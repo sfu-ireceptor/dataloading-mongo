@@ -10,3 +10,5 @@ LABEL maintainer="iReceptor <ireceptor@sfu.ca>"
 #ENV https_proxy 'https://proxy.swmed.edu:3128/'
 #ENV HTTP_PROXY 'http://proxy.swmed.edu:3128/'
 #ENV HTTPS_PROXY 'https://proxy.swmed.edu:3128/'
+
+COPY ./README.md  /home/jovyan/README.md
