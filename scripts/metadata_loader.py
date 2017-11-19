@@ -23,7 +23,7 @@ def inputParameters():
 	
 	parser.add_option('-i', '--input', 
 	                  dest="inputFileName", 
-	                  default="default.out",
+	                  default="data.csv",
 	                  )
 	                  
 	parser.add_option('-v', '--verbose',
@@ -59,6 +59,7 @@ def dbConnect():
 	dbQuery = mng_db[dbCollection]
 	
 def insertDocument(doc, targetCollections):
+
     cursor = dbQuery.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
     empty = False
     try:
@@ -73,11 +74,15 @@ def insertDocument(doc, targetCollections):
     doc["_id"] = seq
     results = targetCollections.insert(doc)
 
+from os.path import exists
+
 def process(options):
 
-	if not options.inputFileName: return
+	if not options.inputFileName or \
+           not exists(options.inputFileName): 
+	    return False 
 	
-	df = pd.read_csv( inputFileName, sep=None )
+	df = pd.read_csv( options.inputFileName, sep=None )
 	
 	# Yang: there is an extra field with the same name library_source
 	# if bojan delete that field, I need to change this code
@@ -97,6 +102,11 @@ def process(options):
 	for r in record_list:
 	    insertDocument(r,db_cm)
 
+	return True
+
 if __name__ == "__main__":
 
-    process(inputParameters())
+    if process(inputParameters()):
+        print("Input file loaded")
+    else:
+        print("Input file not found?")
