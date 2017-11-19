@@ -17,10 +17,7 @@ dbCollection = 'sample'
 # Default connection
 dbQuery = None
 
-# Input file name
-options = None
-
-def getInputParameters():
+def inputParameters():
 
 	parser = optparse.OptionParser()
 	
@@ -47,6 +44,8 @@ def getInputParameters():
 	print('VERBOSE   :', options.verbose)
 	print('OUTPUT    :', options.inputFileName)
 	print('REMAINING :', remainder)
+	
+	return options
 
 def dbConnect():
 
@@ -74,7 +73,7 @@ def insertDocument(doc, targetCollections):
     doc["_id"] = seq
     results = targetCollections.insert(doc)
 
-def process():
+def process(options):
 
 	if not options.inputFileName: return
 	
@@ -100,6 +99,4 @@ def process():
 
 if __name__ == "__main__":
 
-    getInputParameters()
-    
-    process()
+    process(inputParameters())
