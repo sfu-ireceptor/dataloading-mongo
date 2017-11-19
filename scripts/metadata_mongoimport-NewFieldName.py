@@ -43,10 +43,10 @@ def getInputParameters():
 	                  
 	options, remainder = parser.parse_args()
 	
-	print 'VERSION   :', options.version
-	print 'VERBOSE   :', options.verbose
-	print 'OUTPUT    :', options.inputFileName
-	print 'REMAINING :', remainder
+	print('VERSION   :', options.version)
+	print('VERBOSE   :', options.verbose)
+	print('OUTPUT    :', options.inputFileName)
+	print('REMAINING :', remainder)
 
 def dbConnect():
 
