@@ -18,7 +18,7 @@ dbCollection = 'sample'
 dbQuery = None
 
 # Input file name
-inputName = None
+options = None
 
 def getInputParameters():
 
