@@ -1,4 +1,4 @@
-#!/user/bin/python3
+#!/usr/bin/python3
 
 import pandas as pd
 import pymongo
@@ -78,7 +78,7 @@ def process():
 
 	if not options.inputFileName: return
 	
-	df = pd.read_csv( inputFileName, sep=None )"
+	df = pd.read_csv( inputFileName, sep=None )
 	
 	# Yang: there is an extra field with the same name library_source
 	# if bojan delete that field, I need to change this code
