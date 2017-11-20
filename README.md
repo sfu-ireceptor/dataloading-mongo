@@ -28,10 +28,10 @@ $ pip3 install -r requirements.txt
 The metadata loading script may be run as:
 
 ```
-$ python3 metadata_loader.py
+$ python3 metadata_loader.py -h  # -h flag will give usage
 ```
 
-If the file's mode is set to executable, then it may be run directly:
+If the file's mode is set to executable, then it may also be run directly:
 
 ```
 $ chmod u+x metadata_loader.py
