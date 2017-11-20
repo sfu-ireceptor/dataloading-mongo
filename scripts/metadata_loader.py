@@ -12,7 +12,7 @@ dbHost = 'localhost'
 dbName = 'ireceptor'
 
 # Default collection
-Collection_name = 'sample'
+targetCollection = 'sample'
 
 # Default query connection to the collection
 dbCollection = None
