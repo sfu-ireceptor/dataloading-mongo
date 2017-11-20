@@ -20,7 +20,7 @@ them within a [virtualenv](https://virtualenv.pypa.io/en/stable/installation/) w
 The data loading scripts use a number Python libraries. These are listed in the pip 'requirements.txt' file and may be installed as follows:
 
 ```
-$ pip3 install -r requirements.txt
+$ sudo pip3 install -r requirements.txt
 ```
 
 # Running the loading script
