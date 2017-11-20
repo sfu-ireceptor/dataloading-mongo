@@ -96,7 +96,7 @@ def process(options):
 	record_list = list(records)
 	
 	# Connect with the database...
-	dbconnect()
+	dbConnect()
 	
 	# .. then load records
 	for r in record_list:
