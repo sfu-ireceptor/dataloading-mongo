@@ -4,6 +4,7 @@ import os
 from os.path import exists
 
 import pandas as pd
+import urllib.parse
 import pymongo
 import json
 import optparse
@@ -105,20 +106,19 @@ def inputParameters():
 def getDbCollection(options):
          
 	# Connect with Mongo db
-	mng_client = pymongo.MongoClient(
-		options.host, 
-		options.port, 
-		user=options.user, 
-		password=options.password
-	)
+    username = urllib.parse.quote_plus(options.user)
+    password = urllib.parse.quote_plus(options.password)
+    uri = 'mongodb://%s:%s@%s:%s' % ( username, password, options.host, options.port )
+    
+    mng_client = pymongo.MongoClient(uri)
 	
-	# Set Mongo db name
-	mng_db = mng_client[options.database]
-	
-	# Set Mongo db collection name
-	dbCollection = mng_db[options.collection]
-	
-	return dbCollection
+    # Set Mongo db name
+    mng_db = mng_client[options.database]
+    
+    # Set Mongo db collection name
+    dbCollection = mng_db[options.collection]
+    
+    return dbCollection
 
 def insertDocument(doc, dbCollection):
 
