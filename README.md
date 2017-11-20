@@ -28,7 +28,7 @@ $ pip3 install -r requirements.txt
 The metadata loading script may be run as:
 
 ```
-$ python3 metadata_loader.py -h  # -h flag will give usage
+$ python3 metadata_loader.py -h  # -h flag will document the command usage
 ```
 
 If the file's mode is set to executable, then it may also be run directly:
@@ -38,4 +38,21 @@ $ chmod u+x metadata_loader.py
 ./metadata_loader.py
 ```
 
+Note that the default parameters for this script may be set as Linux environment variables set the  *export VARIABLE=value* protocol. These variables are documented in the usage command above.
+
+**Test Data**
+
+The 'testdata' subfolder in here contains some sample data documented in a README file, which may be read in by the available scripts, to test the node.
+
+**Jupyter Docker (deprecated?)**
+
+When the turnkey node is running, one of the Docker containers which is running is a Jupyter Notebook 
+which is a sandbox of script development to facilitate data loading into the turnkey node's MongoDb database. This Notebook may be accessed using a web browser; however, the default is for the notebook to be protected by an authentication token. To see the full local link for this token, you need to look inside the log file of the Jupyter container. This is easily done as follows:
+
+```
+$ sudo docker logs irdn-notebook  # where 'irdn-notebook' is the default name of the Jupyter Notebook
+```
+Clicking on this link should give you the notebook home page with README and a *work* directory with data loading scripts under development.
+
+Note, however, that the Python loading scripts in the Notebook may be out-of-date and rather, the scripts documented above are likely the preferred channel for data loading.
 
