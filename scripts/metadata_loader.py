@@ -12,10 +12,10 @@ dbHost = 'localhost'
 dbName = 'ireceptor'
 
 # Default collection
-dbCollection = 'sample'
+Collection_name = 'sample'
 
-# Default connection
-dbQuery = None
+# Default query connection to the collection
+dbCollection = None
 
 def inputParameters():
 
@@ -56,11 +56,11 @@ def dbConnect():
 	mng_db = mng_client[dbName]
 	
 	# Set Mongo db collection name
-	dbQuery = mng_db[dbCollection]
+	dbCollection = mng_db[targetCollection]
 	
-def insertDocument(doc, targetCollections):
+def insertDocument(doc, dbCollection):
 
-    cursor = dbQuery.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
+    cursor = dbCollection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
     empty = False
     try:
         record = cursor.next()
@@ -72,7 +72,7 @@ def insertDocument(doc, targetCollections):
     else:
         seq = record["_id"]+1
     doc["_id"] = seq
-    results = targetCollections.insert(doc)
+    results = dbCollection.insert(doc)
 
 from os.path import exists
 
@@ -100,7 +100,7 @@ def process(options):
 	
 	# .. then load records
 	for r in record_list:
-	    insertDocument(r,dbQuery)
+	    insertDocument(r,dbCollection)
 
 	return True
 
