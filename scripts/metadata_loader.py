@@ -17,7 +17,7 @@ def inputParameters():
 	
 	default_host =  os.environ.get('MONGODB_HOST', 'localhost')
 	
-	parser.add_option('-h', '--host', 
+	parser.add_option('--host', 
 	                  dest="host", 
 	                  default=default_host,
 	                  help="MongoDb server hostname. If the MONGODB_HOST environment variable is set, it is used. Defaults to 'localhost' otherwise."
