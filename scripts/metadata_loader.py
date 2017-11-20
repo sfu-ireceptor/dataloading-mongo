@@ -47,8 +47,8 @@ def inputParameters():
 	
 	return options
 
-def dbConnect():
-
+def getDbCollection():
+         
 	# Connect with Mongo db
 	mng_client = pymongo.MongoClient(dbHost, 27017)
 	
@@ -57,7 +57,9 @@ def dbConnect():
 	
 	# Set Mongo db collection name
 	dbCollection = mng_db[targetCollection]
-	
+         
+        return dbCollection
+
 def insertDocument(doc, dbCollection):
 
     cursor = dbCollection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
@@ -96,7 +98,7 @@ def process(options):
 	record_list = list(records)
 	
 	# Connect with the database...
-	dbConnect()
+	dbCollection = getDbCollection()
 	
 	# .. then load records
 	for r in record_list:
