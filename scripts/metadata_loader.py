@@ -57,8 +57,8 @@ def getDbCollection():
 	
 	# Set Mongo db collection name
 	dbCollection = mng_db[targetCollection]
-         
-        return dbCollection
+	
+	return dbCollection
 
 def insertDocument(doc, dbCollection):
 
