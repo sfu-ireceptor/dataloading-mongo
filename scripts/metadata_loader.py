@@ -1,29 +1,76 @@
 #!/usr/bin/python3
 
+import os
+from os.path import exists
+
 import pandas as pd
 import pymongo
 import json
 import optparse
 
-# Default host
-dbHost = 'localhost'
-
-# Default database
-dbName = 'ireceptor'
-
 # Default collection
 targetCollection = 'sample'
-
-# Default query connection to the collection
-dbCollection = None
 
 def inputParameters():
 
 	parser = optparse.OptionParser()
 	
-	parser.add_option('-i', '--input', 
-	                  dest="inputFileName", 
-	                  default="data.csv",
+	default_host =  os.environ.get('MONGODB_HOST', 'localhost')
+	
+	parser.add_option('-h', '--host', 
+	                  dest="host", 
+	                  default=default_host,
+	                  help="MongoDb server hostname. If the MONGODB_HOST environment variable is set, it is used. Defaults to 'localhost' otherwise."
+	                  )
+	
+	parser.add_option('--port', 
+	                  dest="port", 
+	                  default=27017,
+	                  type="int",
+	                  help="MongoDb server port number. Defaults to 27017."
+	                  
+	                  )
+	
+	default_user =  os.environ.get('MONGODB_SERVICE_USER', 'admin')
+	
+	parser.add_option('-u', '--user',
+	                  dest="user", 
+	                  default=default_user,
+	                  help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
+	                  )
+	     
+	default_password =  os.environ.get('MONGODB_SERVICE_SECRET', '')
+	    
+	parser.add_option('-p', '--password', 
+	                  dest="password", 
+	                  default=default_password,
+	                  help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
+	                  )
+	
+	default_database = os.environ.get('MONGODB_DB', 'ireceptor')
+	
+	parser.add_option('-d', '--database', 
+	                  dest="database", 
+	                  default=default_database,
+	                  help="Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise." 
+	                  )
+	                  
+	parser.add_option('-c', '--collection', 
+	                  dest="collection", 
+	                  default='sample',
+	                  help="MongoDb collection name. Defaults to 'sample'." 
+	                  )
+	                  
+	parser.add_option('-l', '--library', 
+	                  dest="library", 
+	                  default=".",
+	                  help="Path to 'library' directory of data files. Defaults to the current working directory."
+	                  )
+	                  
+	parser.add_option('-f', '--filename', 
+	                  dest="filename", 
+	                  default="metadata.csv",
+	                  help="Name of file to load. Defaults to 'metadata.csv'."
 	                  )
 	                  
 	parser.add_option('-v', '--verbose',
@@ -40,23 +87,36 @@ def inputParameters():
 	                  
 	options, remainder = parser.parse_args()
 	
-	print('VERSION   :', options.version)
-	print('VERBOSE   :', options.verbose)
-	print('OUTPUT    :', options.inputFileName)
-	print('REMAINING :', remainder)
+	if options.verbose:
+		print('HOST      :', options.host)
+		print('USER      :', options.user)
+		print('PORT      :', options.port)
+		print('PASSWORD  :', options.password)
+		print('DATABASE  :', options.database)
+		print('COLLECTION:', options.collection)
+		print('LIBRARY   :', options.library)
+		print('FILENAME  :', options.filename)
+		print('VERSION   :', options.version)
+		print('VERBOSE   :', options.verbose)
+		#print('REMAINING :', remainder)
 	
 	return options
 
-def getDbCollection():
+def getDbCollection(options):
          
 	# Connect with Mongo db
-	mng_client = pymongo.MongoClient(dbHost, 27017)
+	mng_client = pymongo.MongoClient(
+		options.host, 
+		options.port, 
+		user=options.user, 
+		password=options.password
+	)
 	
 	# Set Mongo db name
-	mng_db = mng_client[dbName]
+	mng_db = mng_client[options.database]
 	
 	# Set Mongo db collection name
-	dbCollection = mng_db[targetCollection]
+	dbCollection = mng_db[options.collection]
 	
 	return dbCollection
 
@@ -76,15 +136,20 @@ def insertDocument(doc, dbCollection):
     doc["_id"] = seq
     results = dbCollection.insert(doc)
 
-from os.path import exists
-
 def process(options):
 
-	if not options.inputFileName or \
-           not exists(options.inputFileName): 
-	    return False 
+	if not options.filename: 
+	    return False
+	   
+	if options.library:
+		path = options.library+"/"+options.filename
+	else:
+		path = filename
 	
-	df = pd.read_csv( options.inputFileName, sep=None )
+	if not exists(path): 
+	    return False 
+
+	df = pd.read_csv( path, sep=None )
 	
 	# Yang: there is an extra field with the same name library_source
 	# if bojan delete that field, I need to change this code
@@ -98,7 +163,7 @@ def process(options):
 	record_list = list(records)
 	
 	# Connect with the database...
-	dbCollection = getDbCollection()
+	dbCollection = getDbCollection(options)
 	
 	# .. then load records
 	for r in record_list:
