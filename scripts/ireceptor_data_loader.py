@@ -8,10 +8,32 @@ import urllib.parse
 import pymongo
 import json
 import optparse
+from __builtin__ import True
+
+from sample import Sample
+from mixcr import MiXCR
+from imgt import IMGT
 
 def inputParameters():
 
 	parser = optparse.OptionParser()
+	
+	parser.add_option('--sample', 
+					action="store_const", 
+					const='sample', 
+					dest='type', 
+					default='sample'
+	)
+	parser.add_option('--imgt',    
+					action='store_const', 
+					const='imgt',    
+					dest='type'
+	)
+	parser.add_option('--mixcr', 
+					action='store_const', 
+					const='mixcr', 
+					dest='type'
+	)
 	
 	default_host =  os.environ.get('MONGODB_HOST', 'localhost')
 	
@@ -25,8 +47,7 @@ def inputParameters():
 	                  dest="port", 
 	                  default=27017,
 	                  type="int",
-	                  help="MongoDb server port number. Defaults to 27017."
-	                  
+	                  help="MongoDb server port number. Defaults to 27017." 
 	                  )
 	
 	default_user =  os.environ.get('MONGODB_SERVICE_USER', 'admin')
@@ -53,12 +74,6 @@ def inputParameters():
 	                  help="Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise." 
 	                  )
 	                  
-	parser.add_option('-c', '--collection', 
-	                  dest="collection", 
-	                  default='sample',
-	                  help="MongoDb collection name. Defaults to 'sample'." 
-	                  )
-	                  
 	parser.add_option('-l', '--library', 
 	                  dest="library", 
 	                  default=".",
@@ -67,8 +82,8 @@ def inputParameters():
 	                  
 	parser.add_option('-f', '--filename', 
 	                  dest="filename", 
-	                  default="sample.csv",
-	                  help="Name of file to load. Defaults to 'sample.csv'."
+	                  default="metadata.csv",
+	                  help="Name of file to load. Defaults to 'metadata.csv'."
 	                  )
 	                  
 	parser.add_option('-v', '--verbose',
@@ -86,6 +101,7 @@ def inputParameters():
 	options, remainder = parser.parse_args()
 	
 	if options.verbose:
+		print('INPUT TYPE:', options.type)
 		print('HOST      :', options.host)
 		print('USER      :', options.user)
 		print('PORT      :', options.port)
@@ -100,82 +116,93 @@ def inputParameters():
 	
 	return options
 
-def getDbCollection(options):
-         
-	# Connect with Mongo db
-    username = urllib.parse.quote_plus(options.user)
-    password = urllib.parse.quote_plus(options.password)
-    uri = 'mongodb://%s:%s@%s:%s' % ( username, password, options.host, options.port )
-    
-    mng_client = pymongo.MongoClient(uri)
+_type2collection = {
+		"sample" : "sample",
+		"imgt"   : "sequence",
+		"mixcr"  : "sequence",
+	}
+
+class Context:
 	
-    # Set Mongo db name
-    mng_db = mng_client[options.database]
-    
-    # Set Mongo db collection name
-    dbCollection = mng_db[options.collection]
-    
-    return dbCollection
-
-def insertDocument(doc, dbCollection):
-
-    cursor = dbCollection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
-    
-    empty = False
-    
-    try:
-        record = cursor.next()
-    except StopIteration:
-        print("Warning! NO PREVIOUS RECORD, THIS IS THE FIRST INSERTION")
-        empty = True
-        
-    if empty:
-        seq = 1
-    else:
-        seq = record["_id"]+1
-        
-    doc["_id"] = seq
-    
-    results = dbCollection.insert(doc)
-
-def process(options):
+	def __init__(self,path,collection):
+		self.path = path
+		self.collection = collection
+		
+def getContext(options):
 
 	if not options.filename: 
 	    return False
 	   
 	if options.library:
-		path = options.library+"/"+options.filename
+		path = options.library + "/" + options.filename
 	else:
 		path = filename
 	
 	if not exists(path): 
-	    return False 
-
-	df = pd.read_csv( path, sep=None )
-	
-	# Yang: there is an extra field with the same name library_source
-	# if bojan delete that field, I need to change this code
-	# df = df.drop('library_source.1', axis=1)"
-	
-	df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-	
-	df['ir_sequence_count'] = 0
-	
-	records = json.loads(df.T.to_json()).values()
-	record_list = list(records)
-	
-	# Connect with the database...
-	dbCollection = getDbCollection(options)
-	
-	# .. then load records
-	for r in record_list:
-	    insertDocument(r,dbCollection)
-
-	return True
+	    return None
+	   
+	else:
+		
+		# Connect with Mongo db
+	    username = urllib.parse.quote_plus(options.user)
+	    password = urllib.parse.quote_plus(options.password)
+	    uri = 'mongodb://%s:%s@%s:%s' % ( username, password, options.host, options.port )
+	    
+	    mng_client = pymongo.MongoClient(uri)
+		
+	    # Set Mongo db name
+	    mng_db = mng_client[options.database]
+	    
+	    # Set Mongo db collection name to 
+	    # data source type: samples, imgt, igblast?
+	    collection = mng_db[
+			_type2collection[options.type]
+		]
+	    
+        return  Context( path , collection )
 
 if __name__ == "__main__":
 
-    if process(inputParameters()):
-        print("Input file loaded")
-    else:
-        print("Input file not found?")
+    options = inputParameters()
+    
+    context = getContext(options)
+    
+    if context:
+		if options.type == "sample":
+			
+			# process samples
+			print("processing Sample metadata file: ",options.filename)
+			
+			sample = Sample(context)
+			
+			if sample.process():
+				print("Sample metadata file loaded")
+			else:
+				print("ERROR: Sample input file not found?")
+				
+		elif options.type == "imgt":
+			
+			# process imgt
+			print("processing IMGT data file: ",options.filename)
+			
+			imgt = IMGT(context)
+			
+			if imgt.process():
+				print("IMGT data file loaded")
+			else:
+				print("ERROR: IMGT data file not found?")
+			
+		elif options.type == "mixcr":
+			
+			# process mixcr
+			print("Processing MiXCR data file: ",options.filename)
+			
+			mixcr = MiXCR(context)
+			
+			if mixcr.process():
+				print("MiXCR data file loaded")
+			else:
+				print("ERROR: MiXCR data file not found?")
+		
+		else:
+			print( "ERROR: unknown input data type:", options.type )
