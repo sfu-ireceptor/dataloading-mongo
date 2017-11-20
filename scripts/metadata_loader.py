@@ -100,7 +100,7 @@ def process(options):
 	
 	# .. then load records
 	for r in record_list:
-	    insertDocument(r,db_cm)
+	    insertDocument(r,dbQuery)
 
 	return True
 
