@@ -247,7 +247,8 @@ class IMGT:
 
         # Clean up annotation files
         filelist = [ f for f in os.listdir( self.dataFolder() ) if f.endswith(".txt") ]
-        for f in filelist: os.remove(f)
+        for f in filelist:
+            os.remove(f)
         
         return True
     
