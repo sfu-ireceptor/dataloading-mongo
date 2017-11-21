@@ -130,13 +130,7 @@ def inputParameters():
 	                  default=False,
 	                  action="store_true",
 	                  )
-	                  
-	parser.add_option('--version',
-	                  dest="version",
-	                  default=1.0,
-	                  type="float",
-	                  )
-	                  
+
 	options, remainder = parser.parse_args()
 
 	if not options.filename:
