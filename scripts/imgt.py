@@ -114,7 +114,8 @@ class IMGT:
         
         path = self.getDataPath(fileName)
         
-        print("Extracting IMGT file: ", path )
+        if self.context.verbose:
+            print("Extracting IMGT file: ", path )
             
         self.setScratchFolder(fileName) 
         
@@ -263,7 +264,11 @@ class IMGT:
         # Clean up annotation files and scratch folder
         filelist = [ f for f in os.listdir( self.getScratchFolder() ) if f.endswith(".txt") ]
         for f in filelist:
+            
             path = self.getScratchPath(f)
+            if self.context.verbose:
+                print( "Deleting processed archive file: ", path )
+                
             if os._exists(path):
                 os.remove(path)
                 

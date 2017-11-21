@@ -148,11 +148,12 @@ def inputParameters():
 
 class Context:
 	
-	def __init__(self, library, path, samples, sequences  ):
+	def __init__(self, library, path, samples, sequences, verbose ):
 		self.library = library
 		self.path = path
 		self.samples = samples
 		self.sequences = sequences
+		self.verbose = verbose
 		
 def getContext(options):
 
@@ -183,7 +184,8 @@ def getContext(options):
 					options.library, 
 					path , 
 					mng_db['sample'], 
-					mng_db['sequence'] 
+					mng_db['sequence'],
+					options.verbose 
 				)
 
 if __name__ == "__main__":
