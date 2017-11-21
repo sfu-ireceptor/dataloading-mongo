@@ -2,7 +2,6 @@
 
 import pandas as pd
 import json
-from __builtin__ import True
 
 class Sample:
 	

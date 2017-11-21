@@ -10,8 +10,8 @@ import json
 import optparse
 
 from sample import Sample
-from mixcr import MiXCR
-from imgt import IMGT
+#from mixcr import MiXCR
+#from imgt import IMGT
 
 def inputParameters():
 
@@ -81,8 +81,8 @@ def inputParameters():
 	                  
 	parser.add_option('-f', '--filename', 
 	                  dest="filename", 
-	                  default="metadata.csv",
-	                  help="Name of file to load. Defaults to 'metadata.csv'."
+	                  default="", 
+	                  help="Name of file to load. Defaults to a 'csv' file with the --type name as the root name."
 	                  )
 	                  
 	parser.add_option('-v', '--verbose',
@@ -98,7 +98,10 @@ def inputParameters():
 	                  )
 	                  
 	options, remainder = parser.parse_args()
-	
+
+	if not options.filename:
+		options.filename = options.type+".csv"
+
 	if options.verbose:
 		print('INPUT TYPE:', options.type)
 		print('HOST      :', options.host)
@@ -106,7 +109,6 @@ def inputParameters():
 		print('PORT      :', options.port)
 		print('PASSWORD  :', options.password)
 		print('DATABASE  :', options.database)
-		print('COLLECTION:', options.collection)
 		print('LIBRARY   :', options.library)
 		print('FILENAME  :', options.filename)
 		print('VERSION   :', options.version)
