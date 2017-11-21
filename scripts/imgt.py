@@ -87,12 +87,12 @@ class IMGT:
         # Process annotation files
         for f in onlyfiles:
             print (f)
-            processAnnotationFile( self.getPath(f) )
+            processImgtArchive( self.getPath(f) )
                     
         # Create indices(?)       
         # self.context.sequences.create_index("functional")
         
-    def processAnnotationFile( self, path ):
+    def processImgtArchive( self, path ):
             
         tar = tarfile.open( path )
         
