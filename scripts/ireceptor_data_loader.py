@@ -10,8 +10,15 @@ import json
 import optparse
 
 from sample import Sample
-#from mixcr import MiXCR
-#from imgt import IMGT
+from imgt   import IMGT
+from mixcr  import MiXCR
+
+
+_type2ext = {
+		"sample" : "csv",
+		"imgt"   : "zip", # assume a zip archive
+		"mixcr"  : "zip", # assume a zip archive
+}
 
 def inputParameters():
 
@@ -23,11 +30,13 @@ def inputParameters():
 					dest='type', 
 					default='sample'
 	)
+	
 	parser.add_option('--imgt',    
 					action='store_const', 
 					const='imgt',    
 					dest='type'
 	)
+	
 	parser.add_option('--mixcr', 
 					action='store_const', 
 					const='mixcr', 
@@ -100,7 +109,7 @@ def inputParameters():
 	options, remainder = parser.parse_args()
 
 	if not options.filename:
-		options.filename = options.type+".csv"
+		options.filename = options.type + "." + _type2ext[options.type]
 
 	if options.verbose:
 		print('INPUT TYPE:', options.type)
