@@ -262,8 +262,11 @@ class IMGT:
 
         #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
 
-        # Clean up annotation files and scratch folder 
-        shutil.rmtree(self.getScratchFolder())
+        # Clean up annotation files and scratch folder
+        if self.context.verbose:
+            print( "Cleaning up scratch folder: ", self.getScratchFolder() )
+            
+        rmtree(self.getScratchFolder())
         
         return True
     
