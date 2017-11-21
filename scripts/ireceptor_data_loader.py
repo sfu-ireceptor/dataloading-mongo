@@ -58,12 +58,12 @@ def inputParameters():
 	                  help="MongoDb server port number. Defaults to 27017." 
 	                  )
 	
-	default_user =  os.environ.get('MONGODB_SERVICE_USER', 'admin')
+	default_user =  os.environ.get('MONGODB_USER', 'admin')
 	
 	parser.add_option('-u', '--user',
 	                  dest="user", 
 	                  default=default_user,
-	                  help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
+	                  help="MongoDb service user name. Defaults to the MONGODB_USER environment variable if set. Defaults to 'admin' otherwise."
 	                  )
 	     
 	default_password =  os.environ.get('MONGODB_PASSWORD', '')
