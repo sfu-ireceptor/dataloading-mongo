@@ -159,12 +159,6 @@ def getContext(options):
 	    # Set Mongo db name
 	    mng_db = mng_client[options.database]
 	    
-	    # Set Mongo db collection name to 
-	    # data source type: samples, imgt, igblast?
-	    collection = mng_db[
-			_type2collection[options.type]
-		]
-	    
 	    return  Context( 
 					options.library, 
 					path , 
