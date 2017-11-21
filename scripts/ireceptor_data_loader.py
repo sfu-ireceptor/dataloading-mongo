@@ -66,12 +66,12 @@ def inputParameters():
 	                  help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
 	                  )
 	     
-	default_password =  os.environ.get('MONGODB_SERVICE_SECRET', '')
+	default_password =  os.environ.get('MONGODB_PASSWORD', '')
 	    
 	parser.add_option('-p', '--password', 
 	                  dest="password", 
 	                  default=default_password,
-	                  help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
+	                  help="MongoDb service user account secret ('password'). Defaults to the MONGODB_PASSWORD environment variable if set. Defaults to empty string otherwise."
 	                  )
 	
 	default_database = os.environ.get('MONGODB_DB', 'ireceptor')
