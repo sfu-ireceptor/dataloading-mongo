@@ -12,6 +12,7 @@ import numpy as np
 
 import os
 from os.path import isfile, join
+from shutil import rmtree
 
 def get_all_substrings(string):
     
@@ -261,18 +262,8 @@ class IMGT:
 
         #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
 
-        # Clean up annotation files and scratch folder
-        filelist = [ f for f in os.listdir( self.getScratchFolder() ) if f.endswith(".txt") ]
-        for f in filelist:
-            
-            path = self.getScratchPath(f)
-            if self.context.verbose:
-                print( "Deleting processed archive file: ", path )
-                
-            if os._exists(path):
-                os.remove(path)
-                
-        os.rmdir(self.getScratchFolder())
+        # Clean up annotation files and scratch folder 
+        shutil.rmtree(self.getScratchFolder())
         
         return True
     
