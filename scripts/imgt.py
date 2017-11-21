@@ -69,14 +69,14 @@ class IMGT:
         # First iteration (bad: hardcoded!)
         return self.context.library + "/imgt/"
     
-    def getPath( self, filename ):
-        return join( self.dataFolder(), filename )
+    def getPath( self, fileName ):
+        return join( self.dataFolder(), fileName )
     
-    def readDf( self, filename ):
-        return pd.read_table( self.getPath(filename) )
+    def readDf( self, fileName ):
+        return pd.read_table( self.getPath(fileName) )
 
-    def readDfNoHeader( self, filename ):
-            return pd.read_table( self.getPath(filename), header=None )
+    def readDfNoHeader( self, fileName ):
+            return pd.read_table( self.getPath(fileName), header=None )
 
     def process(self):
         
@@ -90,16 +90,18 @@ class IMGT:
         # Process annotation files
         for f in onlyfiles:
             print (f)
-            self.processImgtArchive( self.getPath(f) )
+            self.processImgtArchive( f )
                     
         # Create indices(?)       
         # self.context.sequences.create_index("functional")
         
         return True
         
-    def processImgtArchive( self, path ):
+    def processImgtArchive( self, fileName ):
         
-        print("Extracting IMGT data path file: ",path)
+        path = self.getPath(fileName) 
+        
+        print("Extracting IMGT file: ", path )
             
         tar = tarfile.open( path )
         
@@ -216,7 +218,7 @@ class IMGT:
         df_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(len)
         df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(len)
 
-        sampleid = self.context.samples.find({"imgt_file_name":{'$regex': filename}},{'_id':1})
+        sampleid = self.context.samples.find({"imgt_file_name":{'$regex': fileName}},{'_id':1})
 
         ir_project_sample_id = [i['_id'] for i in sampleid][0]
 
@@ -236,12 +238,12 @@ class IMGT:
         
         ir_sequence_count = len(records)
         
-        #     self.context.samples.update_one({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":0}})
-        ori_count = self.context.samples.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
+        #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":0}})
+        ori_count = self.context.samples.find_one({"imgt_file_name":{'$regex': fileName}},{"ir_sequence_count":1})["ir_sequence_count"]
 
-        self.context.samples.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
+        self.context.samples.update({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
 
-        #     self.context.samples.update_one({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
+        #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
 
         # Clean up annotation files
         filelist = [ f for f in os.listdir( self.dataFolder() ) if f.endswith(".txt") ]
