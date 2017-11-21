@@ -22,36 +22,53 @@ _type2ext = {
 
 def inputParameters():
 
-	parser = optparse.OptionParser()
+	parser = optparse.OptionParser(
+						usage="%prog [options]\n"+
+							  "Note: for proper data processing, project --samples metadata should\n"+
+							   "generally be read first into the database before loading other data types.",
+	                    version='1.0',
+    				)
+
+	mode_opts = optparse.OptionGroup(
+						    parser, 'Data Type Options',
+						    'Options to specify the type of data to load.',
+						    )
 	
-	parser.add_option('--sample', 
+	mode_opts.add_option('--sample', 
 					action="store_const", 
 					const='sample', 
 					dest='type', 
 					default='sample'
 	)
 	
-	parser.add_option('--imgt',    
+	mode_opts.add_option('--imgt',    
 					action='store_const', 
 					const='imgt',    
 					dest='type'
 	)
 	
-	#parser.add_option('--mixcr', 
+	#mode_opts.add_option('--mixcr', 
 	#				action='store_const', 
 	#				const='mixcr', 
 	#				dest='type'
 	#)
+		
+	parser.add_option_group(mode_opts) 
+	
+	db_opts = optparse.OptionGroup(
+						    parser, 'Database Connection Options',
+						    'These options control access to the database.',
+						    )
 	
 	default_host =  os.environ.get('MONGODB_HOST', 'localhost')
 	
-	parser.add_option('--host', 
+	db_opts.add_option('--host', 
 	                  dest="host", 
 	                  default=default_host,
 	                  help="MongoDb server hostname. If the MONGODB_HOST environment variable is set, it is used. Defaults to 'localhost' otherwise."
 	                  )
 	
-	parser.add_option('--port', 
+	db_opts.add_option('--port', 
 	                  dest="port", 
 	                  default=27017,
 	                  type="int",
@@ -60,7 +77,7 @@ def inputParameters():
 	
 	default_user =  os.environ.get('MONGODB_USER', 'admin')
 	
-	parser.add_option('-u', '--user',
+	db_opts.add_option('-u', '--user',
 	                  dest="user", 
 	                  default=default_user,
 	                  help="MongoDb service user name. Defaults to the MONGODB_USER environment variable if set. Defaults to 'admin' otherwise."
@@ -68,7 +85,7 @@ def inputParameters():
 	     
 	default_password =  os.environ.get('MONGODB_PASSWORD', '')
 	    
-	parser.add_option('-p', '--password', 
+	db_opts.add_option('-p', '--password', 
 	                  dest="password", 
 	                  default=default_password,
 	                  help="MongoDb service user account secret ('password'). Defaults to the MONGODB_PASSWORD environment variable if set. Defaults to empty string otherwise."
@@ -76,24 +93,38 @@ def inputParameters():
 	
 	default_database = os.environ.get('MONGODB_DB', 'ireceptor')
 	
-	parser.add_option('-d', '--database', 
+	db_opts.add_option('-d', '--database', 
 	                  dest="database", 
 	                  default=default_database,
 	                  help="Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise." 
 	                  )
-	                  
-	parser.add_option('-l', '--library', 
+	
+	parser.add_option_group(db_opts) 
+	
+	data_opts = optparse.OptionGroup(
+						    parser, 'Data Source Options',
+						    'These options specify the identity and location of data files to be loaded.',
+						    )
+	
+	data_opts.add_option('-l', '--library', 
 	                  dest="library", 
 	                  default=".",
 	                  help="Path to 'library' directory of data files. Defaults to the current working directory."
 	                  )
 	                  
-	parser.add_option('-f', '--filename', 
+	data_opts.add_option('-f', '--filename', 
 	                  dest="filename", 
 	                  default="", 
 	                  help="Name of file to load. Defaults to a 'csv' file with the --type name as the root name."
 	                  )
 	                  
+	db_opts = optparse.OptionGroup(
+						    parser, 'General Options',
+						    'Options for general information.',
+						    )
+	
+	parser.add_option_group(data_opts) 
+
 	parser.add_option('-v', '--verbose',
 	                  dest="verbose",
 	                  default=False,
