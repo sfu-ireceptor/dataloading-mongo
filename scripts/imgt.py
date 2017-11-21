@@ -72,11 +72,11 @@ class IMGT:
     def getPath( self, filename ):
         return join( self.dataFolder(), filename )
     
-    def readDf( self, filename, **kwargs ):
-        if not kwargs:
-            return pd.read_table( self.getPath(filename) )
-        else:
-            return pd.read_table( self.getPath(filename), kwargs )
+    def readDf( self, filename ):
+        return pd.read_table( self.getPath(filename) )
+
+    def readDfNoHeader( self, filename ):
+            return pd.read_table( self.getPath(filename), header=None )
 
     def process(self):
         
@@ -98,6 +98,8 @@ class IMGT:
         return True
         
     def processImgtArchive( self, path ):
+        
+        print("Extracting IMGT data path file: ",path)
             
         tar = tarfile.open( path )
         
@@ -117,7 +119,7 @@ class IMGT:
         
         V_REGION_mutation_and_AA_change_table_7 = self.readDf('7_V-REGION-mutation-and-AA-change-table.txt')
 
-        Parameters_11 = self.readDf('11_Parameters.txt', header=None )
+        Parameters_11 = self.readDfNoHeader('11_Parameters.txt')
 
         Para_dict = dict(zip(Parameters_11[0], Parameters_11[1]))
 
