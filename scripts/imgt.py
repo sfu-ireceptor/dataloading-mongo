@@ -67,7 +67,7 @@ class IMGT:
     
     def dataFolder(self):
         # First iteration (bad: hardcoded!)
-        return self.context.library + "/imgt/imgt/"
+        return self.context.library + "/imgt/"
     
     def getPath( self, filename ):
         return join( self.dataFolder(), filename )
