@@ -92,6 +92,8 @@ class IMGT:
         # Create indices(?)       
         # self.context.sequences.create_index("functional")
         
+        return True
+        
     def processImgtArchive( self, path ):
             
         tar = tarfile.open( path )
@@ -99,6 +101,8 @@ class IMGT:
         tar.extractall()
         
         tar.close()
+        
+        return
         
         Summary_1 = self.readDf('1_Summary.txt')
         
