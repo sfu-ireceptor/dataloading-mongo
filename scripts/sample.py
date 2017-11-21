@@ -48,6 +48,6 @@ class Sample:
 		
 		# .. then load records
 		for r in record_list:
-		    insertDocument( r )
+		    self.insertDocument( r )
 	
 		return True
