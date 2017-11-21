@@ -23,7 +23,7 @@ _type2ext = {
 def inputParameters():
 
 	parser = optparse.OptionParser(
-						usage="%prog [options]\n"+
+						usage="%prog [options]\n\n"+
 							  "Note: for proper data processing, project --samples metadata should\n"+
 							   "generally be read first into the database before loading other data types.",
 	                    version='1.0',
@@ -38,19 +38,22 @@ def inputParameters():
 					action="store_const", 
 					const='sample', 
 					dest='type', 
-					default='sample'
+					default='sample',
+					help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
 	)
 	
 	mode_opts.add_option('--imgt',    
 					action='store_const', 
 					const='imgt',    
-					dest='type'
+					dest='type',
+					help="Load a zip archive of IMGT analysis results."
 	)
 	
 	#mode_opts.add_option('--mixcr', 
 	#				action='store_const', 
 	#				const='mixcr', 
-	#				dest='type'
+	#				dest='type',
+	#				help="Load a zip archive of MiXCR analysis results."
 	#)
 		
 	parser.add_option_group(mode_opts) 
@@ -115,13 +118,8 @@ def inputParameters():
 	data_opts.add_option('-f', '--filename', 
 	                  dest="filename", 
 	                  default="", 
-	                  help="Name of file to load. Defaults to a 'csv' file with the --type name as the root name."
+	                  help="Name of file to load. Defaults to a data file with the --type name as the root name (appropriate file format and extension assumed)."
 	                  )
-	                  
-	db_opts = optparse.OptionGroup(
-						    parser, 'General Options',
-						    'Options for general information.',
-						    )
 	
 	parser.add_option_group(data_opts) 
 
