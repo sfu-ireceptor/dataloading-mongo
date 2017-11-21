@@ -9,7 +9,7 @@ class Sample:
 		self.path = context.path
 		self.collection = context.collection
 		
-	def insertDocument( doc ):
+	def insertDocument( self, doc ):
 	
 	    cursor = collection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
 	    
@@ -31,7 +31,7 @@ class Sample:
 	    
 	    results = collection.insert(doc)
 	
-	def process():
+	def process(self):
 	
 		df = pd.read_csv( path , sep=None )
 		

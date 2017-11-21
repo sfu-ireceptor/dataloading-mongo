@@ -92,6 +92,6 @@ class MiXCR:
         self.path = context.path
         self.collection = context.collection
         
-    def process():
+    def process(self):
         return False
 
