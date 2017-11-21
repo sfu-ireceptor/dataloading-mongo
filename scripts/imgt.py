@@ -98,7 +98,7 @@ class IMGT:
             
         tar = tarfile.open( path )
         
-        tar.extractall()
+        tar.extractall(self.dataFolder())
         
         tar.close()
         
