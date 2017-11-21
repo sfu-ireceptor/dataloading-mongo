@@ -8,7 +8,6 @@ import urllib.parse
 import pymongo
 import json
 import optparse
-from __builtin__ import True
 
 from sample import Sample
 from mixcr import MiXCR
@@ -159,7 +158,7 @@ def getContext(options):
 			_type2collection[options.type]
 		]
 	    
-        return  Context( path , collection )
+	    return  Context( path , collection )
 
 if __name__ == "__main__":
 
