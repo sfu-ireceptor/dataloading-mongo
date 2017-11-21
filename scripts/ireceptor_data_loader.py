@@ -114,15 +114,13 @@ def inputParameters():
 	if options.verbose:
 		print('INPUT TYPE:', options.type)
 		print('HOST      :', options.host)
-		print('USER      :', options.user)
+		print('USER      :', options.user[0]+"***"+options.user[-1])
 		print('PORT      :', options.port)
-		print('PASSWORD  :', options.password)
+		print('PASSWORD  :', options.password[0]+"***"+options.password[-1])
 		print('DATABASE  :', options.database)
 		print('LIBRARY   :', options.library)
 		print('FILENAME  :', options.filename)
 		print('VERSION   :', options.version)
-		print('VERBOSE   :', options.verbose)
-		#print('REMAINING :', remainder)
 	
 	return options
 
