@@ -77,7 +77,7 @@ class IMGT:
     # We create a specific temporary 'scratch' folder for each IMGT sequence archive
     def setScratchFolder( self, fileName):
         folderName = fileName[:fileName.index('.')]
-        self.scratchFolder = self.getDataFolder()+"/"+folderName + "/"
+        self.scratchFolder = self.getDataFolder()+folderName + "/"
 
     def getScratchFolder(self):
         return self.scratchFolder
