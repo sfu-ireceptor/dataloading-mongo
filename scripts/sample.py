@@ -6,12 +6,11 @@ import json
 class Sample:
 	
 	def __init__(self,context):
-		self.path = context.path
-		self.collection = context.collection
+		self.context = context
 		
 	def insertDocument( self, doc ):
 	
-	    cursor = self.collection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
+	    cursor = self.context.samples.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
 	    
 	    empty = False
 	    
@@ -29,11 +28,11 @@ class Sample:
 	        
 	    doc["_id"] = seq
 	    
-	    results = self.collection.insert(doc)
+	    results = self.context.samples.insert(doc)
 	
 	def process(self):
 	
-		df = pd.read_csv( self.path , sep=None )
+		df = pd.read_csv( self.context.path , sep=None )
 		
 		# Yang: there is an extra field with the same name library_source
 		# if bojan delete that field, I need to change this code

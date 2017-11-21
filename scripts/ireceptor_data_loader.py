@@ -11,7 +11,7 @@ import optparse
 
 from sample import Sample
 from imgt   import IMGT
-from mixcr  import MiXCR
+#from mixcr  import MiXCR
 
 
 _type2ext = {
@@ -37,11 +37,11 @@ def inputParameters():
 					dest='type'
 	)
 	
-	parser.add_option('--mixcr', 
-					action='store_const', 
-					const='mixcr', 
-					dest='type'
-	)
+	#parser.add_option('--mixcr', 
+	#				action='store_const', 
+	#				const='mixcr', 
+	#				dest='type'
+	#)
 	
 	default_host =  os.environ.get('MONGODB_HOST', 'localhost')
 	
@@ -126,17 +126,13 @@ def inputParameters():
 	
 	return options
 
-_type2collection = {
-		"sample" : "sample",
-		"imgt"   : "sequence",
-		"mixcr"  : "sequence",
-	}
-
 class Context:
 	
-	def __init__(self,path,collection):
+	def __init__(self, library, path, samples, sequences  ):
+		self.library = library
 		self.path = path
-		self.collection = collection
+		self.samples = samples
+		self.sequences = sequences
 		
 def getContext(options):
 
@@ -169,7 +165,12 @@ def getContext(options):
 			_type2collection[options.type]
 		]
 	    
-	    return  Context( path , collection )
+	    return  Context( 
+					options.library, 
+					path , 
+					mng_db['sample'], 
+					mng_db['sequence'] 
+				)
 
 if __name__ == "__main__":
 	
