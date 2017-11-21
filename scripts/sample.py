@@ -11,7 +11,7 @@ class Sample:
 		
 	def insertDocument( self, doc ):
 	
-	    cursor = collection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
+	    cursor = self.collection.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
 	    
 	    empty = False
 	    
@@ -29,11 +29,11 @@ class Sample:
 	        
 	    doc["_id"] = seq
 	    
-	    results = collection.insert(doc)
+	    results = self.collection.insert(doc)
 	
 	def process(self):
 	
-		df = pd.read_csv( path , sep=None )
+		df = pd.read_csv( self.path , sep=None )
 		
 		# Yang: there is an extra field with the same name library_source
 		# if bojan delete that field, I need to change this code
