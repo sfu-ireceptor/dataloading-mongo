@@ -161,12 +161,13 @@ def getContext(options):
 	    return  Context( path , collection )
 
 if __name__ == "__main__":
+	
+	options = inputParameters()
+	
+	context = getContext(options)
 
-    options = inputParameters()
-    
-    context = getContext(options)
-    
-    if context:
+	if context:
+		
 		if options.type == "sample":
 			
 			# process samples
@@ -178,14 +179,15 @@ if __name__ == "__main__":
 				print("Sample metadata file loaded")
 			else:
 				print("ERROR: Sample input file not found?")
-				
-		elif options.type == "imgt":
 			
+		elif options.type == "imgt":
+
 			# process imgt
+			
 			print("processing IMGT data file: ",options.filename)
 			
 			imgt = IMGT(context)
-			
+
 			if imgt.process():
 				print("IMGT data file loaded")
 			else:
@@ -194,6 +196,7 @@ if __name__ == "__main__":
 		elif options.type == "mixcr":
 			
 			# process mixcr
+			
 			print("Processing MiXCR data file: ",options.filename)
 			
 			mixcr = MiXCR(context)
@@ -202,6 +205,6 @@ if __name__ == "__main__":
 				print("MiXCR data file loaded")
 			else:
 				print("ERROR: MiXCR data file not found?")
-		
 		else:
 			print( "ERROR: unknown input data type:", options.type )
+
