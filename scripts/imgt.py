@@ -73,7 +73,10 @@ class IMGT:
         return join( self.dataFolder(), filename )
     
     def readDf( self, filename, **kwargs ):
-        return pd.read_table( self.getPath(filename), kwargs )
+        if not kwargs:
+            return pd.read_table( self.getPath(filename) )
+        else:
+            return pd.read_table( self.getPath(filename), kwargs )
 
     def process(self):
         
