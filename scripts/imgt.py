@@ -65,19 +65,32 @@ class IMGT:
     def __init__( self, context ):
         self.context = context
     
-    def dataFolder(self):
+    def getDataFolder(self):
         # First iteration (bad: hardcoded!)
         return self.context.library + "/imgt/"
     
-    def getPath( self, fileName ):
-        return join( self.dataFolder(), fileName )
+    def getDataPath( self, fileName ):
+        return join( self.getDataFolder(), fileName )
+
+    scratchFolder = ""
+    
+    # We create a specific temporary 'scratch' folder for each IMGT sequence archive
+    def setScratchFolder( self, fileName):
+        folderName = fileName[:fileName.index('.')]
+        self.scratchFolder = self.getDataFolder()+"/"+folderName + "/"
+
+    def getScratchFolder(self):
+        return self.scratchFolder
+    
+    def getScratchPath( self, fileName ):
+        return join( self.getScratchFolder(), fileName )
     
     def readDf( self, fileName ):
-        return pd.read_table( self.getPath(fileName) )
+        return pd.read_table( self.getScratchPath(fileName) )
 
     def readDfNoHeader( self, fileName ):
-            return pd.read_table( self.getPath(fileName), header=None )
-
+            return pd.read_table( self.getScratchPath(fileName), header=None )
+    
     def process(self):
         
         # Assuming that you have a zip file like 'imgt.zip'
@@ -85,7 +98,7 @@ class IMGT:
             # unzip to local directory for now
             zip.extractall( self.context.library )
 
-        onlyfiles = [f for f in os.listdir( self.dataFolder() ) if isfile( self.getPath(f) )]
+        onlyfiles = [f for f in os.listdir( self.getDataFolder() ) if isfile( self.getDataPath(f) )]
         
         # Process annotation files
         for f in onlyfiles:
@@ -99,13 +112,15 @@ class IMGT:
         
     def processImgtArchive( self, fileName ):
         
-        path = self.getPath(fileName) 
+        path = self.getDataPath(fileName)
         
         print("Extracting IMGT file: ", path )
             
+        self.setScratchFolder(fileName) 
+        
         tar = tarfile.open( path )
         
-        tar.extractall(self.dataFolder())
+        tar.extractall(self.getScratchFolder())
         
         tar.close()
         
@@ -245,10 +260,14 @@ class IMGT:
 
         #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
 
-        # Clean up annotation files
-        filelist = [ f for f in os.listdir( self.dataFolder() ) if f.endswith(".txt") ]
+        # Clean up annotation files and scratch folder
+        filelist = [ f for f in os.listdir( self.getScratchFolder() ) if f.endswith(".txt") ]
         for f in filelist:
-            os.remove(f)
+            path = self.getScratchPath(f)
+            if os._exists(path):
+                os.remove(path)
+                
+        os.rmdir(self.getScratchFolder())
         
         return True
     
