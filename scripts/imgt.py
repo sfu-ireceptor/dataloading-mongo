@@ -102,8 +102,6 @@ class IMGT:
         
         tar.close()
         
-        return
-        
         Summary_1 = self.readDf('1_Summary.txt')
         
         IMGT_gapped_nt_sequences_2 = self.readDf('2_IMGT-gapped-nt-sequences.txt')
