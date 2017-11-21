@@ -87,7 +87,7 @@ class IMGT:
         # Process annotation files
         for f in onlyfiles:
             print (f)
-            processImgtArchive( self.getPath(f) )
+            self.processImgtArchive( self.getPath(f) )
                     
         # Create indices(?)       
         # self.context.sequences.create_index("functional")
