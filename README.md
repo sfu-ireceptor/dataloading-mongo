@@ -25,34 +25,73 @@ $ sudo pip3 install -r requirements.txt
 
 # Running the loading script
 
-The metadata loading script may be run as:
+The data loading may be run inside a terminal session. The -h flag will document the command usage as follows:
 
 ```
-$ python3 metadata_loader.py -h  # -h flag will document the command usage
+$ python3 ireceptor_data_loader.py -h  
+
+Usage: ireceptor_data_loader.py [options]
+
+Note: for proper data processing, project --samples metadata should
+generally be read first into the database before loading other data types.
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -v, --verbose         
+
+  Data Type Options:
+    Options to specify the type of data to load.
+
+    --sample            Load a sample metadata file (a 'csv' file with
+                        standard iReceptor column headers).
+    --imgt              Load a zip archive of IMGT analysis results.
+
+  Database Connection Options:
+    These options control access to the database.
+
+    --host=HOST         MongoDb server hostname. If the MONGODB_HOST
+                        environment variable is set, it is used. Defaults to
+                        'localhost' otherwise.
+    --port=PORT         MongoDb server port number. Defaults to 27017.
+    -u USER, --user=USER
+                        MongoDb service user name. Defaults to the
+                        MONGODB_USER environment variable if set. Defaults to
+                        'admin' otherwise.
+    -p PASSWORD, --password=PASSWORD
+                        MongoDb service user account secret ('password').
+                        Defaults to the MONGODB_PASSWORD environment variable
+                        if set. Defaults to empty string otherwise.
+    -d DATABASE, --database=DATABASE
+                        Target MongoDb database. Defaults to the MONGODB_DB
+                        environment variable if set. Defaults to 'ireceptor'
+                        otherwise.
+
+  Data Source Options:
+    These options specify the identity and location of data files to be
+    loaded.
+
+    -l LIBRARY, --library=LIBRARY
+                        Path to 'library' directory of data files. Defaults to
+                        the current working directory.
+    -f FILENAME, --filename=FILENAME
+                        Name of file to load. Defaults to a data file with the
+                        --type name as the root name (appropriate file format
+                        and extension assumed).
+
 ```
 
-If the file's mode is set to executable, then it may also be run directly:
+Note that if the file's mode is set to executable, then it may also be run directly:
 
 ```
-$ chmod u+x metadata_loader.py
-./metadata_loader.py
+$ chmod u+x ireceptor_data_loader.py
+./ireceptor_data_loader.py
 ```
 
-Note that the default parameters for this script may be set as Linux environment variables set the  *export VARIABLE=value* protocol. These variables are documented in the usage command above.
+Note also that the default parameters for this script may be set as Linux environment variables set the  *export MONGODB_<tag>=value* protocol, where <tag> is one of the variable name suffixes noted in the -h usage output above.
+
+The ireceptor_data_loader currently accepts iReceptor sample metadata csv files and zip archives of IMGT data file output.
 
 **Test Data**
 
 The 'testdata' subfolder in here contains some sample data documented in a README file, which may be read in by the available scripts, to test the node.
-
-**Jupyter Docker (deprecated?)**
-
-When the turnkey node is running, one of the Docker containers which is running is a Jupyter Notebook 
-which is a sandbox of script development to facilitate data loading into the turnkey node's MongoDb database. This Notebook may be accessed using a web browser; however, the default is for the notebook to be protected by an authentication token. To see the full local link for this token, you need to look inside the log file of the Jupyter container. This is easily done as follows:
-
-```
-$ sudo docker logs irdn-notebook  # where 'irdn-notebook' is the default name of the Jupyter Notebook
-```
-Clicking on this link should give you the notebook home page with README and a *work* directory with data loading scripts under development.
-
-Note, however, that the Python loading scripts in the Notebook may be out-of-date and rather, the scripts documented above are likely the preferred channel for data loading.
-

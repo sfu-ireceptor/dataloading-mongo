@@ -1,5 +1,8 @@
 # Script for loading MIXCR formatted data file 
 # into an iReceptor data node MongoDb database
+#
+## WORK-IN-PROGRESS, not yet completed (nor used)
+#
 
 import pandas as pd
 import json

@@ -1,5 +1,18 @@
 #!/usr/bin/python3
-
+"""
+ ireceptor_data_loader.py is a batch loading script for loading
+ iReceptor sample metadata and sequence annotation
+ 
+ The current version accepts 
+ 1) Sample metadata in the form of csv files with AIRR compliant tagged column headers
+ 
+ 2) IMGT annotation txt files, currently assumed bundled into tgz archives, 
+    themselves wrapped inside a zip files.
+ 
+ Running the ireceptor_data_loader.py script with 
+ the -h flag publishes the usage of the script.
+ 
+"""
 import os
 from os.path import exists
 
@@ -12,7 +25,6 @@ import optparse
 from sample import Sample
 from imgt   import IMGT
 #from mixcr  import MiXCR
-
 
 _type2ext = {
 		"sample" : "csv",
