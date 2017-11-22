@@ -151,7 +151,7 @@ def inputParameters():
 		print('HOST      :', options.host)
 		print('USER      :', options.user[0]+(len(options.user)-2)*"*"+options.user[-1])
 		print('PORT      :', options.port)
-		print('PASSWORD  :', options.password[0]+(len(options.password)-2)*"*"+options.password[-1])
+		print('PASSWORD  :', options.password[0]+(len(options.password)-2)*"*"+options.password[-1] if options.password else "")
 		print('DATABASE  :', options.database)
 		print('LIBRARY   :', options.library)
 		print('FILENAME  :', options.filename)
