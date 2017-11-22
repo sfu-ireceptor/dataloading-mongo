@@ -1,5 +1,7 @@
 # dataloading-mongo
 
+Here we give an overview of iReceptor node data loading configuration and operation. It is assumed that you type in these commands and run them within a Linux terminal (the '$' designates the command line prompt... yours may look different!).
+
 # Prerequisites
 
 To directly run the python data loading scripts in this module outside of Jupyter, one needs
@@ -28,7 +30,7 @@ $ sudo pip3 install -r requirements.txt
 The data loading may be run inside a terminal session. The -h flag will document the command usage as follows:
 
 ```
-$ python3 ireceptor_data_loader.py -h  
+$ ./ireceptor_data_loader.py -h  
 
 Usage: ireceptor_data_loader.py [options]
 
@@ -81,17 +83,46 @@ Options:
 
 ```
 
-Note that if the file's mode is set to executable, then it may also be run directly:
+If this doesn't automatically work, then check first if the file's mode is set to mode 'executable':
 
 ```
 $ chmod u+x ireceptor_data_loader.py
-./ireceptor_data_loader.py
 ```
 
-Note also that the default parameters for this script may be set as Linux environment variables set the  *export MONGODB_<tag>=value* protocol, where <tag> is one of the variable name suffixes noted in the -h usage output above.
+Then try again.
+
+Note also that the default parameters for this script may be set as Linux environment variables, e.g.
+
+```
+$ export MONGODB_DB=ireceptor
+$ export MONGODB_USER=<your-ireceptor-service-account-username>
+$ export MONGODB_PASSWORD=<your-ireceptor-service-account-password>
+
+```
+
+The MONGODB_HOST variable defaults to 'localhost' which is normally ok (though you can change it if you wish to point to another MONGO instance outside of the docker one...).
+
+**What kind of data can be loaded?**
 
 The ireceptor_data_loader currently accepts iReceptor sample metadata csv files and zip archives of IMGT data file output.
 
+Assuming that your data files use the default names, then:
+
+```
+$ ./ireceptor_data_loader.py -v
+```
+
+will default to the --sample flag which loads a properly formatted *sample.csv* file into the database.
+
+```
+$ ./ireceptor_data_loader.py -v --imgt
+```
+
+will load a properly formatted *imgt.zip* sequence annotation into the database.
+
+The expected data formats are described in more detail on the [iReceptor Data Curation repository site](https://github.com/sfu-ireceptor/dataloading-curation).
+
+
 **Test Data**
 
-The 'testdata' subfolder in here contains some sample data documented in a README file, which may be read in by the available scripts, to test the node.
+The 'testdata' subfolder in here contains test data files - sample.csv and imgt.zip - as documented in a README file and which may be read in by the available scripts, to test the node.
