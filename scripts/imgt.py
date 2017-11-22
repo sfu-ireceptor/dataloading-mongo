@@ -103,23 +103,24 @@ class IMGT:
         
         # Process annotation files
         for f in onlyfiles:
-            #print (f)
             self.processImgtArchive( f )
+            
+        rmtree(self.getDataFolder())
                     
         # Rebuild indices 
         print("Rebuilding sequence indices:")      
         print("v_call...")
-        self.context.sequences.ensureIndex( { v_call : 1 } )
+        self.context.sequences.create_index("v_call")
         print("d_call...")
-        self.context.sequences.ensureIndex( { d_call : 1 } )
+        self.context.sequences.create_index("d_call")
         print("j_call...")
-        self.context.sequences.ensureIndex( { j_call : 1 } )
+        self.context.sequences.create_index("j_call")
         print("junction_aa_length...")
-        self.context.sequences.ensureIndex( { junction_aa_length : 1 } )
+        self.context.sequences.create_index("junction_aa_length")
         print("functional...")
-        self.context.sequences.ensureIndex( { functional : 1 } )
+        self.context.sequences.create_index("functional")
         print("ir_project_sample_id...")
-        self.context.sequences.ensureIndex( { ir_project_sample_id : 1 } )
+        self.context.sequences.create_index("ir_project_sample_id")
         
         return True
         
