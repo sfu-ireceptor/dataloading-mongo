@@ -249,10 +249,9 @@ class IMGT:
         df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(len)
 
         sampleid = self.context.samples.find({"imgt_file_name":{'$regex': fileName}},{'_id':1})
-
         ir_project_sample_id = [i['_id'] for i in sampleid][0]
-
         df_concat['ir_project_sample_id']=ir_project_sample_id
+        
         df_concat['substring'] = df_concat['junction_aa'].apply(get_substring)
         #     df_concat['substring'] = df_concat['cdr3region_sequence_aa'].apply(get_substring)
         df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
