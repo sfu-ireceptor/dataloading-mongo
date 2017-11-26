@@ -258,7 +258,7 @@ class IMGT:
         df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
         df_concat['d_call'] = df_concat['d_string'].apply(str).apply(setGene)
         df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
-        df_concat['junction_length_aa'] = df_concat['junction_aa'].apply(len)
+        df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
         
         records = json.loads(df_concat.T.to_json()).values()
         
