@@ -270,9 +270,9 @@ class IMGT:
         #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":0}})
         
         if self.context.counter == 'reset':
-        		ori_count = 0
-        	else: # assume 'increment' mode
-        		ori_count = self.context.samples.find_one({"imgt_file_name":{'$regex': fileName}},{"ir_sequence_count":1})["ir_sequence_count"]
+            ori_count = 0
+        	else:
+            ori_count = self.context.samples.find_one({"imgt_file_name":{'$regex': fileName}},{"ir_sequence_count":1})["ir_sequence_count"]
 
         self.context.samples.update({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
 
