@@ -72,7 +72,7 @@ def inputParameters():
 	
 	counter_reset_opts = optparse.OptionGroup(
 						    parser, 'Sample Counter Reset Options',
-						    'Options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset').',
+						    "Options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset').",
 						    )
 	
 	counter_reset_opts.add_option('--reset', 
