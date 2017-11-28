@@ -169,11 +169,11 @@ def inputParameters():
 		options.filename = options.type + "." + _type2ext[options.type]
 		
 	if options.counter == 'reset':
-		while true:
+		while True:
 			decision = input("Warning: resetting of sample sequence counter specified (Y/N):")
-			if decision.toUpper().startWith('Y'):
+			if decision.upper().startswith('Y'):
 				break;
-			elif decision.toUpper().startWith('N'):
+			elif decision.upper().startswith('N'):
 				options.counter = 'increment'
 				break;
 
