@@ -72,7 +72,7 @@ def inputParameters():
 	
 	counter_reset_opts = optparse.OptionGroup(
 						    parser, 'Sample Counter Reset Options',
-						    'Options to specify whether or not the sample sequence counter should be reset or incremented upon annotated sequence loading (has no effect on sample loading itself).',
+						    'Options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset').',
 						    )
 	
 	counter_reset_opts.add_option('--reset', 
@@ -170,7 +170,7 @@ def inputParameters():
 		
 	if options.counter == 'reset':
 		while True:
-			decision = input("Warning: resetting of sample sequence counter specified (Y/N):")
+			decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No):")
 			if decision.upper().startswith('Y'):
 				break;
 			elif decision.upper().startswith('N'):
@@ -192,11 +192,12 @@ def inputParameters():
 
 class Context:
 	
-	def __init__(self, library, path, samples, sequences, verbose ):
+	def __init__(self, library, path, samples, sequences, counter, verbose ):
 		self.library = library
 		self.path = path
 		self.samples = samples
 		self.sequences = sequences
+		self.counter = counter
 		self.verbose = verbose
 		
 def getContext(options):
@@ -229,14 +230,13 @@ def getContext(options):
 					path , 
 					mng_db['sample'], 
 					mng_db['sequence'],
+					options.counter,
 					options.verbose 
 				)
 
 if __name__ == "__main__":
 	
 	options = inputParameters()
-	
-	exit(0) # testing input parameters for now
 	
 	context = getContext(options)
 
