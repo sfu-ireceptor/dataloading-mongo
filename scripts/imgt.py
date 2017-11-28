@@ -247,7 +247,7 @@ class IMGT:
         df_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(len)
         df_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(len)
         df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(len)
-
+        
         sampleid = self.context.samples.find({"imgt_file_name":{'$regex': fileName}},{'_id':1})
         ir_project_sample_id = [i['_id'] for i in sampleid][0]
         df_concat['ir_project_sample_id']=ir_project_sample_id
@@ -271,13 +271,13 @@ class IMGT:
         
         if self.context.counter == 'reset':
             ori_count = 0
-        	else:
+        else:
             ori_count = self.context.samples.find_one({"imgt_file_name":{'$regex': fileName}},{"ir_sequence_count":1})["ir_sequence_count"]
-
+        
         self.context.samples.update({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
-
+        
         #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
-
+        
         # Clean up annotation files and scratch folder
         if self.context.verbose:
             print( "Cleaning up scratch folder: ", self.getScratchFolder() )
