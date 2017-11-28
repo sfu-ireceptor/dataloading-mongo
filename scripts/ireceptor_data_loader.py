@@ -70,6 +70,28 @@ def inputParameters():
 		
 	parser.add_option_group(mode_opts) 
 	
+	counter_reset_opts = optparse.OptionGroup(
+						    parser, 'Sample Counter Reset Options',
+						    'Options to specify whether or not the sample sequence counter should be reset or incremented upon annotated sequence loading (has no effect on sample loading itself).',
+						    )
+	
+	counter_reset_opts.add_option('--reset', 
+					action="store_const", 
+					const='reset', 
+					dest='counter', 
+					default='reset',
+					help="Reset sample counter when loading current annotated sequence data set."
+	)
+
+	counter_reset_opts.add_option('--increment', 
+					action="store_const", 
+					const='increment', 
+					dest='counter',
+					help="Increment sample counter when loading current annotated sequence data set."
+	)
+
+	parser.add_option_group(counter_reset_opts) 
+		
 	db_opts = optparse.OptionGroup(
 						    parser, 'Database Connection Options',
 						    'These options control access to the database.',
@@ -145,9 +167,19 @@ def inputParameters():
 
 	if not options.filename:
 		options.filename = options.type + "." + _type2ext[options.type]
+		
+	if options.counter == 'reset':
+		while true:
+			decision = input("Warning: resetting of sample sequence counter specified (Y/N):")
+			if decision.toUpper().startWith('Y'):
+				break;
+			elif decision.toUpper().startWith('N'):
+				options.counter = 'increment'
+				break;
 
 	if options.verbose:
 		print('INPUT TYPE:', options.type)
+		print('SAMPLE SEQUENCE COUNTER:', options.counter)
 		print('HOST      :', options.host)
 		print('USER      :', options.user[0]+(len(options.user)-2)*"*"+options.user[-1])
 		print('PORT      :', options.port)
@@ -203,6 +235,8 @@ def getContext(options):
 if __name__ == "__main__":
 	
 	options = inputParameters()
+	
+	exit(0) # testing input parameters for now
 	
 	context = getContext(options)
 
