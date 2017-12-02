@@ -1,3 +1,10 @@
+# Script for taking IMGT formatted data files 
+# extracted from a zip archive and loaded
+# into an iReceptor data node MongoDb database
+#
+# Original script by Yang Zhou
+# Adapted and revised by Richard Bruskiewich
+#
 import pandas as pd
 import json
 import pymongo
@@ -14,25 +21,7 @@ import os
 from os.path import isfile, join
 from shutil import rmtree
 
-def get_all_substrings(string):
-    
-    if type(string) == float:
-        return
-    else:
-        length = len(string)
-        for i in range(length):
-            for j in range(i + 1, length + 1):
-                yield(string[i:j])
-            
-def get_substring(string):
-    
-    strlist=[]
-    
-    for i in get_all_substrings(string):
-        if len(i)>3:
-            strlist.append(i)
-            
-    return strlist
+import parser
 
 def setGene(gene):
     
@@ -61,36 +50,10 @@ def setGene(gene):
             
         return gene_string
 
-class IMGT:
+class IMGT(Parser):
     
     def __init__( self, context ):
-        self.context = context
-    
-    def getDataFolder(self):
-        # First iteration (bad: hardcoded!)
-        return self.context.library + "/imgt/"
-    
-    def getDataPath( self, fileName ):
-        return join( self.getDataFolder(), fileName )
-
-    scratchFolder = ""
-    
-    # We create a specific temporary 'scratch' folder for each IMGT sequence archive
-    def setScratchFolder( self, fileName):
-        folderName = fileName[:fileName.index('.')]
-        self.scratchFolder = self.getDataFolder()+folderName + "/"
-
-    def getScratchFolder(self):
-        return self.scratchFolder
-    
-    def getScratchPath( self, fileName ):
-        return join( self.getScratchFolder(), fileName )
-    
-    def readDf( self, fileName ):
-        return pd.read_table( self.getScratchPath(fileName) )
-
-    def readDfNoHeader( self, fileName ):
-            return pd.read_table( self.getScratchPath(fileName), header=None )
+        Parser._init_(context)
     
     def process(self):
         
