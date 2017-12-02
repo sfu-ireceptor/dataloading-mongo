@@ -168,7 +168,7 @@ def inputParameters():
 	if not options.filename:
 		options.filename = options.type + "." + _type2ext[options.type]
 		
-	if options.type != 'sample' && options.counter == 'reset':
+	if options.type != 'sample' and options.counter == 'reset':
 		while True:
 			decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No):")
 			if decision.upper().startswith('Y'):
