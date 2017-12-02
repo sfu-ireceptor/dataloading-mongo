@@ -21,7 +21,7 @@ import os
 from os.path import isfile, join
 from shutil import rmtree
 
-import parser
+from parser import Parser
 
 def setGene(gene):
     
@@ -215,8 +215,8 @@ class IMGT(Parser):
         ir_project_sample_id = [i['_id'] for i in sampleid][0]
         df_concat['ir_project_sample_id']=ir_project_sample_id
         
-        df_concat['substring'] = df_concat['junction_aa'].apply(get_substring)
-        #     df_concat['substring'] = df_concat['cdr3region_sequence_aa'].apply(get_substring)
+        df_concat['substring'] = df_concat['junction_aa'].apply(Parser.get_substring)
+        #     df_concat['substring'] = df_concat['cdr3region_sequence_aa'].apply(Parser.get_substring)
         df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
         df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
         df_concat['d_call'] = df_concat['d_string'].apply(str).apply(setGene)

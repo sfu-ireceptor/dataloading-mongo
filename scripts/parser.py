@@ -1,27 +1,28 @@
 # Parent Parser class of data file type specific AIRR data parsers
 # Extracted common code patterns shared across various parsers.
 
-def get_all_substrings(string):
-    
-    if type(string) == float:
-        return
-    else:
-        length = len(string)
-        for i in range(length):
-            for j in range(i + 1, length + 1):
-                yield(string[i:j])
-            
-def get_substring(string):
-    
-    strlist=[]
-    
-    for i in get_all_substrings(string):
-        if len(i)>3:
-            strlist.append(i)
-            
+class Parser:
+
+    def get_all_substrings(string):
+        
+        if type(string) == float:
+            return
+        else:
+            length = len(string)
+            for i in range(length):
+                for j in range(i + 1, length + 1):
+                    yield(string[i:j])
+                
+    def get_substring(string):
+        
+        strlist=[]
+        
+        for i in get_all_substrings(string):
+            if len(i)>3:
+                strlist.append(i)
+                
     return strlist
 
-class Parser:
     
     def __init__(self,context):
         self.context = context

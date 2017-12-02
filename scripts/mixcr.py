@@ -15,7 +15,7 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 
-import parser
+from parser import Parser
 
 mng_client = pymongo.MongoClient('localhost', 27017)
 
@@ -53,7 +53,7 @@ class MiXCR(Parser):
         df.columns = ['vgene', 'dgene', 'jgene', 'vgene_gene', 'dgene_gene', 'jgene_gene', 'vgene_family', 'dgene_family',
                        'jgene_family','v_score','junction','junction_aa', 'seqId']
         
-        df['substring'] = df['junction_aa'].apply(get_substring)
+        df['substring'] = df['junction_aa'].apply(Parser.get_substring)
         df['junction_length'] = df['junction'].apply(str).apply(len)
         df['junction_length_aa'] = df['junction_aa'].apply(str).apply(len)
         df['functional'] = 'productive'
