@@ -4,7 +4,6 @@
 class Parser:
 
     def get_all_substrings(string):
-        
         if type(string) == float:
             return
         else:
@@ -12,16 +11,13 @@ class Parser:
             for i in range(length):
                 for j in range(i + 1, length + 1):
                     yield(string[i:j])
-                
+
     def get_substring(string):
-        
         strlist=[]
-        
         for i in get_all_substrings(string):
             if len(i)>3:
                 strlist.append(i)
-                
-    return strlist
+        return strlist
 
     
     def __init__(self,context):
