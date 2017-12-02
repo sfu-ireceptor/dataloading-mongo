@@ -53,7 +53,7 @@ def setGene(gene):
 class IMGT(Parser):
     
     def __init__( self, context ):
-        Parser._init_(context)
+        Parser.__init__(context)
     
     def process(self):
         

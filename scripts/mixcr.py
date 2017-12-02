@@ -43,7 +43,7 @@ filename = 'SRR4084213_aa_mixcr_annotation.txt'
 class MiXCR(Parser):
     
     def __init__( self, context ):
-        Parser._init_(context)
+        Parser.__init__(context)
 
     def process(self):
         df_raw = pd.read_table(mypath+filename)
