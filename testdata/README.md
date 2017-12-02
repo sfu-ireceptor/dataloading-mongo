@@ -2,7 +2,8 @@
 
 This directory contains a small number of data files that can be uses to test an iReceptor turnkey node by loading the MongoDb database using the project Python scripts. 
 
-The test data is a subset of AIRR B cell data from the public AIRR study by *Palanichamy et al.(2014)*. 
+The imgt_sample.csv data is excerpted from the AIRR B cell data from the public AIRR study by *Palanichamy et al.(2014)*.
+The mixcr_sample.csv data is excerpted from the TCR cell data from the public AIRR study by *Putintseva et al. (2013)*
 
 This data should not be used in production deployments of the turnkey but only for local testing of the installation and interface. Once the system is tested, you should re-initialize the database to a new empty database, then load your own data, suitably formatted.
 
