@@ -72,20 +72,20 @@ def inputParameters():
     
     counter_reset_opts = optparse.OptionGroup(
                 parser, 'Sample Counter Reset Options',
-                "Options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset').",
-    
+                "Options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset')."
+    )
 
     counter_reset_opts.add_option('--reset', 
-                 action="store_const", 
-                 const='reset', 
-                 dest='counter', 
+                 action="store_const",
+                 const='reset',
+                 dest='counter',
                  default='reset',
                  help="Reset sample counter when loading current annotated sequence data set."
     )
 
-    counter_reset_opts.add_option('--increment', 
-                 action="store_const", 
-                 const='increment', 
+    counter_reset_opts.add_option('--increment',
+                 action="store_const",
+                 const='increment',
                  dest='counter',
                  help="Increment sample counter when loading current annotated sequence data set."
     )
@@ -226,20 +226,20 @@ class Context:
             # Set Mongo db name
             mng_db = mng_client[options.database]
 
-            return  Context( 
+            return Context( 
                      options.library,
                      path ,
                      mng_db['sample'],
                      mng_db['sequence'],
                      options.counter,
                      options.verbose
-        )
+            )
 
 if __name__ == "__main__":
 
     options = inputParameters()
 
-    context = getContext(options)
+    context = Context.getContext(options)
 
     if context:
 
