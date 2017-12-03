@@ -193,7 +193,8 @@ def inputParameters():
 
 class Context:
 
-    def __init__(self, library, path, samples, sequences, counter, verbose ):
+    def __init__(self, type, library, path, samples, sequences, counter, verbose ):
+        self.type = type
         self.library = library
         self.path = path
         self.samples = samples
@@ -226,13 +227,14 @@ class Context:
             # Set Mongo db name
             mng_db = mng_client[options.database]
 
-            return Context( 
-                     options.library,
-                     path ,
-                     mng_db['sample'],
-                     mng_db['sequence'],
-                     options.counter,
-                     options.verbose
+            return Context(
+                        options.type,
+                        options.library,
+                        path ,
+                        mng_db['sample'],
+                        mng_db['sequence'],
+                        options.counter,
+                        options.verbose
             )
 
 if __name__ == "__main__":
