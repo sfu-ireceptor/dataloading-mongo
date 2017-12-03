@@ -17,7 +17,7 @@ class Parser:
 
     def get_substring(string):
         strlist=[]
-        for i in get_all_substrings(string):
+        for i in Parser.get_all_substrings(string):
             if len(i)>3:
                 strlist.append(i)
         return strlist
