@@ -1,4 +1,4 @@
-# Script for taking IMGT formatted data files 
+# Script for taking IMGT formatted annotation files 
 # extracted from a zip archive and loaded
 # into an iReceptor data node MongoDb database
 #

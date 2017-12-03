@@ -61,13 +61,13 @@ def inputParameters():
                  help="Load a zip archive of IMGT analysis results."
     )
 
-    #mode_opts.add_option('--mixcr', 
-    #                action='store_const', 
-    #                const='mixcr', 
-    #                dest='type',
-    #                help="Load a zip archive of MiXCR analysis results."
-    #)
-        
+    mode_opts.add_option('--mixcr', 
+                    action='store_const', 
+                    const='mixcr', 
+                    dest='type',
+                    help="Load a zip archive of MiXCR analysis results."
+    )
+
     parser.add_option_group(mode_opts) 
     
     counter_reset_opts = optparse.OptionGroup(
@@ -230,7 +230,7 @@ class Context:
             return Context(
                         options.type,
                         options.library,
-                        path ,
+                        path,
                         mng_db['sample'],
                         mng_db['sequence'],
                         options.counter,
