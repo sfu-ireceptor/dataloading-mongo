@@ -5,21 +5,15 @@
 # Original script by Yang Zhou
 # Adapted and revised by Richard Bruskiewich
 #
-import pandas as pd
-import json
-import pymongo
-
-import zipfile
-
-import tarfile
-
-import sys
-import re
-import numpy as np
 
 import os
-from os.path import isfile, join
+from os.path import isfile
 from shutil import rmtree
+import re
+import zipfile
+import tarfile
+import json
+import pandas as pd
 
 from parser import Parser
 

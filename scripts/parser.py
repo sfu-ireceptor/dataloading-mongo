@@ -1,6 +1,9 @@
 # Parent Parser class of data file type specific AIRR data parsers
 # Extracted common code patterns shared across various parsers.
 
+from os.path import join
+import pandas as pd
+
 class Parser:
 
     def get_all_substrings(string):
@@ -31,7 +34,7 @@ class Parser:
 
     scratchFolder = ""
     
-    # We create a specific temporary 'scratch' folder for each IMGT sequence archive
+    # We create a specific temporary 'scratch' folder for each sequence archive
     def setScratchFolder( self, fileName):
         folderName = fileName[:fileName.index('.')]
         self.scratchFolder = self.getDataFolder()+folderName + "/"
