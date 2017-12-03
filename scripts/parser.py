@@ -24,7 +24,7 @@ class Parser:
         self.context = context
 
     def getDataFolder(self):
-        return self.context.library + "/"+context.type+"/"
+        return self.context.library + "/"+self.context.type+"/"
     
     def getDataPath( self, fileName ):
         return join( self.getDataFolder(), fileName )
