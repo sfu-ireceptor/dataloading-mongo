@@ -51,6 +51,3 @@ class Parser:
     def readDfNoHeader( self, fileName ):
             return pd.read_table( self.getScratchPath(fileName), header=None )
 
-    def process(self):
-        return False
-
