@@ -48,15 +48,20 @@ class MiXCR(Parser):
         print("Reading in table...")
         df_raw = pd.read_table(path)
 
-        print("Processing data frame...")
+        print("Processing raw data frame...")
         df = df_raw[['bestVHit','bestDHit','bestJHit','bestVGene','bestDGene','bestJGene','bestVFamily','bestDFamily',
                    'bestJFamily','bestVHitScore','nSeqCDR3','aaSeqCDR3','descrR1']]
 
         df.columns = ['vgene', 'dgene', 'jgene', 'vgene_gene', 'dgene_gene', 'jgene_gene', 'vgene_family', 'dgene_family',
                        'jgene_family','v_score','junction','junction_aa', 'seqId']
 
+        print("Retrieving junction amino acids...")
         df['substring'] = df['junction_aa'].apply(Parser.get_substring)
+
+        print("Computing junction length...")
         df['junction_length'] = df['junction'].apply(str).apply(len)
+
+        print("Computing junction amino acids length...")
         df['junction_aa_length'] = df['junction_aa'].apply(str).apply(len)
 
         df['functional'] = 'productive'
@@ -65,7 +70,7 @@ class MiXCR(Parser):
         # Get root filename: may need to strip off any gzip 'archive' file extension
         filename = self.context.filename.replace(".gz","")
         print("For MiXCR filename: "+filename)
-        
+
         print("Retrieving associated sample...")
         sampleid = self.context.samples.find({"mixcr_file_name":{'$regex': filename}},{'_id':1})
 
@@ -74,7 +79,6 @@ class MiXCR(Parser):
 
         count_row = len(df.index)
         num_to_insert = 10000
-
         (runNumber,rest)= divmod(count_row,num_to_insert)
 
         print("Inserting "+runNumber+" records in MongoDb sequence collection")
@@ -83,6 +87,7 @@ class MiXCR(Parser):
             records = json.loads(df_insert.T.to_json()).values()
             self.context.sequences.insert_many(records)
 
+        print("Updating sequence count")
         if self.context.counter == 'reset':
             ori_count = 0
         else:
@@ -90,3 +95,6 @@ class MiXCR(Parser):
 
         self.context.samples.update({"mixcr_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":count_row+ori_count}}, multi=True)
         # self.context.samples.update_one({"mixcr_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":count_row}})
+
+        print("MiXCR data loading complete for file: "+filename)
+        
