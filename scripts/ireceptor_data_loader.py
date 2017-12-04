@@ -193,9 +193,10 @@ def inputParameters():
 
 class Context:
 
-    def __init__(self, type, library, path, samples, sequences, counter, verbose ):
+    def __init__(self, type, library, filename, path, samples, sequences, counter, verbose ):
         self.type = type
         self.library = library
+        self.filename = filename
         self.path = path
         self.samples = samples
         self.sequences = sequences
@@ -210,7 +211,7 @@ class Context:
         if options.library:
             path = options.library + "/" + options.filename
         else:
-            path = filename
+            path = options.filename
 
         if not exists(path): 
             return None
@@ -230,6 +231,7 @@ class Context:
             return Context(
                         options.type,
                         options.library,
+                        options.filename,
                         path,
                         mng_db['sample'],
                         mng_db['sequence'],
@@ -248,7 +250,7 @@ if __name__ == "__main__":
         if options.type == "sample":
 
             # process samples
-            print("processing Sample metadata file: ",options.filename)
+            print("processing Sample metadata file: ",context.filename)
 
             sample = Sample(context)
             
@@ -261,7 +263,7 @@ if __name__ == "__main__":
 
             # process imgt
 
-            print("processing IMGT data file: ",options.filename)
+            print("processing IMGT data file: ",context.filename)
 
             imgt = IMGT(context)
 
@@ -274,7 +276,7 @@ if __name__ == "__main__":
 
             # process mixcr
 
-            print("Processing MiXCR data file: ",options.filename)
+            print("Processing MiXCR data file: ",context.filename)
 
             mixcr = MiXCR(context)
 
@@ -284,4 +286,4 @@ if __name__ == "__main__":
                 print("ERROR: MiXCR data file not found?")
 
         else:
-            print( "ERROR: unknown input data type:", options.type )
+            print( "ERROR: unknown input data type:", context.type )

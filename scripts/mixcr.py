@@ -22,12 +22,14 @@ class MiXCR(Parser):
         
         # Open, decompress then read(), if it is a gz archive
         if self.context.path.endswith(".gz"):
+            print("Reading data gzip archive: "+self.context.path)
             with gzip.open(self.context.path, 'rb') as f:
                 # read file directly from the file handle 
                 # (Panda read_table call handles this...)
                 self.processMiXcrFile(f)
 
         else: # read directly as a regular text file
+            print("Reading text file: "+self.context.path)
             self.processMiXcrFile(self.context.path)
 
         # Rebuild indices 
@@ -38,13 +40,15 @@ class MiXCR(Parser):
         self.context.sequences.create_index("functional")
         print("ir_project_sample_id...")
         self.context.sequences.create_index("ir_project_sample_id")
-                
+
         return True
 
     def processMiXcrFile( self, path ):
 
+        print("Reading in table...")
         df_raw = pd.read_table(path)
 
+        print("Processing data frame...")
         df = df_raw[['bestVHit','bestDHit','bestJHit','bestVGene','bestDGene','bestJGene','bestVFamily','bestDFamily',
                    'bestJFamily','bestVHitScore','nSeqCDR3','aaSeqCDR3','descrR1']]
 
@@ -58,6 +62,11 @@ class MiXCR(Parser):
         df['functional'] = 'productive'
         df['annotation_tool'] = 'MiXCR'
 
+        # Get root filename: may need to strip off any gzip 'archive' file extension
+        filename = self.context.filename.replace(".gz","")
+        print("For MiXCR filename: "+filename)
+        
+        print("Retrieving associated sample...")
         sampleid = self.context.samples.find({"mixcr_file_name":{'$regex': filename}},{'_id':1})
 
         ir_project_sample_id = [i['_id'] for i in sampleid][0]
@@ -68,6 +77,7 @@ class MiXCR(Parser):
 
         (runNumber,rest)= divmod(count_row,num_to_insert)
 
+        print("Inserting "+runNumber+" records in MongoDb sequence collection")
         for i in range(runNumber+1):
             df_insert = df.iloc[10000*i:10000*(i+1)]
             records = json.loads(df_insert.T.to_json()).values()
