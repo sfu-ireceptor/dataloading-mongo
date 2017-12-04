@@ -16,7 +16,7 @@ class MiXCR(Parser):
     def process(self):
 
         # This first iteration just reads one MiXCR file
-        $ at a time, given the full file (path) name
+        # at a time, given the full file (path) name
         # e.g. SRR4084213_aa_mixcr_annotation.txt
         # May also be gzip compressed file
         
