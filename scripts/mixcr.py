@@ -26,6 +26,7 @@ class MiXCR(Parser):
                 # read file directly from the file handle 
                 # (Panda read_table call handles this...)
                 self.processMiXcrFile(f)
+
         else: # read directly as a regular text file
             self.processMiXcrFile(self.context.path)
 

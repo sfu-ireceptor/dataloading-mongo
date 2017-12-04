@@ -24,7 +24,7 @@ import optparse
 
 from sample import Sample
 from imgt   import IMGT
-#from mixcr  import MiXCR
+from mixcr  import MiXCR
 
 _type2ext = {
         "sample" : "csv",
