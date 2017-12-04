@@ -4,6 +4,7 @@
 
 import pandas as pd
 import json
+import gzip
 
 from parser import Parser
 
@@ -13,12 +14,20 @@ class MiXCR(Parser):
         Parser.__init__(self,context)
 
     def process(self):
-    
+
         # This first iteration just reads one MiXCR file
         $ at a time, given the full file (path) name
         # e.g. SRR4084213_aa_mixcr_annotation.txt
-
-        self.processMiXcrFile( self.context.path )
+        # May also be gzip compressed file
+        
+        # Open, decompress then read(), if it is a gz archive
+        if self.context.path.endswith(".gz"):
+            with gzip.open(self.context.path, 'rb') as f:
+                # read file directly from the file handle 
+                # (Panda read_table call handles this...)
+                self.processMiXcrFile(f)
+        else: # read directly as a regular text file
+            self.processMiXcrFile(self.context.path)
 
         # Rebuild indices 
         print("Rebuilding sequence indices:")      
