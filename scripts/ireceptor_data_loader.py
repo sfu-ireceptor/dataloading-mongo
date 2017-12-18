@@ -112,20 +112,20 @@ def inputParameters():
                help="MongoDb server port number. Defaults to 27017." 
     )
 
-    default_user =  os.environ.get('MONGODB_USER', 'admin')
+    default_user =  os.environ.get('MONGODB_SERVICE_USER', 'admin')
 
     db_opts.add_option('-u', '--user',
                dest="user", 
                default=default_user,
-               help="MongoDb service user name. Defaults to the MONGODB_USER environment variable if set. Defaults to 'admin' otherwise."
+               help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
     )
 
-    default_password =  os.environ.get('MONGODB_PASSWORD', '')
+    default_password =  os.environ.get('MONGODB_SERVICE_SECRET', '')
 
     db_opts.add_option('-p', '--password', 
                dest="password", 
                default=default_password,
-               help="MongoDb service user account secret ('password'). Defaults to the MONGODB_PASSWORD environment variable if set. Defaults to empty string otherwise."
+               help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
     )
 
     default_database = os.environ.get('MONGODB_DB', 'ireceptor')
@@ -182,8 +182,8 @@ def inputParameters():
         if options.type != 'sample':
             print('SAMPLE SEQUENCE COUNTER:', options.counter)
         print('HOST      :', options.host)
-        print('USER      :', options.user[0]+(len(options.user)-2)*"*"+options.user[-1])
         print('PORT      :', options.port)
+        print('USER      :', options.user[0]+(len(options.user)-2)*"*"+options.user[-1])
         print('PASSWORD  :', options.password[0]+(len(options.password)-2)*"*"+options.password[-1] if options.password else "")
         print('DATABASE  :', options.database)
         print('LIBRARY   :', options.library)
