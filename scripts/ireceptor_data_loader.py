@@ -97,12 +97,10 @@ def inputParameters():
                 'These options control access to the database.'
     )
 
-    default_host =  os.environ.get('MONGODB_HOST', 'localhost')
-    
     db_opts.add_option('--host', 
                dest="host", 
-               default=default_host,
-               help="MongoDb server hostname. If the MONGODB_HOST environment variable is set, it is used. Defaults to 'localhost' otherwise."
+               default='localhost',
+               help="MongoDb server hostname. Defaults to 'localhost'."
     )
 
     db_opts.add_option('--port', 
@@ -112,20 +110,20 @@ def inputParameters():
                help="MongoDb server port number. Defaults to 27017." 
     )
 
-    default_user =  os.environ.get('MONGODB_USER', 'admin')
+    default_user =  os.environ.get('MONGODB_SERVICE_USER', 'admin')
 
     db_opts.add_option('-u', '--user',
                dest="user", 
                default=default_user,
-               help="MongoDb service user name. Defaults to the MONGODB_USER environment variable if set. Defaults to 'admin' otherwise."
+               help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
     )
 
-    default_password =  os.environ.get('MONGODB_PASSWORD', '')
+    default_password =  os.environ.get('MONGODB_SERVICE_SECRET', '')
 
     db_opts.add_option('-p', '--password', 
                dest="password", 
                default=default_password,
-               help="MongoDb service user account secret ('password'). Defaults to the MONGODB_PASSWORD environment variable if set. Defaults to empty string otherwise."
+               help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
     )
 
     default_database = os.environ.get('MONGODB_DB', 'ireceptor')
@@ -182,8 +180,8 @@ def inputParameters():
         if options.type != 'sample':
             print('SAMPLE SEQUENCE COUNTER:', options.counter)
         print('HOST      :', options.host)
-        print('USER      :', options.user[0]+(len(options.user)-2)*"*"+options.user[-1])
         print('PORT      :', options.port)
+        print('USER      :', options.user[0]+(len(options.user)-2)*"*"+options.user[-1])
         print('PASSWORD  :', options.password[0]+(len(options.password)-2)*"*"+options.password[-1] if options.password else "")
         print('DATABASE  :', options.database)
         print('LIBRARY   :', options.library)
@@ -222,8 +220,17 @@ class Context:
             username = urllib.parse.quote_plus(options.user)
             password = urllib.parse.quote_plus(options.password)
             uri = 'mongodb://%s:%s@%s:%s' % ( username, password, options.host, options.port )
+            print("Connecting to Mongo as user %s on %s:%s" % (username, options.host, options.port))
 
             mng_client = pymongo.MongoClient(uri)
+            # Constructor doesn't block - need to check to see if the connection works.
+            try:
+                # The ismaster command is cheap and does not require auth.
+                mng_client.admin.command('ismaster')
+            except pymongo.errors.ConnectionFailure:
+                print("Unable to connect to %s:%s, Mongo server not available" % (options.host, options.port))
+                return None
+
 
             # Set Mongo db name
             mng_db = mng_client[options.database]
