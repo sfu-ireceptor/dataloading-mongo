@@ -220,8 +220,17 @@ class Context:
             username = urllib.parse.quote_plus(options.user)
             password = urllib.parse.quote_plus(options.password)
             uri = 'mongodb://%s:%s@%s:%s' % ( username, password, options.host, options.port )
+            print("Connecting to Mongo as user %s on %s:%s" % (username, options.host, options.port))
 
             mng_client = pymongo.MongoClient(uri)
+            # Constructor doesn't block - need to check to see if the connection works.
+            try:
+                # The ismaster command is cheap and does not require auth.
+                mng_client.admin.command('ismaster')
+            except pymongo.errors.ConnectionFailure:
+                print("Unable to connect to %s:%s, Mongo server not available" % (options.host, options.port))
+                return None
+
 
             # Set Mongo db name
             mng_db = mng_client[options.database]
