@@ -7,7 +7,7 @@ python sample_data_loading.py <dbname> <collectionname> <datapath>
 python sample_data_loading.py mydb sample_test master_metadata_20171031.csv
 
 
-
+=============================================================================
 
 For  sequence data importing:
 
