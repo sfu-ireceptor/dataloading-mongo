@@ -97,12 +97,10 @@ def inputParameters():
                 'These options control access to the database.'
     )
 
-    default_host =  os.environ.get('MONGODB_HOST', 'localhost')
-    
     db_opts.add_option('--host', 
                dest="host", 
-               default=default_host,
-               help="MongoDb server hostname. If the MONGODB_HOST environment variable is set, it is used. Defaults to 'localhost' otherwise."
+               default='localhost',
+               help="MongoDb server hostname. Defaults to 'localhost'."
     )
 
     db_opts.add_option('--port', 
