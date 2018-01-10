@@ -52,14 +52,7 @@ def loaddata(fullfilename,filename):
     sample_db_cm.update({"mixcr_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":count_row+ori_count}}, multi=True)
     return
 
-# def main(mypath):
-#     folders = [f for f in listdir(mypath)]
-#     for folder in folders:
-#         for gzfilename in listdir(join(mypath,folder)):
-#             filename = gzfilename[:-3]
-#             fullfilename = mypath+"/"+folder+"/"+gzfilename
-#             print ("loading data to mongodb from"+fullfilename)
-#             loaddata(fullfilename,filename)
+
 
 def main(mypath):
     for gzfilename in listdir(mypath):
