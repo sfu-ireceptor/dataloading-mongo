@@ -1,8 +1,10 @@
 # dataloading-mongo
 
-Here we give an overview of iReceptor node data loading configuration and operation. It is assumed 
-that you type in these commands and run them within a Linux terminal 
-(the '$' designates the command line prompt... yours may look different!).
+Here we give an overview of iReceptor node data loading configuration and operation. 
+It is assumed that you type in these commands and run them within a Linux terminal
+running within the Linux machine which has your Mongo database. 
+(note that the '$' designates the terminal command line prompt... your prompt may look different!).
+
 This tutorial assumes that you are running a Linux version like Ubuntu
 (adjust the installation instructions to suit your particular Linux flavor...).
 
@@ -18,7 +20,9 @@ ensure that it is also installed on your system. You will also need to install t
 ```
 $ sudo apt install python-pip
 $ sudo pip install virtualenv
-# also install Python3 if it is not already pre-installed by your Linux OS version, then...
+
+# also install Python3 if it is not already 
+# pre-installed by your Linux OS version, then...
 $ sudo apt install python3-pip
 $ pip3 install --upgrade pip # gets the latest version
 ```
@@ -54,17 +58,40 @@ $ source bin/activate
 deactivate
 ```
 
-# Installing Dependencies
-
-The data loading scripts use a number Python libraries. These are listed in the pip 'requirements.txt' file and may be installed as follows:
+For convenience, if you haven't already done so, it is helpful to configure a 
+Linux symbolic file link in close filing system proximity to your your virtualenv folder, 
+pointing to your local git cloned copy of the turnkey-service repository, something like:
 
 ```
+$ sudo ln -s /path/to/your/cloned/turnkey-service /opt/ireceptor/turnkey-service
+```
+
+We assume this aliased location of the turnkey code in some of our commands which follow below.
+
+# Installing Dependencies
+
+The data loading scripts use a number Python 3 libraries. These are listed 
+in the pip 'requirements.txt' file and may be installed as follows:
+
+```
+# if you are using virtualenv, make sure that it is activated
+$ cd /opt/ireceptor/data
+$ source bin/activate
+
+# cd /opt/ireceptor/turnkey-service/dataloading
 $ sudo pip3 install -r requirements.txt
 ```
 
+# Test Data
+
+To use the data loader, we obviously need some data! If you don't already have some suitably formatted data
+on hand but wish to test your MongoDb iReceptor node installation, you may use some test data we provide.
+The 'testdata' subdirectory provided here contains some such test data files which are documented in another 
+README file in the subdirectory.
+
 # Running the loading script
 
-The data loading is run inside a Linux terminal session on the machine which has your systems MongoDb database. 
+You should now be  
 
 Note that the data loading script accesses the database using the 'service' (**NOT** the 'guest') account username and password ("secret") that you will have specified while setting up the MongoDb database.  You need to specify these either as options on the command line or set as environment variables (see below).  You can use the -h / --help flag to display the data loader usage, as follows:
 
@@ -166,6 +193,3 @@ will load a properly formatted *imgt.zip* sequence annotation into the database.
 The expected data formats are described in more detail on the [iReceptor Data Curation repository site](https://github.com/sfu-ireceptor/dataloading-curation).
 
 
-# Test Data
-
-The 'testdata' subfolder in here contains test data files - sample.csv and imgt.zip - as documented in a README file and which may be read in by the available scripts, to test the node.
