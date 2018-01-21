@@ -1,4 +1,4 @@
-#Test Data Set#
+# Test Data Set
 
 This directory contains a small number of data files that can be uses to test an iReceptor turnkey node by loading the MongoDb database using the project Python scripts. 
 

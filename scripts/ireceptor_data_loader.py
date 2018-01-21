@@ -187,7 +187,7 @@ def inputParameters():
         print('LIBRARY   :', options.library)
         print('FILENAME  :', options.filename)
     
-        return options
+    return options
 
 class Context:
 
