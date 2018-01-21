@@ -148,22 +148,32 @@ Options:
     --sample            Load a sample metadata file (a 'csv' file with
                         standard iReceptor column headers).
     --imgt              Load a zip archive of IMGT analysis results.
+    --mixcr             Load a zip archive of MiXCR analysis results.
+
+  Sample Counter Reset Options:
+    Options to specify whether or not the sample sequence counter should
+    be reset or incremented during a current annotated sequence data
+    loading run. Has no effect on sample metadata loading (Default:
+    'reset').
+
+    --reset             Reset sample counter when loading current annotated
+                        sequence data set.
+    --increment         Increment sample counter when loading current
+                        annotated sequence data set.
 
   Database Connection Options:
     These options control access to the database.
 
-    --host=HOST         MongoDb server hostname. If the MONGODB_HOST
-                        environment variable is set, it is used. Defaults to
-                        'localhost' otherwise.
+    --host=HOST         MongoDb server hostname. Defaults to 'localhost'.
     --port=PORT         MongoDb server port number. Defaults to 27017.
     -u USER, --user=USER
                         MongoDb service user name. Defaults to the
-                        MONGODB_USER environment variable if set. Defaults to
-                        'admin' otherwise.
+                        MONGODB_SERVICE_USER environment variable if set.
+                        Defaults to 'admin' otherwise.
     -p PASSWORD, --password=PASSWORD
                         MongoDb service user account secret ('password').
-                        Defaults to the MONGODB_PASSWORD environment variable
-                        if set. Defaults to empty string otherwise.
+                        Defaults to the MONGODB_SERVICE_SECRET environment
+                        variable if set. Defaults to empty string otherwise.
     -d DATABASE, --database=DATABASE
                         Target MongoDb database. Defaults to the MONGODB_DB
                         environment variable if set. Defaults to 'ireceptor'
