@@ -91,19 +91,43 @@ $ cd /opt/ireceptor/turnkey-service/dataloading
 $ sudo pip3 install -r requirements.txt
 ```
 
+## (Optional) Linux Environment Variables
+
+Note that, For added convenience for running of the data loading script, some of the default parameters
+of the data loading script may be specified in operating system environment variables. 
+
+For example, under Ubuntu Linux, you may set the Mongo database, user and passwords as follows:
+
+```
+$ export MONGODB_DB=<your-database-name>
+$ export MONGODB_USER=<your-ireceptor-service-account-username>
+$ export MONGODB_PASSWORD=<your-ireceptor-service-account-password>
+
+```
+
+See the script usage (below) for additional options that may be set this way. Note that some of these options 
+may have reasonable default values. For example, the MONGODB_HOST variable defaults to 'localhost' which is normally ok 
+(though you can change it if you wish to point to another MONGO instance running on another machine perhaps).
+
+If environment variables are set, then the corresponding command line parameters may be omitted while running the script.
+
 # Test Data
 
 To use the data loader, we obviously need some data! 
 
-If you don't already have some suitably formatted data on hand but need to test your (Mongo) iReceptor node installation, 
-you may use some test data files that we provide in the 'testdata' subdirectory provided here and which are documented in 
-a README file in that subdirectory.
+If you don't already have some suitably formatted data on hand but need to test your 
+(Mongo) iReceptor node installation, you may use some test data files that we provide in the 
+['testdata' subdirectory](https://github.com/sfu-ireceptor/dataloading-mongo/tree/master/testdata) 
+provided here and which are documented in a README file in that subdirectory.
 
 # Running the loading script
 
-You should now be  
+You are now ready to run the data loading script. 
 
-Note that the data loading script accesses the database using the 'service' (**NOT** the 'guest') account username and password ("secret") that you will have specified while setting up the MongoDb database.  You need to specify these either as options on the command line or set as environment variables (see below).  You can use the -h / --help flag to display the data loader usage, as follows:
+Note that the data loading script accesses the database using the 'service' (**NOT** the 'guest') 
+account username and password ("secret") that you will have specified while setting up the MongoDb database.  
+You need to specify these either as options on the command line or set as environment variables (see below). 
+ You can use the -h / --help flag to display the data loader usage, as follows:
 
 ```
 $ ./ireceptor_data_loader.py -h  
@@ -166,21 +190,6 @@ $ chmod u+x ireceptor_data_loader.py
 ```
 
 Then try again.
-
-## Linux Environment Variables
-
-Note also that the default parameters for this script may also be set as Linux environment variables, e.g.
-
-```
-$ export MONGODB_DB=ireceptor
-$ export MONGODB_USER=<your-ireceptor-service-account-username>
-$ export MONGODB_PASSWORD=<your-ireceptor-service-account-password>
-
-```
-
-The MONGODB_HOST variable defaults to 'localhost' which is normally ok (though you can change it if you wish to point to another MONGO instance outside of the docker one...).
-
-If environment variables are set, then the corresponding command line parameters may be omitted while running the script.
 
 # What kind of data can be loaded?
 
