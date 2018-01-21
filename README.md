@@ -52,25 +52,34 @@ $ cd data
 $ source bin/activate
 
 # you should now be running within a virtual environment inside 'data'
+# Note that the command line prompt will change to something like the following:
 (data) ubuntu@...:/opt/ireceptor/data$
 
+# where the .. is some hostname stuff specific to your operating system shell configuration.
+# If you decide to use virtualenv, then from this point onward the '$' command line prompt 
+is assumed to be the virtualenv prompt, unless stated otherwise
+
 # To exit the virtualenv, type the following
-deactivate
+$ deactivate
 ```
 
-For convenience, if you haven't already done so, it is helpful to configure a 
-Linux symbolic file link in close filing system proximity to your your virtualenv folder, 
-pointing to your local git cloned copy of the turnkey-service repository, something like:
+You should now be back to your normal Linux system shell prompt.
+To re-enter virtualenv, rerun the *source bin/activate* command as above,
+from within the /opt/ireceptor/data subdirectory
+
+For convenience, if you haven't already done so, it is also helpful to configure a Linux symbolic file link 
+nearby, pointing to your local git cloned copy of the turnkey-service repository.something like:
 
 ```
 $ sudo ln -s /path/to/your/cloned/turnkey-service /opt/ireceptor/turnkey-service
 ```
 
 We assume this aliased location of the turnkey code in some of our commands which follow below.
+(Modify those commands to suit the actual turnkey-service code (symbolic link) location that you decide to use).
 
 # Installing Dependencies
 
-The data loading scripts use a number Python 3 libraries. These are listed 
+The data loading scripts use several Python 3 libraries. These are listed 
 in the pip 'requirements.txt' file and may be installed as follows:
 
 ```
@@ -78,16 +87,17 @@ in the pip 'requirements.txt' file and may be installed as follows:
 $ cd /opt/ireceptor/data
 $ source bin/activate
 
-# cd /opt/ireceptor/turnkey-service/dataloading
+$ cd /opt/ireceptor/turnkey-service/dataloading
 $ sudo pip3 install -r requirements.txt
 ```
 
 # Test Data
 
-To use the data loader, we obviously need some data! If you don't already have some suitably formatted data
-on hand but wish to test your MongoDb iReceptor node installation, you may use some test data we provide.
-The 'testdata' subdirectory provided here contains some such test data files which are documented in another 
-README file in the subdirectory.
+To use the data loader, we obviously need some data! 
+
+If you don't already have some suitably formatted data on hand but need to test your (Mongo) iReceptor node installation, 
+you may use some test data files that we provide in the 'testdata' subdirectory provided here and which are documented in 
+a README file in that subdirectory.
 
 # Running the loading script
 
