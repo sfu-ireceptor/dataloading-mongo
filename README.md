@@ -1,28 +1,60 @@
 # dataloading-mongo
 
-Here we give an overview of iReceptor node data loading configuration and operation. It is assumed that you type in these commands and run them within a Linux terminal (the '$' designates the command line prompt... yours may look different!).
+Here we give an overview of iReceptor node data loading configuration and operation. It is assumed 
+that you type in these commands and run them within a Linux terminal 
+(the '$' designates the command line prompt... yours may look different!).
+This tutorial assumes that you are running a Linux version like Ubuntu
+(adjust the installation instructions to suit your particular Linux flavor...).
 
 # Prerequisites
 
 If you are running the scripts directly on your host system, you should consider running
-them within a [virtualenv](https://virtualenv.pypa.io/en/stable/installation/)
-which sets Python3 as the default, since the data loading scripts are written to 
-run under that version of Python.
-
-To actually run the python data loading scripts (within or outside of virtualenv), 
-certain Python3 library dependencies need to be installed. To do this, you need to 
-[install pip3](https://pip.pypa.io/en/stable/installing/).
-
-For Ubuntu:
+them within a [virtualenv](https://virtualenv.pypa.io/en/stable/installation/).
+To install virtualenv, you will need to first install the regular (i.e. Python 2) version
+of pip. Since the data loading script is written to run under the release 3 of Python, you should
+ensure that it is also installed on your system. You will also need to install the latest version of 
+[pip3](https://pip.pypa.io/en/stable/installing/) - the Python 3 variant of pip
 
 ```
-$ sudo apt-get install python3-pip
+$ sudo apt install python-pip
+$ sudo pip install virtualenv
+# also install Python3 if it is not already pre-installed by your Linux OS version, then...
+$ sudo apt install python3-pip
 $ pip3 install --upgrade pip # gets the latest version
 ```
 
-If you are using another version of Linux, consult your respective operating system documentation for pip3 installation details.
+If you are using another version of Linux, consult your respective operating 
+system documentation for pip3 installation details.
 
-# Dependencies
+# Running Virtualenv
+
+The full user guide for virtualenv (https://virtualenv.pypa.io/en/stable/userguide/) is available, but
+for our purposes, the required operation is simply to create a suitable location and initialize it 
+with the tool.. The one important detail to remember is to make Python3 the default Python interpreter 
+used by the environment:
+
+```
+$ sudo mkdir -p /opt/ireceptor/data
+
+# make sure your regular Linux account, not root, owns the directory
+$ sudo chown ubuntu:ubuntu /opt/ireceptor/data
+
+$ cd /opt/ireceptor
+
+# make sure you specific Python3 as the default...
+$ virtualenv --python=python3 data
+
+$ cd data
+$ source bin/activate
+
+# you should now be running within a virtual environment inside 'data'
+(data) ubuntu@...:/opt/ireceptor/data$
+
+# To exit the virtualenv, type the following
+deactivate
+```
+
+# Installing Dependencies
 
 The data loading scripts use a number Python libraries. These are listed in the pip 'requirements.txt' file and may be installed as follows:
 
