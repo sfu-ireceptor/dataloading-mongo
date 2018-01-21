@@ -4,18 +4,23 @@ Here we give an overview of iReceptor node data loading configuration and operat
 
 # Prerequisites
 
-To directly run the python data loading scripts in this module outside of Jupyter, one needs
-to install some requirements. The scripts are assume the use of Python 3.
+If you are running the scripts directly on your host system, you should consider running
+them within a [virtualenv](https://virtualenv.pypa.io/en/stable/installation/)
+which sets Python3 as the default, since the data loading scripts are written to 
+run under that version of Python.
 
-To install the necessary Python3 libraries, you need to [install pip3](https://pip.pypa.io/en/stable/installing/). For Ubuntu:
+To actually run the python data loading scripts (within or outside of virtualenv), 
+certain Python3 library dependencies need to be installed. To do this, you need to 
+[install pip3](https://pip.pypa.io/en/stable/installing/).
+
+For Ubuntu:
 
 ```
 $ sudo apt-get install python3-pip
 $ pip3 install --upgrade pip # gets the latest version
 ```
 
-If you are running the scripts directly on your host system, you should consider running
-them within a [virtualenv](https://virtualenv.pypa.io/en/stable/installation/) which sets Python3 as the default.
+If you are using another version of Linux, consult your respective operating system documentation for pip3 installation details.
 
 # Dependencies
 
@@ -27,7 +32,9 @@ $ sudo pip3 install -r requirements.txt
 
 # Running the loading script
 
-The data loading may be run inside a terminal session. The -h flag will document the command usage as follows:
+The data loading is run inside a Linux terminal session on the machine which has your systems MongoDb database. 
+
+Note that the data loading script accesses the database using the 'service' (**NOT** the 'guest') account username and password ("secret") that you will have specified while setting up the MongoDb database.  You need to specify these either as options on the command line or set as environment variables (see below).  You can use the -h / --help flag to display the data loader usage, as follows:
 
 ```
 $ ./ireceptor_data_loader.py -h  
@@ -91,7 +98,9 @@ $ chmod u+x ireceptor_data_loader.py
 
 Then try again.
 
-Note also that the default parameters for this script may be set as Linux environment variables, e.g.
+## Linux Environment Variables
+
+Note also that the default parameters for this script may also be set as Linux environment variables, e.g.
 
 ```
 $ export MONGODB_DB=ireceptor
@@ -102,7 +111,9 @@ $ export MONGODB_PASSWORD=<your-ireceptor-service-account-password>
 
 The MONGODB_HOST variable defaults to 'localhost' which is normally ok (though you can change it if you wish to point to another MONGO instance outside of the docker one...).
 
-**What kind of data can be loaded?**
+If environment variables are set, then the corresponding command line parameters may be omitted while running the script.
+
+# What kind of data can be loaded?
 
 The ireceptor_data_loader currently accepts iReceptor sample metadata csv files and zip archives of IMGT data file output.
 
@@ -123,6 +134,6 @@ will load a properly formatted *imgt.zip* sequence annotation into the database.
 The expected data formats are described in more detail on the [iReceptor Data Curation repository site](https://github.com/sfu-ireceptor/dataloading-curation).
 
 
-**Test Data**
+# Test Data
 
 The 'testdata' subfolder in here contains test data files - sample.csv and imgt.zip - as documented in a README file and which may be read in by the available scripts, to test the node.
