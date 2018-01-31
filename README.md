@@ -117,8 +117,7 @@ To use the data loader, we obviously need some data!
 
 If you don't already have some suitably formatted data on hand but need to test your 
 (Mongo) iReceptor node installation, you may use some test data files that we provide in the 
-['testdata' subdirectory](https://github.com/sfu-ireceptor/dataloading-mongo/tree/master/testdata) 
-provided here and which are documented in a README file in that subdirectory.
+'data' submodule folder. A README file in that submodule describes what is available.
 
 # Running the loading script
 
