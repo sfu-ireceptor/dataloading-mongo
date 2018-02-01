@@ -187,7 +187,7 @@ def inputParameters():
         print('LIBRARY   :', options.library)
         print('FILENAME  :', options.filename)
     
-        return options
+    return options
 
 class Context:
 
@@ -211,7 +211,8 @@ class Context:
         else:
             path = options.filename
 
-        if not exists(path): 
+        if not exists(path):
+            print("Input data file '"+path+"' does not exist? No data to load?") 
             return None
 
         else:
@@ -230,7 +231,6 @@ class Context:
             except pymongo.errors.ConnectionFailure:
                 print("Unable to connect to %s:%s, Mongo server not available" % (options.host, options.port))
                 return None
-
 
             # Set Mongo db name
             mng_db = mng_client[options.database]
