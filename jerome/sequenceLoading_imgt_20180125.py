@@ -9,6 +9,7 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 from time import gmtime, strftime
+import time
 
 def get_all_substrings(string):
     if type(string) == float:
@@ -55,10 +56,14 @@ def functional_boolean(functionality):
     else:
         return 0
     
-def loadData(mypath,filename):    
+def loadData(mypath,filename,sample_db_cm):
+    t1 = time.time()        
+    print ("%s - extracting data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     tar = tarfile.open(mypath+filename)
     tar.extractall()
     tar.close()
+
+    t2 = time.time()
     print ("%s - parsing data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     Summary_1 = pd.read_table('1_Summary.txt')
     IMGT_gapped_nt_sequences_2 = pd.read_table('2_IMGT-gapped-nt-sequences.txt')
@@ -141,9 +146,9 @@ def loadData(mypath,filename):
     df_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(len)
     df_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(len)
     df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(len)
-    # sampleid = sample_db_cm.find({"imgt_file_name":{'$regex': filename}},{'_id':1})
-    # ir_project_sample_id = [i['_id'] for i in sampleid][0]
-    df_concat['ir_project_sample_id']=5
+    sampleid = sample_db_cm.find({"imgt_file_name":{'$regex': filename}},{'_id':1})
+    ir_project_sample_id = [i['_id'] for i in sampleid][0]
+    df_concat['ir_project_sample_id']=ir_project_sample_id
     df_concat['substring'] = df_concat['junction_aa'].apply(get_substring)
     df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
     df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
@@ -152,13 +157,21 @@ def loadData(mypath,filename):
     df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
     df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
     records = json.loads(df_concat.T.to_json()).values()
+
+    t3 = time.time()
+    print ("done, it took %d s: %d" % int(t3 - t2))
+
     print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
-    # sequence_db_cm.insert_many(records)
-    ir_sequence_count = len(records)
+    sequence_db_cm.insert_many(records)
     print ("%s - loading complete " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+
+    t4 = time.time()
+    print ("done, it took %d s" % int(t4 - t3))
+
+    ir_sequence_count = len(records)
     print ("Loaded % sequences" % ir_sequence_count)
-    # ori_count = sample_db_cm.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
-    # sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
+    ori_count = sample_db_cm.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
+    sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
     return
 
 
@@ -166,28 +179,27 @@ def main(mypath):
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
     for filename in onlyfiles:
         print (filename)
-        # sampleid = sample_db_cm.find({"imgt_file_name":{'$regex': filename}},{'_id':1})
-        # idlist=[i['_id'] for i in sampleid]
-        # if len(idlist)>0:
-        loadData(mypath,filename)
-        # else:
-        #     print ("Warning! The filename %s does not match the one in sample data" %filename)
+        sampleid = sample_db_cm.find({"imgt_file_name":{'$regex': filename}},{'_id':1})
+        idlist=[i['_id'] for i in sampleid]
+        if len(idlist)>0:
+            loadData(mypath,filename,sample_db_cm)
+        else:
+            print ("Warning! The filename %s does not match the one in sample data" %filename)
     filelist = [ f for f in os.listdir(".") if f.endswith(".txt") ]
     for f in filelist:
         os.remove(f)
             
 if __name__ == "__main__":
-#     mng_client = pymongo.MongoClient('localhost', 27017)
-#     db_name = sys.argv[1]
-#     sequence_cname = sys.argv[2]
-#     sample_cname = sys.argv[3]
-#     mypath = sys.argv[4]
-# #     mypath = "/mnt/data/annotations"
-#     # Replace mongo db name
-#     mng_db = mng_client[db_name]
-#     #  Replace mongo db collection name
-#     sample_db_cm = mng_db[sample_cname]
-#     # sq_collection_name = 'sequenceDataNew' 
-#     sequence_db_cm = mng_db[sequence_cname]
-    mypath = sys.argv[1]
+    mng_client = pymongo.MongoClient('localhost', 27017)
+    db_name = sys.argv[1]
+    sequence_cname = sys.argv[2]
+    sample_cname = sys.argv[3]
+    mypath = sys.argv[4]
+#     mypath = "/mnt/data/annotations"
+    # Replace mongo db name
+    mng_db = mng_client[db_name]
+    #  Replace mongo db collection name
+    sample_db_cm = mng_db[sample_cname]
+    # sq_collection_name = 'sequenceDataNew' 
+    sequence_db_cm = mng_db[sequence_cname]
     main(mypath)
