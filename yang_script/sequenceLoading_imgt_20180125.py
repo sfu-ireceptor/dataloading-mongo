@@ -159,14 +159,14 @@ def loadData(mypath,filename,sample_db_cm):
     records = json.loads(df_concat.T.to_json()).values()
 
     t3 = time.time()
-    print ("done, it took %d s" % int(t3 - t2))
+    print ("** done, it took %d s" % int(t3 - t2))
 
     print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     sequence_db_cm.insert_many(records)
     print ("%s - loading complete " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
 
     t4 = time.time()
-    print ("done, it took %d s" % int(t4 - t3))
+    print ("*** done, it took %d s" % int(t4 - t3))
 
     ir_sequence_count = len(records)
     print ("Loaded % sequences" % ir_sequence_count)
