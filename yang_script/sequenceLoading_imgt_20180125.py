@@ -159,7 +159,7 @@ def loadData(mypath,filename,sample_db_cm):
     records = json.loads(df_concat.T.to_json()).values()
 
     t3 = time.time()
-    print ("done, it took %d s: %d" % int(t3 - t2))
+    print ("done, it took %d s" % int(t3 - t2))
 
     print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     sequence_db_cm.insert_many(records)
