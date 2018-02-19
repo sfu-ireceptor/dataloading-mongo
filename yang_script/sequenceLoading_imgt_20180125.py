@@ -9,6 +9,7 @@ import numpy as np
 from os import listdir
 from os.path import isfile, join
 from time import gmtime, strftime
+import time
 
 def get_all_substrings(string):
     if type(string) == float:
@@ -55,10 +56,14 @@ def functional_boolean(functionality):
     else:
         return 0
     
-def loadData(mypath,filename,sample_db_cm):    
+def loadData(mypath,filename,sample_db_cm):
+    t1 = time.time()        
+    print ("%s - extracting data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     tar = tarfile.open(mypath+filename)
     tar.extractall()
     tar.close()
+
+    t2 = time.time()
     print ("%s - parsing data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     Summary_1 = pd.read_table('1_Summary.txt')
     IMGT_gapped_nt_sequences_2 = pd.read_table('2_IMGT-gapped-nt-sequences.txt')
@@ -152,10 +157,18 @@ def loadData(mypath,filename,sample_db_cm):
     df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
     df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
     records = json.loads(df_concat.T.to_json()).values()
+
+    t3 = time.time()
+    print ("done, it took %d s: %d" % int(t3 - t2))
+
     print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     sequence_db_cm.insert_many(records)
-    ir_sequence_count = len(records)
     print ("%s - loading complete " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+
+    t4 = time.time()
+    print ("done, it took %d s" % int(t4 - t3))
+
+    ir_sequence_count = len(records)
     print ("Loaded % sequences" % ir_sequence_count)
     ori_count = sample_db_cm.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
     sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
