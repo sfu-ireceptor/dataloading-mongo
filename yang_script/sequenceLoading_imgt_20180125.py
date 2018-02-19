@@ -172,6 +172,7 @@ def loadData(mypath,filename,sample_db_cm):
     print ("Loaded % sequences" % ir_sequence_count)
     ori_count = sample_db_cm.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
     sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
+    print ("**********************************")
     return
 
 
