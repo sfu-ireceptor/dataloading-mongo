@@ -58,13 +58,13 @@ def functional_boolean(functionality):
     
 def loadData(mypath,filename,sample_db_cm):
     t1 = time.time()        
-    print ("%s - extracting data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+    #print ("%s - extracting data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     tar = tarfile.open(mypath+filename)
     tar.extractall()
     tar.close()
 
     t2 = time.time()
-    print ("%s - parsing data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+    #print ("%s - parsing data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     Summary_1 = pd.read_table('1_Summary.txt')
     IMGT_gapped_nt_sequences_2 = pd.read_table('2_IMGT-gapped-nt-sequences.txt')
     Nt_sequences_3 = pd.read_table('3_Nt-sequences.txt')
@@ -159,27 +159,31 @@ def loadData(mypath,filename,sample_db_cm):
     records = json.loads(df_concat.T.to_json()).values()
 
     t3 = time.time()
-    print ("** done, it took %d s" % int(t3 - t2))
+    parsing_time = int(t3 - t2)
+    #print ("** done, it took %d s" % int(t3 - t2))
 
-    print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+    #print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     sequence_db_cm.insert_many(records)
-    print ("%s - loading complete " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+    #print ("%s - loading complete " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
 
     t4 = time.time()
-    print ("*** done, it took %d s" % int(t4 - t3))
+    loading_time = int(t4 - t3)
+    #print ("*** done, it took %d s" % int(t4 - t3))
 
     ir_sequence_count = len(records)
-    print ("Loaded % sequences" % ir_sequence_count)
+    #print ("Loaded %s sequences" % ir_sequence_count)
     ori_count = sample_db_cm.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
     sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
-    print ("**********************************")
+    #print ("**********************************")
+
+    print ("%d\t%d") % (parsing_time, loading_time)
     return
 
 
 def main(mypath):
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
     for filename in onlyfiles:
-        print (filename)
+        #print (filename)
         sampleid = sample_db_cm.find({"imgt_file_name":{'$regex': filename}},{'_id':1})
         idlist=[i['_id'] for i in sampleid]
         if len(idlist)>0:
