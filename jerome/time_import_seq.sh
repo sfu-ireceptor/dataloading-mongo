@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cd /home/ubuntu/scratch
-today= `date +%Y_%m_%d.%H%M%S`
+today=`date +%Y_%m_%d.%H%M%S`
 filename="$today"'.txt'
 
 for i in `seq 100`
