@@ -176,7 +176,7 @@ def loadData(mypath,filename,sample_db_cm):
     sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
     #print ("**********************************")
 
-    print ("%d\t%d") % (parsing_time, loading_time)
+    print ("%d\t%d" % (parsing_time, loading_time))
     return
 
 
