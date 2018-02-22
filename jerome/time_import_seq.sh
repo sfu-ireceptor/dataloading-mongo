@@ -4,7 +4,7 @@ cd /home/ubuntu/scratch
 today=`date +%Y_%m_%d.%H%M%S`
 filename="$today"'.txt'
 
-for i in `seq 100`
+for i in `seq 1000`
 do
 	echo "Starting iteration $i.." 
 	python /home/ubuntu/dataloading-mongo/yang_script/sequenceLoading_imgt_20180125.py db1 sequences samples /home/ubuntu/data_to_load/seq/ >> ~/"$filename"
