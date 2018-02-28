@@ -90,7 +90,7 @@ in the pip 'requirements.txt' file and may be installed as follows:
 $ cd /opt/ireceptor/data
 $ source bin/activate
 
-$ cd /opt/ireceptor/turnkey-service/dataloading
+$ cd /opt/ireceptor/turnkey-service/dataloading-mongo
 $ sudo pip3 install -r requirements.txt
 ```
 
