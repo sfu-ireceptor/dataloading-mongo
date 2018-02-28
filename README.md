@@ -21,10 +21,13 @@ ensure that it is also installed on your system. You will also need to install t
 $ sudo apt install python-pip
 $ sudo pip install virtualenv
 
-# also install Python3 if it is not already 
-# pre-installed by your Linux OS version, then...
+# also install Python3 if it is not already
+# pre-installed by your Linux OS version
+$ sudo apt install python3
+
+# then also install pip3 and upgrade it to the latest version
 $ sudo apt install python3-pip
-$ pip3 install --upgrade pip # gets the latest version
+$ pip3 install --upgrade pip 
 ```
 
 If you are using another version of Linux, consult your respective operating 
