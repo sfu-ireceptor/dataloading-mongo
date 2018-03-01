@@ -101,7 +101,7 @@ For example, under Ubuntu Linux, you may set the Mongo database, user and passwo
 ```
 $ export MONGODB_DB=<your-database-name>
 $ export MONGODB_SERVICE_USER=<your-ireceptor-service-account-username>
-$ export MONGODB_SERVICE_PASSWORD=<your-ireceptor-service-account-password>
+$ export MONGODB_SERVICE_SECRET=<your-ireceptor-service-account-secret-password>
 
 ```
 
