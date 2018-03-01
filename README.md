@@ -21,10 +21,13 @@ ensure that it is also installed on your system. You will also need to install t
 $ sudo apt install python-pip
 $ sudo pip install virtualenv
 
-# also install Python3 if it is not already 
-# pre-installed by your Linux OS version, then...
+# also install Python3 if it is not already
+# pre-installed by your Linux OS version
+$ sudo apt install python3
+
+# then also install pip3 and upgrade it to the latest version
 $ sudo apt install python3-pip
-$ pip3 install --upgrade pip # gets the latest version
+$ pip3 install --upgrade pip 
 ```
 
 If you are using another version of Linux, consult your respective operating 
@@ -87,7 +90,7 @@ in the pip 'requirements.txt' file and may be installed as follows:
 $ cd /opt/ireceptor/data
 $ source bin/activate
 
-$ cd /opt/ireceptor/turnkey-service/dataloading
+$ cd /opt/ireceptor/turnkey-service/dataloading-mongo
 $ sudo pip3 install -r requirements.txt
 ```
 
@@ -102,7 +105,6 @@ For example, under Ubuntu Linux, you may set the Mongo database, user and passwo
 $ export MONGODB_DB=<your-database-name>
 $ export MONGODB_SERVICE_USER=<your-ireceptor-service-account-username>
 $ export MONGODB_SERVICE_SECRET=<your-ireceptor-service-account-secret-password>
-
 ```
 
 See the script usage (below) for additional options that may be set this way. Note that some of these options 
