@@ -13,7 +13,7 @@ def main(mypath):
 
 	l = []
 	for filepath in files:
-		# print(filepath)
+		#print(filepath)
 		data = pd.read_table(filepath, skiprows=2)
 		# print(data)
 		l.append(data)
@@ -21,7 +21,7 @@ def main(mypath):
 	t = l[0].loc[:, ['sample id']]
 	t['total nb seq'] = l[0]['total results']
 
-	query_type_list = ['equal', 'substring', 'regex']
+	query_type_list = ['equal', 'substring', 'regex', 'total']
 	for query_type in query_type_list:
 		t[query_type + ' nb results'] = l[0][query_type + ' results']	
 		for i,data in enumerate(l):
