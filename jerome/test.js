@@ -1,4 +1,4 @@
-var n = db.sequence.count();
+var n = db.sequences.count();
 print("DB contains " + n + " sequences");
 
 var t1 = new Date();
