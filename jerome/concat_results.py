@@ -21,7 +21,7 @@ def main(mypath):
 	t = l[0].loc[:, ['sample id']]
 	t['total nb seq'] = l[0]['total results']
 
-	query_type_list = ['equal', 'substring', 'regex', 'total']
+	query_type_list = ['equal', 'substring', 'regex', 'range', 'total']
 	for query_type in query_type_list:
 		t[query_type + ' nb results'] = l[0][query_type + ' results']	
 		for i,data in enumerate(l):
