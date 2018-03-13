@@ -23,9 +23,10 @@ def main(mypath):
 
 	query_type_list = ['equal', 'substring', 'regex', 'range', 'total']
 	for query_type in query_type_list:
-		t[query_type + ' nb results'] = l[0][query_type + ' results']	
-		for i,data in enumerate(l):
-			t['run ' + str(i) + ' ' + query_type] = l[i][query_type + ' time']	
+		if query_type + ' results' in l[0]:
+			t[query_type + ' nb results'] = l[0][query_type + ' results']	
+			for i,data in enumerate(l):
+				t['run ' + str(i) + ' ' + query_type] = l[i][query_type + ' time']	
 
 	print(t.to_csv(sep='\t'))
             
