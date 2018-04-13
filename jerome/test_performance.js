@@ -29,26 +29,26 @@ var sample_id_list = db[collection].distinct('ir_project_sample_id');
 
 print("sample id\tequal time\tequal results\tsubstring time\tsubstring results\tvregex time\tvregex results\tjregex time\tjregex results\tdregex time\tdregex results\ttotal time\ttotal results");
 sample_id_list.forEach(function(sample_id, i) {
-       print('Doing queries for sample_id=' + sample_id);
-
-       var t0 = new Date();
-       var sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "v_call": {"$regex": filter_v_call}});
-       var t1 = new Date();
-       var duration = (t1  - t0)/1000;
+       var t0, t1, duration, sequence_count;
+       
+       t0 = new Date();
+       sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "v_call": {"$regex": filter_v_call}});
+       t1 = new Date();
+       duration = (t1  - t0)/1000;
        vregex[i] = duration;
        vregex_res[i] = sequence_count;
 
-       var t0 = new Date();
-       var sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "j_call": {"$regex": filter_j_call}});
-       var t1 = new Date();
-       var duration = (t1  - t0)/1000;
+       t0 = new Date();
+       sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "j_call": {"$regex": filter_j_call}});
+       t1 = new Date();
+       duration = (t1  - t0)/1000;
        jregex[i] = duration;
        jregex_res[i] = sequence_count;
 
-       var t0 = new Date();
-       var sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "d_call": {"$regex": filter_d_call}});
-       var t1 = new Date();
-       var duration = (t1  - t0)/1000;
+       t0 = new Date();
+       sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "d_call": {"$regex": filter_d_call}});
+       t1 = new Date();
+       duration = (t1  - t0)/1000;
        dregex[i] = duration;
        dregex_res[i] = sequence_count;
 
@@ -73,5 +73,5 @@ sample_id_list.forEach(function(sample_id, i) {
        total[i] = duration;
        total_res[i] = sequence_count;
 
-       print (i+ "\t" + equals[i] + "\t" + equals_res[i] + "\t" + substring[i] + "\t" + substring_res[i] + "\t" +vregex[i] + "\t" + vregex_res[i] + "\t" +jregex[i] + "\t" + jregex_res[i]+ "\t" +dregex[i] + "\t" + dregex_res[i] + "\t" + total[i] + "\t" + total_res[i]);
+       print (sample_id + "\t" + equals[i] + "\t" + equals_res[i] + "\t" + substring[i] + "\t" + substring_res[i] + "\t" + vregex[i] + "\t" + vregex_res[i] + "\t" +jregex[i] + "\t" + jregex_res[i]+ "\t" +dregex[i] + "\t" + dregex_res[i] + "\t" + total[i] + "\t" + total_res[i]);
 });
