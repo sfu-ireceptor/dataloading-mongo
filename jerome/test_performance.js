@@ -26,42 +26,42 @@ sample_id_list.forEach(function(sample_id, i) {
        print('Doing queries for sample_id=' + sample_id);
 
        var t0 = new Date();
-       var sequence_count = db.sequence.count({"ir_project_sample_id": sample_id, "v_call": {"$regex": '^TRBV20-1\\*01'}});
+       var sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "v_call": {"$regex": '^TRBV20-1\\*01'}});
        var t1 = new Date();
        var duration = (t1  - t0)/1000;
        vregex[i] = duration;
        vregex_res[i] = sequence_count;
 
        var t0 = new Date();
-       var sequence_count = db.sequence.count({"ir_project_sample_id": sample_id, "j_call": {"$regex": '^TRBJ1-5\\*02'}});
+       var sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "j_call": {"$regex": '^TRBJ1-5\\*02'}});
        var t1 = new Date();
        var duration = (t1  - t0)/1000;
        jregex[i] = duration;
        jregex_res[i] = sequence_count;
 
        var t0 = new Date();
-       var sequence_count = db.sequence.count({"ir_project_sample_id": sample_id, "d_call": {"$regex": '^TRBD2\\*01'}});
+       var sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "d_call": {"$regex": '^TRBD2\\*01'}});
        var t1 = new Date();
        var duration = (t1  - t0)/1000;
        dregex[i] = duration;
        dregex_res[i] = sequence_count;
 
        t0 = new Date();
-       sequence_count = db.sequence.count({"ir_project_sample_id": sample_id, "substring": "CASSQVGTGVY"});
+       sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "substring": "CASSQVGTGVY"});
        t1 = new Date();
        duration = (t1  - t0)/1000;
        substring[i] = duration;
        substring_res[i] = sequence_count;
 
        t0 = new Date();
-       sequence_count = db.sequence.count({"ir_project_sample_id": sample_id, "junction_aa_length": 6});
+       sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "junction_aa_length": 6});
        t1 = new Date();
        duration = (t1  - t0)/1000;
        equals[i] = duration;
        equals_res[i] = sequence_count;
 
        t0 = new Date();
-       sequence_count = db.sequence.count({"ir_project_sample_id": sample_id});
+       sequence_count = db[collection].count({"ir_project_sample_id": sample_id});
        t1 = new Date();
        duration = (t1  - t0)/1000;
        total[i] = duration;
