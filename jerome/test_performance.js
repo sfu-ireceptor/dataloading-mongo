@@ -6,7 +6,7 @@ var filter_v_call = '^TRBV20-1\\*01';
 var filter_j_call = '^TRBJ1-5\\*02';
 var filter_d_call = '^TRBD2\\*01';
 var filter_substring = 'CASSQVGTGVY';
-vat filter_junction_aa_length = 6;
+var filter_junction_aa_length = 6;
 
 // init result arrays
 var equals = [];
