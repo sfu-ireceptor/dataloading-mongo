@@ -43,7 +43,7 @@ function do_query(filters) {
        return data;
 }
 
-function do_query_for_all_samples(sample_id_list, $filters) {
+function do_query_for_all_samples(sample_id_list, filters) {
        var data = [];
        
        sample_id_list.forEach(function(sample_id, i) {
