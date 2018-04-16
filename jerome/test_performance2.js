@@ -38,6 +38,8 @@ function do_query(filters) {
        t1 = new Date();
        data['duration'] = (t1  - t0)/1000;
 
+       print(data);
+
        return data;
 }
 
@@ -49,6 +51,8 @@ function do_query_for_all_samples(sample_id_list, $filters) {
               
               filters['ir_project_sample_id'] = sample_id;
               data[i] = do_query(filters);
+
+              print(data[i]);
        });
 
        return data;
