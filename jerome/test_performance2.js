@@ -1,32 +1,48 @@
-// MongoDB collection
-var collection = 'sequences';
+var collection = '', sample_id_list = [], queries = [], results = [];
 
-// filter values
-var filter_v_call = '^TRBV20-1\\*01';
-var filter_j_call = '^TRBJ1-5\\*02';
-var filter_d_call = '^TRBD2\\*01';
-var filter_substring = 'CASSQVGTGVY';
-var filter_junction_aa_length = 6;
+/****************************************************************************************
+ * config
+ ****************************************************************************************/
 
-var header_line = 'sample_id\t';
+collection = 'sequences';
 
-// get samples ids from *sequences* collection
-var sample_id_list = db[collection].distinct('ir_project_sample_id');
+queries['total'] = {};
+queries['equals'] = {'junction_aa_length': 6};
+queries['substring'] = {'substring': 'CASSQVGTGVY'};
+queries['vregex'] = {'v_call': {'$regex': '^TRBV20-1\\*01'}};
+queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
+queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
+
+/****************************************************************************************
+ * MAIN
+ ****************************************************************************************/
+
+// get samples ids directly from sequences collection
+sample_id_list = db[collection].distinct('ir_project_sample_id');
+
+// execute queries
+for (var key in queries) {           
+       results[key] = do_query_for_all_samples(sample_id_list, queries[key]);
+}
+
+// print headers line
+print_headers(queries);
+
+// print results
+sample_id_list.forEach(function(sample_id, i) {
+       var s = '' + sample_id + '\t';
+       for (var key in queries) {
+              s+= results[key][sample_id]['duration'];
+              s+= '\t';
+              s+= results[key][sample_id]['count'];
+              s+= '\t';
+       }
+       print(s);
+});
 
 /****************************************************************************************
  * functions
  ****************************************************************************************/
-
-function do_query(filters) {
-       var t0, t1, data = [];
-
-       t0 = new Date();
-       data['count'] = db[collection].count(filters);
-       t1 = new Date();
-       data['duration'] = (t1  - t0)/1000;
-
-       return data;
-}
 
 function do_query_for_all_samples(sample_id_list, filters) {
        var data = [];
@@ -41,42 +57,24 @@ function do_query_for_all_samples(sample_id_list, filters) {
        return data;
 }
 
-/****************************************************************************************
- * MAIN
- ****************************************************************************************/
+function do_query(filters) {
+       var t0, t1, data = [];
 
-var queries = [], results = [];
+       t0 = new Date();
+       data['count'] = db[collection].count(filters);
+       t1 = new Date();
+       data['duration'] = (t1  - t0)/1000;
 
-// define queries
-queries['total'] = {};
-queries['equals'] = {'junction_aa_length': filter_junction_aa_length};
-queries['substring'] = {'substring': filter_substring};
-queries['vregex'] = {'v_call': {'$regex': filter_v_call}};
-queries['jregex'] = {'j_call': {'$regex': filter_j_call}};
-queries['dregex'] = {'d_call': {'$regex': filter_d_call}};
-
-// execute queries
-for (var key in queries) {           
-       results[key] = do_query_for_all_samples(sample_id_list, queries[key]);
+       return data;
 }
 
-// print headers line
-for (var key in results) {
-       header_line+= key + ' time';
-       header_line+= '\t';
-       header_line+= key + ' results';
-       header_line+= '\t';
-}
-print(header_line);
-
-// print results
-sample_id_list.forEach(function(sample_id, i) {
-       var s = '' + sample_id + '\t';
-       for (var key in results) {
-              s+= results[key][sample_id]['duration'];
-              s+= '\t';
-              s+= results[key][sample_id]['count'];
-              s+= '\t';
+function print_headers(queries) {
+       var header_line = 'sample_id\t';
+       for (var key in queries) {
+              header_line+= key + ' time';
+              header_line+= '\t';
+              header_line+= key + ' results';
+              header_line+= '\t';
        }
-       print(s);
-});
+       print(header_line);   
+}
