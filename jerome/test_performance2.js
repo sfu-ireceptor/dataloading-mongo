@@ -44,7 +44,7 @@ function do_query_for_all_samples(sample_id_list, $filters) {
               var t = [];
               
               filters['ir_project_sample_id'] = sample_id;
-              data[i] = do_one_query(filters);
+              data[i] = do_query(filters);
        });
 }
 
