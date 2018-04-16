@@ -24,6 +24,9 @@ var total_res = [];
 var range = [];
 var range_res = [];
 
+var data = [];
+var filters = [];
+
 // get samples ids from *sequences* collection
 var sample_id_list = db[collection].distinct('ir_project_sample_id');
 
@@ -48,12 +51,14 @@ function do_query_for_all_samples(sample_id_list, $filters) {
        });
 }
 
-var data = [];
-var filters = [];
+print('before');
+
 filters['v_call'] = {"$regex": filter_v_call};
 data = do_query_for_all_samples(sample_id_list, filters);
 
+print('ok');
 print(data);
+print('done');
 
 // sample_id_list.forEach(function(sample_id, i) {
 //        var t0, t1, duration, sequence_count;
