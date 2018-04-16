@@ -1,8 +1,7 @@
 var collection = '', sample_id_list = [], queries = [], results = [];
 
 /****************************************************************************************
- * config
- ****************************************************************************************/
+ config */
 
 collection = 'sequences';
 
@@ -14,8 +13,7 @@ queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
 queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
 
 /****************************************************************************************
- * MAIN
- ****************************************************************************************/
+ MAIN */
 
 // get samples ids directly from sequences collection
 sample_id_list = db[collection].distinct('ir_project_sample_id');
@@ -41,8 +39,7 @@ sample_id_list.forEach(function(sample_id, i) {
 });
 
 /****************************************************************************************
- * functions
- ****************************************************************************************/
+ functions */
 
 function do_query_for_all_samples(sample_id_list, filters) {
        var data = [];
