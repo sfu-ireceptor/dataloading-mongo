@@ -26,9 +26,15 @@ var range_res = [];
 
 var data = [];
 var filters = [];
+var header_line = 'sample_id\t';
 
 // get samples ids from *sequences* collection
 var sample_id_list = db[collection].distinct('ir_project_sample_id');
+
+/****************************************************************************************
+ * functions
+ ****************************************************************************************/
+
 
 function do_query(filters) {
        var t0, t1, data = [];
@@ -37,8 +43,6 @@ function do_query(filters) {
        data['count'] = db[collection].count(filters);
        t1 = new Date();
        data['duration'] = (t1  - t0)/1000;
-
-       print(data);
 
        return data;
 }
@@ -50,34 +54,44 @@ function do_query_for_all_samples(sample_id_list, filters) {
               var t = [];
               
               filters['ir_project_sample_id'] = sample_id;
-              data[i] = do_query(filters);
-
-              print(data[i]);
+              data[sample_id] = do_query(filters);
        });
 
        return data;
 }
 
-print('before');
 
-filters['v_call'] = {"$regex": filter_v_call};
-data = do_query_for_all_samples(sample_id_list, filters);
+/****************************************************************************************
+ * MAIN
+ ****************************************************************************************/
 
-print('ok');
-print(data);
-print('done');
+var queries = [], results = [];
+queries['vregex'] = {"v_call": {"$regex": filter_v_call}};
+queries['jregex'] = {"j_call": {"$regex": filter_j_call}};
 
-// sample_id_list.forEach(function(sample_id, i) {
-//        var t0, t1, duration, sequence_count;
-       
-//        t0 = new Date();
-//        sequence_count = db[collection].count({"ir_project_sample_id": sample_id, "v_call": {"$regex": filter_v_call}});
-//        t1 = new Date();
-//        duration = (t1  - t0)/1000;
-//        vregex[i] = duration;
-//        vregex_res[i] = sequence_count;
+// execute queries
+for (var key in queries) {           
+       results[key] = do_query_for_all_samples(sample_id_list, queries[key]);
+}
 
-// });
+// print results - headers
+for (var key in results) {
+       header_line+= key + ' time';
+       header_line+= '\t';
+       header_line+= key + ' results';
+       header_line+= '\t';
+}
+print(header_line);
 
-// print("sample id\tequal time\tequal results\tsubstring time\tsubstring results\tvregex time\tvregex results\tjregex time\tjregex results\tdregex time\tdregex results\ttotal time\ttotal results");
-// print (sample_id + "\t" + equals[i] + "\t" + equals_res[i] + "\t" + substring[i] + "\t" + substring_res[i] + "\t" + vregex[i] + "\t" + vregex_res[i] + "\t" +jregex[i] + "\t" + jregex_res[i]+ "\t" +dregex[i] + "\t" + dregex_res[i] + "\t" + total[i] + "\t" + total_res[i]);
+
+// print results - data
+sample_id_list.forEach(function(sample_id, i) {
+       var s = '' + sample_id + '\t';
+       for (var key in results) {
+              s+= results[key][sample_id]['duration'];
+              s+= '\t';
+              s+= results[key][sample_id]['count'];
+              s+= '\t';
+       }
+       print(s);
+});
