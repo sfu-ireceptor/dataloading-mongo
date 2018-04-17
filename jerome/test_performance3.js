@@ -8,11 +8,17 @@ var collection = '', sample_id_list = [], queries = [], results = [], output = '
 collection = 'sequences';
 
 queries['total'] = {};
-queries['equals'] = {'junction_aa_length': 6};
-queries['substring'] = {'substring': 'CASSQVGTGVY'};
-queries['vregex'] = {'v_call': {'$regex': '^TRBV20-1\\*01'}};
-queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
-queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
+// queries['equals'] = {'junction_aa_length': 6};
+// queries['substring'] = {'substring': 'CASSQVGTGVY'};
+// queries['vregex'] = {'v_call': {'$regex': '^TRBV20-1\\*01'}};
+// queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
+// queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
+
+queries['equals'] = {'junction_aa_length': 7};
+queries['substring'] = {'substring': 'CASSQVGTG'};
+queries['vregex'] = {'v_call': {'$regex': '^TRBV20-2\\*01'}};
+queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-4\\*02'}};
+queries['dregex'] = {'d_call': {'$regex': '^TRBD1\\*01'}};
 
 /****************************************************************************************
  MAIN */
