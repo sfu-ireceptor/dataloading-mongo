@@ -32,7 +32,7 @@ for (var key in queries) {
 }
 
 // print headers line
-print_headers(queries);
+//print_headers(queries);
 
 // print results
 for (var key in queries) {
