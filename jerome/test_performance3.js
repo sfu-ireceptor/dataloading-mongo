@@ -30,9 +30,9 @@ print_headers(queries);
 
 // print results
 for (var key in queries) {
-       output+= Math.ceil(results[key]['duration']);
-       output+= '\t';
        output+= results[key]['count'];
+       output+= '\t';
+       output+= Math.ceil(results[key]['duration']);
        output+= '\t';
 }
 print(output);
@@ -72,9 +72,9 @@ function do_query(filters) {
 function print_headers(queries) {
        var header_line = '';
        for (var key in queries) {
-              header_line+= key + ' time';
-              header_line+= '\t';
               header_line+= key + ' results';
+              header_line+= '\t';
+              header_line+= key + ' time';
               header_line+= '\t';
        }
        print(header_line);   
