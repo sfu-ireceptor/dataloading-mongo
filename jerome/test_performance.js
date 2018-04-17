@@ -1,3 +1,5 @@
+// script from Bojan, refactored
+
 // MongoDB collection
 var collection = 'sequences';
 

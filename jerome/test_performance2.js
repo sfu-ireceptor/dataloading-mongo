@@ -1,3 +1,5 @@
+// modified to run a query type for all samples ids and THEN move to another query type 
+
 var collection = '', sample_id_list = [], queries = [], results = [];
 
 /****************************************************************************************

@@ -1,3 +1,5 @@
+// modified to print only total query time and total nb of results for each query type
+
 var collection = '', sample_id_list = [], queries = [], results = [], output = '';
 
 /****************************************************************************************
@@ -28,7 +30,7 @@ print_headers(queries);
 
 // print results
 for (var key in queries) {
-       output+= results[key]['duration'];
+       output+= Math.ceil(results[key]['duration']);
        output+= '\t';
        output+= results[key]['count'];
        output+= '\t';
