@@ -39,6 +39,7 @@ for (var key in queries) {
 
 // print results
 for (var key in queries) {
+       output = '';
        output+= key;
        output+= '\t';
        output+= results[key]['count'];
