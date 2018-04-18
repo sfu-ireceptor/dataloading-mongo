@@ -14,12 +14,15 @@ queries['total'] = {};
 // queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
 // queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
 
-queries['equals'] = {'junction_aa_length': 7};
-queries['substring'] = {'substring': 'CASSQVGTG'};
-queries['vregex'] = {'v_call': {'$regex': '^TRBV20-2\\*01'}};
-queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-4\\*02'}};
-queries['dregex'] = {'d_call': {'$regex': '^TRBD1\\*01'}};
+// queries['equals'] = {'junction_aa_length': 7};
+// queries['substring'] = {'substring': 'CASSQVGTG'};
+// queries['vregex'] = {'v_call': {'$regex': '^TRBV20-2\\*01'}};
+// queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-4\\*02'}};
+// queries['dregex'] = {'d_call': {'$regex': '^TRBD1\\*01'}};
 
+db[collection].distinct('junction_aa_length').forEach(function(length, i) {
+       queries['equals' + length] = {'junction_aa_length': length};
+});
 /****************************************************************************************
  MAIN */
 
