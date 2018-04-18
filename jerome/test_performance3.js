@@ -39,12 +39,14 @@ for (var key in queries) {
 
 // print results
 for (var key in queries) {
+       output+= key;
+       output+= '\t';
        output+= results[key]['count'];
        output+= '\t';
        output+= Math.ceil(results[key]['duration']);
        output+= '\t';
+       print(output);
 }
-print(output);
 
 /****************************************************************************************
  functions */
