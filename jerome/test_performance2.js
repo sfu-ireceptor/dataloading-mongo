@@ -13,6 +13,7 @@ queries['substring'] = {'substring': 'CASSQVGTGVY'};
 queries['vregex'] = {'v_call': {'$regex': '^TRBV20-1\\*01'}};
 queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
 queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
+queries['range'] = {'v_call': {"$gte":'TRBV20-1*01', "$lt":'TRBV20-1*02'}};
 
 /****************************************************************************************
  MAIN */
