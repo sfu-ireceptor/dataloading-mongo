@@ -14,15 +14,12 @@ queries['total'] = {};
 // queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
 // queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
 
-// queries['equals'] = {'junction_aa_length': 7};
-// queries['substring'] = {'substring': 'CASSQVGTG'};
-// queries['vregex'] = {'v_call': {'$regex': '^TRBV20-2\\*01'}};
-// queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-4\\*02'}};
-// queries['dregex'] = {'d_call': {'$regex': '^TRBD1\\*01'}};
+queries['equals'] = {'junction_aa_length': 7};
+queries['substring'] = {'substring': 'CASSQVGTG'};
+queries['vregex'] = {'v_call': {'$regex': '^TRBV20-2\\*01'}};
+queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-4\\*02'}};
+queries['dregex'] = {'d_call': {'$regex': '^TRBD1\\*01'}};
 
-db[collection].distinct('junction_aa_length').forEach(function(length, i) {
-       queries['equals' + length] = {'junction_aa_length': length};
-});
 /****************************************************************************************
  MAIN */
 
@@ -39,14 +36,12 @@ for (var key in queries) {
 
 // print results
 for (var key in queries) {
-       output+= key;
-       output+= '\t';
        output+= results[key]['count'];
        output+= '\t';
        output+= Math.ceil(results[key]['duration']);
        output+= '\t';
-       print(output);
 }
+print(output);
 
 /****************************************************************************************
  functions */

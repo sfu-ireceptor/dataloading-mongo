@@ -18,10 +18,11 @@ def main(mypath):
 		# print(data)
 		l.append(data)
 
-	t = l[0].loc[:, ['sample id']]
+	# t = l[0].loc[:, ['sample id']]
+	t = l[0].loc[:, []]
 	t['total nb seq'] = l[0]['total results']
 
-	query_type_list = ['equal', 'substring', 'regex', 'range', 'total']
+	query_type_list = ['equal', 'substring', 'regex', 'vregex', 'jregex', 'dregex', 'range', 'total']
 	for query_type in query_type_list:
 		if query_type + ' results' in l[0]:
 			t[query_type + ' nb results'] = l[0][query_type + ' results']	
