@@ -10,10 +10,33 @@ collection = 'sequences';
 queries['total'] = {};
 queries['equals'] = {'junction_aa_length': 6};
 queries['substring'] = {'substring': 'CASSQVGTGVY'};
+// B-Cell queries
+// B-Cell V-Gene
+queries['vgene_family_igh'] = {vgene_family: 'IGHV2'};
+queries['vgene_gene_igh'] = {vgene_gene: 'IGHV2-5'};
+queries['v_call_igh'] = {v_call: 'IGHV2-5*08'};
+// B-Cell D-Gene
+queries['dgene_family_igh'] = {dgene_family: 'IGHD2'};
+// B-Cell J-Gene
+queries['jgene_family_igh'] = {jgene_family: 'IGHJ4'};
+queries['j_call_igh'] = {j_call: 'IGHJ4*02'};
+// T-Cell queries
+// T-Cell V-Gene
+queries['vgene_family_trb'] = {vgene_family: 'TRBV20'};
+queries['vgene_gene_trb'] = {vgene_gene: 'TRBV20-1'};
+queries['v_call_trb'] = {v_call: 'TRBV20-1*01'};
+// T-Cell D-Gene
+queries['d_call_trb'] = {d_call: 'TRBD2*01'};
+// T-Cell J-Gene
+queries['jgene_family_trb'] = {jgene_family: 'TRBJ2'};
+queries['j_call_trb'] = {j_call: 'TRBJ2-3*01'};
+// Old deprecated queries
 //queries['vregex'] = {'v_call': {'$regex': '^TRBV20-1\\*01'}};
 //queries['jregex'] = {'j_call': {'$regex': '^TRBJ1-5\\*02'}};
 //queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
-queries['range'] = {'v_call': {"$gte":'TRBV20-1*01', "$lt":'TRBV20-1*02'}};
+//queries['range'] = {'v_call': {"$gte":'TRBV20-1*01', "$lt":'TRBV20-1*02'}};
+//queries['range_string'] = {'v_call_string':{"$gte":'IGHV2-5*08', "$lt":'IGHV2-5*09'}};
+
 
 /****************************************************************************************
  MAIN */

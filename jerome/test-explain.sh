@@ -16,11 +16,11 @@ host_name=$(hostname)
 
 current_time=$(date "+%Y.%m.%d-%H.%M.%S")
 echo "Test performed at: $current_time"
-mongo $db_name --port $db_port cache-dump.js > $host_name-$db_name-cache-$current_time.txt
+mongo $db_name --port $db_port cache-dump.js > $host_name-$db_port-$db_name-cache-$current_time.txt
 
 for i in `seq 1 $count`;
 do
     echo "performing test iteration $i"
-    mongo $db_name --port $db_port $js_file > run$i-$host_name-$db_name-$current_time.txt
+    mongo $db_name --port $db_port $js_file > run$i-$host_name-$db_port-$db_name-$current_time.txt
 done
 
