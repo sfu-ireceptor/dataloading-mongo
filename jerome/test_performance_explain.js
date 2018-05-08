@@ -5,11 +5,19 @@ var collection = '', sample_id_list = [], queries = [], results = [];
 /****************************************************************************************
  config */
 
-collection = 'sequences';
+// Change the collection based on which repository being used...
+// This needs to be fixed!
+// On big-mongo repository has a sequence collection (no s)
+collection = 'sequence';
+// On mini-mongo repository has a sequences collection (with an s)
+//collection = 'sequence';
 
 queries['total'] = {};
-queries['equals'] = {'junction_aa_length': 6};
-queries['substring'] = {'substring': 'CASSQVGTGVY'};
+// Junction Length
+queries['equals_9'] = {'junction_aa_length': 9};
+queries['equals_15'] = {'junction_aa_length': 15};
+// Junction substring
+queries['junction'] = {'substring': 'CASSQVGTGVY'};
 // B-Cell queries
 // B-Cell V-Gene
 queries['vgene_family_igh'] = {vgene_family: 'IGHV2'};
