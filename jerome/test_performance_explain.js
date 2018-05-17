@@ -8,9 +8,9 @@ var collection = '', sample_id_list = [], queries = [], results = [];
 // Change the collection based on which repository being used...
 // This needs to be fixed!
 // On big-mongo repository has a sequence collection (no s)
-collection = 'sequence';
+//collection = 'sequences';
 // On mini-mongo repository has a sequences collection (with an s)
-//collection = 'sequence';
+collection = 'sequence';
 
 queries['total'] = {};
 // Junction Length
@@ -25,8 +25,11 @@ queries['vgene_gene_igh'] = {vgene_gene: 'IGHV2-5'};
 queries['v_call_igh'] = {v_call: 'IGHV2-5*08'};
 // B-Cell D-Gene
 queries['dgene_family_igh'] = {dgene_family: 'IGHD2'};
+queries['dgene_gene_igh'] = {dgene_gene: 'IGHD2-21'};
+queries['d_call_igh'] = {d_call: 'IGHD2-21*02'};
 // B-Cell J-Gene
 queries['jgene_family_igh'] = {jgene_family: 'IGHJ4'};
+queries['jgene_gene_igh'] = {jgene_gene: 'IGHJ4'};
 queries['j_call_igh'] = {j_call: 'IGHJ4*02'};
 // T-Cell queries
 // T-Cell V-Gene
@@ -34,9 +37,12 @@ queries['vgene_family_trb'] = {vgene_family: 'TRBV20'};
 queries['vgene_gene_trb'] = {vgene_gene: 'TRBV20-1'};
 queries['v_call_trb'] = {v_call: 'TRBV20-1*01'};
 // T-Cell D-Gene
+queries['dgene_family_trb'] = {dgene_family: 'TRBD2'};
+queries['dgene_gene_trb'] = {dgene_gene: 'TRBD2'};
 queries['d_call_trb'] = {d_call: 'TRBD2*01'};
 // T-Cell J-Gene
 queries['jgene_family_trb'] = {jgene_family: 'TRBJ2'};
+queries['jgene_gene_trb'] = {jgene_gene: 'TRBJ2-3'};
 queries['j_call_trb'] = {j_call: 'TRBJ2-3*01'};
 // Old deprecated queries
 //queries['vregex'] = {'v_call': {'$regex': '^TRBV20-1\\*01'}};
