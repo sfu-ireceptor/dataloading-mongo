@@ -11,16 +11,19 @@ else
     exit
 fi
 
-js_file="test_performance_explain.js"
+perf_js_file="test_performance_explain.js"
+cache_js_file="cache_dump.js"
 host_name=$(hostname)
 
 current_time=$(date "+%Y.%m.%d-%H.%M.%S")
 echo "Test performed at: $current_time"
-mongo $db_name --port $db_port cache-dump.js > $host_name-$db_port-$db_name-cache-$current_time.txt
+mongo $db_name --port $db_port $cache_js_file > cache-$host_name-$db_port-$db_name-$current_time.txt
 
 for i in `seq 1 $count`;
 do
-    echo "performing test iteration $i"
-    mongo $db_name --port $db_port $js_file > run$i-$host_name-$db_port-$db_name-$current_time.txt
+    echo "Performing test iteration $i"
+    time mongo $db_name --port $db_port $perf_js_file > run$i-$host_name-$db_port-$db_name-$current_time.txt
 done
+end_time=$(date "+%Y.%m.%d-%H.%M.%S")
+echo "Test finished at: $end_time"
 
