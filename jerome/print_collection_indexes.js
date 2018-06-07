@@ -9,12 +9,18 @@ collection = 'sequences';
 /****************************************************************************************
  MAIN */
 
-index_list = db[collection].getIndexes();
-index_list.forEach(function(index, i) {
+db[collection].getIndexes().forEach(function(index) {
 		var ns = index['ns'],
 			index_collection = ns.split('.')[1];
 
 		if(index_collection == collection) {
-	       print(tojson(index['key']));
+			index_list.push(tojson(index['key']));
 		}
 });
+
+// // print as one JS array
+// print('[' + index_list + ']');
+
+index_list.forEach(function(index) {
+		print(index);
+})
