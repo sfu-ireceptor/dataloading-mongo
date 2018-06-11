@@ -2,15 +2,19 @@
 
 var collection = '', sample_id_list = [], queries = [], results = [];
 
+var start_time, query_setup_time, sample_id_time, end_time;
+
+start_time = new Date();
+
 /****************************************************************************************
  config */
 
 // Change the collection based on which repository being used...
 // This needs to be fixed!
 // On big-mongo repository has a sequence collection (no s)
-//collection = 'sequences';
+collection = 'sequences';
 // On mini-mongo repository has a sequences collection (with an s)
-collection = 'sequence';
+//collection = 'sequence';
 
 queries['total'] = {};
 // Junction Length
@@ -50,6 +54,7 @@ queries['j_call_trb'] = {j_call: 'TRBJ2-3*01'};
 //queries['dregex'] = {'d_call': {'$regex': '^TRBD2\\*01'}};
 //queries['range'] = {'v_call': {"$gte":'TRBV20-1*01', "$lt":'TRBV20-1*02'}};
 //queries['range_string'] = {'v_call_string':{"$gte":'IGHV2-5*08', "$lt":'IGHV2-5*09'}};
+query_setup_time = new Date();
 
 
 /****************************************************************************************
@@ -58,12 +63,13 @@ queries['j_call_trb'] = {j_call: 'TRBJ2-3*01'};
 // get samples ids directly from sequences collection
 //sample_id_list = [110];
 sample_id_list = db[collection].distinct('ir_project_sample_id');
+sample_id_time = new Date();
 
 // execute queries
 for (var key in queries) {           
        results[key] = do_query_for_all_samples(sample_id_list, queries[key]);
 }
-
+end_time = new Date();
 // print headers line
 print_headers(queries);
 
@@ -87,6 +93,14 @@ sample_id_list.forEach(function(sample_id, i) {
               print(results[key][sample_id]['winningPlan']);
        }
 });
+
+// Print timing
+print("Total run time = " + (end_time - start_time)/1000);
+print("Query setup time = " + (query_setup_time - start_time)/1000);
+print("Sample ID time = " + (sample_id_time - query_setup_time)/1000);
+print("Primary query time = " + (end_time - sample_id_time)/1000);
+
+
 /****************************************************************************************
  functions */
 
@@ -119,9 +133,9 @@ function do_query(filters) {
 function print_headers(queries) {
        var header_line = 'sample_id\t';
        for (var key in queries) {
-              header_line+= key + ' time';
+              header_line+= key + '_time';
               header_line+= '\t';
-              header_line+= key + ' results';
+              header_line+= key + '_results';
               header_line+= '\t';
        }
        print(header_line);   
