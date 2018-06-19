@@ -49,6 +49,38 @@ def setGene(gene):
             gene_string.remove('comment)')
         return gene_string
 
+#function  to extract just the gene from V/D/J-GENE fields   
+# essentially ignore the part of the gene after *, if it exists     
+def setGeneGene(gene_array):
+    gene_gene = list()
+    for gene in gene_array:
+        pattern = re.search('([^\*]*)\*', gene)
+        if pattern == None:
+            #there wasn't an allele - gene is same as _call
+            if gene not in gene_gene:
+                gene_gene.append(gene)                
+        else:
+            if pattern.group(1) not in gene_gene:               
+                gene_gene.append(pattern.group(1))
+    return gene_gene 
+
+#function to extract just the family from V/D/J-GENE fields
+# ignore part of the gene after -, or after * if there's no -
+def setGeneFamily(gene_array):
+    gene_family = list()
+    for gene in gene_array:
+        pattern = re.search('([^\*^-]*)[\*\-]', gene)
+        if pattern == None:
+            #there wasn't an allele - gene is same as _call
+            if gene not in gene_family:
+                gene_family.append(gene)
+            else:
+                1
+        else:
+            if pattern.group(1) not in gene_family:
+                gene_family.append(pattern.group(1))
+    return gene_family
+
 def functional_boolean(functionality):
     if functionality.startswith("productive"):
         return 1
@@ -149,9 +181,17 @@ def loadData(mypath,filename,sample_db_cm):
     df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
     df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
     df_concat['d_call'] = df_concat['d_string'].apply(str).apply(setGene)
+    df_concat['vgene_gene'] = df_concat['v_call'].apply(setGeneGene)
+    df_concat['vgene_family'] = df_concat['v_call'].apply(setGeneFamily)
+    df_concat['jgene_gene'] = df_concat['j_call'].apply(setGeneGene)
+    df_concat['jgene_family'] = df_concat['j_call'].apply(setGeneFamily)   
+    df_concat['dgene_gene'] = df_concat['d_call'].apply(setGeneGene)
+    df_concat['dgene_family'] = df_concat['d_call'].apply(setGeneFamily)
     df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
     df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
     df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
+    df_concat['annotation_tool'] = "V-Quest"
+    
     records = json.loads(df_concat.T.to_json()).values()
     print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     #sequence_db_cm.insert_many(records)

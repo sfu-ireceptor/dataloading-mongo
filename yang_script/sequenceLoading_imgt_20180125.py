@@ -49,13 +49,46 @@ def setGene(gene):
             gene_string.remove('comment)')
         return gene_string
 
+#function  to extract just the gene from V/D/J-GENE fields   
+# essentially ignore the part of the gene after *, if it exists     
+def setGeneGene(gene_array):
+    gene_gene = list()
+    for gene in gene_array:
+        pattern = re.search('([^\*]*)\*', gene)
+        if pattern == None:
+            #there wasn't an allele - gene is same as _call
+            if gene not in gene_gene:
+                gene_gene.append(gene)                
+        else:
+            if pattern.group(1) not in gene_gene:               
+                gene_gene.append(pattern.group(1))
+    return gene_gene 
+
+#function to extract just the family from V/D/J-GENE fields
+# ignore part of the gene after -, or after * if there's no -
+def setGeneFamily(gene_array):
+    gene_family = list()
+    for gene in gene_array:
+        pattern = re.search('([^\*^-]*)[\*\-]', gene)
+        if pattern == None:
+            #there wasn't an allele - gene is same as _call
+            if gene not in gene_family:
+                gene_family.append(gene)
+            else:
+                1
+        else:
+            if pattern.group(1) not in gene_family:
+                gene_family.append(pattern.group(1))
+    return gene_family
+
 def functional_boolean(functionality):
     if functionality.startswith("productive"):
         return 1
     else:
         return 0
-    
-def loadData(mypath,filename,sample_db_cm):    
+
+def loadData(mypath,filename,sample_db_cm):
+    print ("Opening" + mypath + " " + filename)
     tar = tarfile.open(mypath+filename)
     tar.extractall()
     tar.close()
@@ -70,9 +103,9 @@ def loadData(mypath,filename,sample_db_cm):
     Para_dict = dict(zip(Parameters_11[0], Parameters_11[1]))
     Summary_column_list = Summary_1.columns.values.tolist()
     if 'Functionality' in Summary_column_list:
-        df_1 = Summary_1[['Sequence ID','V-GENE and allele', 'J-GENE and allele', 'D-GENE and allele', 'Functionality', 
+        df_1 = Summary_1[['Sequence ID','V-GENE and allele', 'J-GENE and allele', 'D-GENE and allele', 'Functionality',
                           'V-REGION score', 'J-REGION score','V-REGION identity %', 'D-REGION reading frame',
-                          'CDR1-IMGT length', 'CDR2-IMGT length','CDR3-IMGT length', 'Functionality comment', 
+                          'CDR1-IMGT length', 'CDR2-IMGT length','CDR3-IMGT length', 'Functionality comment',
                           'Orientation', 'V-REGION identity %']]
         df_1.columns = ['seq_name','v_string', 'j_string', 'd_string', 'functionality', 'v_score', 'j_score',
                         'vgene_probablity',
@@ -81,8 +114,8 @@ def loadData(mypath,filename,sample_db_cm):
                         'rev_comp', 'vgene_probability']
     elif 'V-DOMAIN Functionality' in Summary_column_list:
         df_1 = Summary_1[['Sequence ID','V-GENE and allele', 'J-GENE and allele', 'D-GENE and allele', 'V-DOMAIN Functionality',
-                          'V-REGION score', 'J-REGION score','V-REGION identity %', 'D-REGION reading frame', 
-                          'CDR1-IMGT length','CDR2-IMGT length', 'CDR3-IMGT length', 'V-DOMAIN Functionality comment', 
+                          'V-REGION score', 'J-REGION score','V-REGION identity %', 'D-REGION reading frame',
+                          'CDR1-IMGT length','CDR2-IMGT length', 'CDR3-IMGT length', 'V-DOMAIN Functionality comment',
                           'Orientation','V-REGION identity %']]
         df_1.columns = ['seq_name','v_string', 'j_string', 'd_string', 'functionality', 'v_score', 'j_score',
                         'vgene_probablity',
@@ -135,8 +168,8 @@ def loadData(mypath,filename,sample_db_cm):
     df_concat['receptor_type'] = Para_dict['Receptor type or locus']
     df_concat['reference_directory_set'] = Para_dict['IMGT/V-QUEST reference directory set']
     df_concat['search_insert_delete'] = Para_dict['Search for insertions and deletions']
-    df_concat['no_nucleotide_to_add'] = Para_dict[ "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
-    df_concat['no_nucleotide_to_exclude'] = Para_dict[ "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
+    df_concat['no_nucleotide_to_add'] = Para_dict["Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
+    df_concat['no_nucleotide_to_exclude'] = Para_dict["Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
     df_concat = df_concat.where((pd.notnull(df_concat)), "")
     df_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(len)
     df_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(len)
@@ -148,14 +181,22 @@ def loadData(mypath,filename,sample_db_cm):
     df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
     df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
     df_concat['d_call'] = df_concat['d_string'].apply(str).apply(setGene)
+    df_concat['vgene_gene'] = df_concat['v_call'].apply(setGeneGene)
+    df_concat['vgene_family'] = df_concat['v_call'].apply(setGeneFamily)
+    df_concat['jgene_gene'] = df_concat['j_call'].apply(setGeneGene)
+    df_concat['jgene_family'] = df_concat['j_call'].apply(setGeneFamily)   
+    df_concat['dgene_gene'] = df_concat['d_call'].apply(setGeneGene)
+    df_concat['dgene_family'] = df_concat['d_call'].apply(setGeneFamily)
     df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
     df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
     df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
+    df_concat['annotation_tool'] = "V-Quest"
+
     records = json.loads(df_concat.T.to_json()).values()
     print ("%s - loading data " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
     sequence_db_cm.insert_many(records)
-    ir_sequence_count = len(records)
     print ("%s - loading complete " % strftime('%Y-%m-%d %H:%M:%S', gmtime()))
+    ir_sequence_count = len(records)
     print ("Loaded % sequences" % ir_sequence_count)
     ori_count = sample_db_cm.find_one({"imgt_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
     sample_db_cm.update({"imgt_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}}, multi=True)
@@ -175,7 +216,7 @@ def main(mypath):
     filelist = [ f for f in os.listdir(".") if f.endswith(".txt") ]
     for f in filelist:
         os.remove(f)
-            
+
 if __name__ == "__main__":
     mng_client = pymongo.MongoClient('localhost', 27017)
     db_name = sys.argv[1]
@@ -187,6 +228,5 @@ if __name__ == "__main__":
     mng_db = mng_client[db_name]
     #  Replace mongo db collection name
     sample_db_cm = mng_db[sample_cname]
-    # sq_collection_name = 'sequenceDataNew' 
     sequence_db_cm = mng_db[sequence_cname]
     main(mypath)
