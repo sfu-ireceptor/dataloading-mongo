@@ -201,6 +201,7 @@ class Context:
         self.counter = counter
         self.verbose = verbose
 
+    @staticmethod
     def getContext(options):
 
         if not options.filename: 
