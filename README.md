@@ -8,70 +8,91 @@ running within the Linux machine which has your Mongo database.
 This tutorial assumes that you are running a Linux version like Ubuntu
 (adjust the installation instructions to suit your particular Linux flavor...).
 
-# Prerequisites
+## Prerequisites
 
 If you are running the scripts directly on your host system, you should consider running
 them within a [virtualenv](https://virtualenv.pypa.io/en/stable/installation/).
 To install virtualenv, you will need to first install the regular (i.e. Python 2) version
 of pip. Since the data loading script is written to run under the release 3 of Python, you should
-ensure that it is also installed on your system. You will also need to install the latest version of 
-[pip3](https://pip.pypa.io/en/stable/installing/) - the Python 3 variant of pip
+ensure that it is also installed on your system. You will also need to install the latest version of [pip3](https://pip.pypa.io/en/stable/installing/) - the Python 3 variant of pip.
 
 ```
 $ sudo apt install python-pip
-$ sudo pip install virtualenv
+```
 
-# also install Python3 if it is not already
-# pre-installed by your Linux OS version
+Also install Python3 if it is not already pre-installed by your Linux OS version. (**Note:** if you are already using `Ubuntu 18.04 LTS` or newer, then python3 should be already installed by default.)
+
+```
 $ sudo apt install python3
+```
 
-# then also install pip3 and upgrade it to the latest version
+Then, install pip3 and upgrade it to the latest version:
+
+```
 $ sudo apt install python3-pip
-$ pip3 install --upgrade pip 
+$ pip3 install --upgrade pip
 ```
 
-If you are using another version of Linux, consult your respective operating 
-system documentation for pip3 installation details.
-
-# Running Virtualenv
-
-The full user guide for virtualenv (https://virtualenv.pypa.io/en/stable/userguide/) is available, but
-for our purposes, the required operation is simply to create a suitable location and initialize it 
-with the tool.. The one important detail to remember is to make Python3 the default Python interpreter 
-used by the environment:
+After this point, you can install python packages using:
 
 ```
-$ sudo mkdir -p /opt/ireceptor/data
+$ sudo python3 -m pip install SomePackage
+```
 
-# make sure your regular Linux account, not root, owns the directory
-$ sudo chown ubuntu:ubuntu /opt/ireceptor/data
+Install `virtualenv`:
 
+```
+$ sudo python3 -m pip install virtualenv
+```
+
+If you are using another version of Linux, consult your respective operating system documentation for pip3 installation details.
+
+## Running Virtualenv
+
+The full [user guide]((https://virtualenv.pypa.io/en/stable/userguide/)) for virtualenv is available, but for our purposes, the required operation is simply to create a suitable location and initialize it with the tool. The one important detail to remember is to make Python3 the default Python interpreter used by the environment:
+
+```
 $ cd /opt/ireceptor
+```
 
-# make sure you specific Python3 as the default...
-$ virtualenv --python=python3 data
+Create a new virual environment named `data` and make sure to specify Python3 as the default:
 
+```
+$ sudo python3 -m virtualenv --python=python3 data
+```
+
+Make sure your regular Linux account, not root, owns the directory:
+
+```
+$ sudo chown -R user:user /opt/ireceptor/data
+```
+
+Activate the virtualenv:
+
+```
 $ cd data
 $ source bin/activate
+```
 
-# you should now be running within a virtual environment inside 'data'
-# Note that the command line prompt will change to something like the following:
-(data) ubuntu@...:/opt/ireceptor/data$
+you should now be running within a virtual environment inside *data*. Note that the command line prompt will change to something like the following:
 
-# where the .. is some hostname stuff specific to your operating system shell configuration.
-# If you decide to use virtualenv, then from this point onward the '$' command line prompt 
-is assumed to be the virtualenv prompt, unless stated otherwise
+```
+(data) user@host:/opt/ireceptor/data$
+```
 
-# To exit the virtualenv, type the following
+To exit the virtualenv, type the following:
+
+```
 $ deactivate
 ```
 
+**Note:** If you decide to use virtualenv, then from this point onward the '$' command line prompt is assumed to be the virtualenv prompt, unless stated otherwise.
+
 You should now be back to your normal Linux system shell prompt.
 To re-enter virtualenv, rerun the *source bin/activate* command as above,
-from within the /opt/ireceptor/data subdirectory
+from within the */opt/ireceptor/data* directory
 
-For convenience, if you haven't already done so, it is also helpful to configure a Linux symbolic file link 
-nearby, pointing to your local git cloned copy of the turnkey-service repository.something like:
+For convenience, if you haven't already done so, it is also helpful to configure a Linux symbolic file link nearby, pointing to your local git cloned copy of the turnkey-service repository.something like:
 
 ```
 $ sudo ln -s /path/to/your/cloned/turnkey-service /opt/ireceptor/turnkey-service
@@ -80,24 +101,24 @@ $ sudo ln -s /path/to/your/cloned/turnkey-service /opt/ireceptor/turnkey-service
 We assume this aliased location of the turnkey code in some of our commands which follow below.
 (Modify those commands to suit the actual turnkey-service code (symbolic link) location that you decide to use).
 
-# Installing Dependencies
+## Installing Dependencies
 
-The data loading scripts use several Python 3 libraries. These are listed 
-in the pip 'requirements.txt' file and may be installed as follows:
+The data loading scripts use several Python 3 libraries. These are listed in the pip 'requirements.txt' file and may be installed as follows (if you are using virtualenv, make sure that it is activated):
+
+(data) user@host:/opt/ireceptor/data$
 
 ```
-# if you are using virtualenv, make sure that it is activated
-$ cd /opt/ireceptor/data
+$ cd /opt/ireceptor/data/
 $ source bin/activate
-
-$ cd /opt/ireceptor/turnkey-service/dataloading-mongo
-$ /usr/bin/env python3 -m pip install -r requirements.txt
+(data) user@host:/opt/ireceptor/data$ cd /opt/ireceptor/turnkey-service/dataloading-mongo
+(data) user@host:/opt/ireceptor/data$ pip install -r requirements.txt
 ```
+**Note:** Packages installed in this environment will live under `ENV/lib/pythonX.X/site-packages/`, where `ENV` is a directory to place the new virtual environment (in this case, `ENV` is located at `/opt/ireceptor/`).
 
 ## (Optional) Linux Environment Variables
 
 Note that, For added convenience for running of the data loading script, some of the default parameters
-of the data loading script may be specified in operating system environment variables. (**Note**: this is only temporary per terminal session)
+of the data loading script may be specified in operating system environment variables. (this is only temporary per terminal session)
 
 For example, under Ubuntu Linux, you may set the Mongo database, user and passwords as follows:
 
@@ -106,8 +127,7 @@ $ export MONGODB_DB=<your-database-name>
 $ export MONGODB_SERVICE_USER=<your-ireceptor-service-account-username>
 $ export MONGODB_SERVICE_SECRET=<your-ireceptor-service-account-secret-password>
 ```
-**Note**: You must enter the *variables names* exactly as shown, since the dataloading script will use the exact same spelling (e.g. 'MONGODB_DB') to run its logic. 
-
+**Note**: You must enter the *variables names* exactly as shown, since the dataloading script will use the exact same spelling (e.g. 'MONGODB_DB') to run its logic.
 
 See the script usage (below) for additional options that may be set this way. Note that some of these options 
 may have reasonable default values. For example, the MONGODB_HOST variable defaults to 'localhost' which is normally ok 
@@ -115,20 +135,19 @@ may have reasonable default values. For example, the MONGODB_HOST variable defau
 
 If environment variables are set, then the corresponding command line parameters may be omitted while running the script.
 
-# Test Data
+## Test Data
 
-To use the data loader, we obviously need some data! 
+To use the data loader, we obviously need some data!
 
 If you don't already have some suitably formatted data on hand but need to test your 
 (Mongo) iReceptor node installation, you may use some test data files that we provide in the 
 'data' submodule folder. A README file in that submodule describes what is available.
 
-# Running the loading script
+## Running the loading script
 
 You are now ready to run the data loading script. 
 
-Note that the data loading script accesses the database using the 'service' (**NOT** the 'guest') 
-account username and password ("secret") that you will have specified while setting up the MongoDb database.  
+Note that the data loading script accesses the database using the `service` (**NOT** the `guest`) account username and password (i.e. secret) that you will have specified while setting up the MongoDb database.  
 You need to specify these either as options on the command line or set as environment variables (see below). 
  You can use the -h / --help flag to display the data loader usage, as follows:
 
@@ -204,7 +223,7 @@ $ chmod u+x ireceptor_data_loader.py
 
 Then try again.
 
-# What kind of data can be loaded?
+## What kind of data can be loaded?
 
 The ireceptor_data_loader currently accepts iReceptor sample metadata csv files and zip archives of IMGT data file output.
 

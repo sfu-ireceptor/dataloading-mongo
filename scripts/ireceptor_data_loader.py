@@ -178,7 +178,7 @@ def inputParameters():
         action="store_true",
     )
 
-    options, remainder = parser.parse_args()
+    options = parser.parse_args()[0]
 
     if not options.filename:
         options.filename = options.type + "." + _type2ext[options.type]
