@@ -105,15 +105,13 @@ We assume this aliased location of the turnkey code in some of our commands whic
 
 The data loading scripts use several Python 3 libraries. These are listed in the pip 'requirements.txt' file and may be installed as follows (if you are using virtualenv, make sure that it is activated):
 
-(data) user@host:/opt/ireceptor/data$
-
 ```
 $ cd /opt/ireceptor/data/
 $ source bin/activate
 (data) user@host:/opt/ireceptor/data$ cd /opt/ireceptor/turnkey-service/dataloading-mongo
 (data) user@host:/opt/ireceptor/data$ pip install -r requirements.txt
 ```
-**Note:** Packages installed in this environment will live under `ENV/lib/pythonX.X/site-packages/`, where `ENV` is a directory to place the new virtual environment (in this case, `ENV` is located at `/opt/ireceptor/`).
+**Note:** Packages installed in this environment will live under `ENV/lib/pythonX.X/site-packages/`, where `ENV` is a directory to place the new virtual environment (in this case, `ENV` is the directory `data` located under `/opt/ireceptor/`).
 
 ## (Optional) Linux Environment Variables
 
@@ -134,14 +132,6 @@ may have reasonable default values. For example, the MONGODB_HOST variable defau
 (though you can change it if you wish to point to another MONGO instance running on another machine perhaps).
 
 If environment variables are set, then the corresponding command line parameters may be omitted while running the script.
-
-## Test Data
-
-To use the data loader, we obviously need some data!
-
-If you don't already have some suitably formatted data on hand but need to test your 
-(Mongo) iReceptor node installation, you may use some test data files that we provide in the 
-'data' submodule folder. A README file in that submodule describes what is available.
 
 ## Running the loading script
 
@@ -223,6 +213,26 @@ $ chmod u+x ireceptor_data_loader.py
 
 Then try again.
 
+## Test Data
+
+To use the data loader, we obviously need some data!
+
+If you don't already have some suitably formatted data on hand but need to test your 
+(Mongo) iReceptor node installation, you may use some test data files that we provide in the `data` submodule folder. A README file in that submodule describes what is available. For example,
+
+```
+$ ./ireceptor_data_loader.py -v --sample -u <serviceName> -p <serviceSecret> -d ireceptor -f ../data/test/imgt/imgt_sample.csv
+```
+
+loads the `imgt_sample.csv` sample metadata file. Next, run:
+
+``` 
+$ ./ireceptor_data_loader.py -v --imgt -u <serviceName> -p <serviceSecret> -d ireceptor -f ../data/test/imgt/imgt.zip
+```
+to load the `imgt.zip` data file.
+
+You need to replace `<serviceName>`, `<serviceSecret>` with the Mongodb *service username* and *service password* respectively during the Turnkey configuration step.
+
 ## What kind of data can be loaded?
 
 The ireceptor_data_loader currently accepts iReceptor sample metadata csv files and zip archives of IMGT data file output.
@@ -242,5 +252,3 @@ $ ./ireceptor_data_loader.py -v --imgt
 will load a properly formatted *imgt.zip* sequence annotation into the database.
 
 The expected data formats are described in more detail on the [iReceptor Data Curation repository site](https://github.com/sfu-ireceptor/dataloading-curation).
-
-
