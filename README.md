@@ -91,13 +91,13 @@ $ cd /opt/ireceptor/data
 $ source bin/activate
 
 $ cd /opt/ireceptor/turnkey-service/dataloading-mongo
-$ sudo pip3 install -r requirements.txt
+$ /usr/bin/env python3 -m pip install -r requirements.txt
 ```
 
 ## (Optional) Linux Environment Variables
 
 Note that, For added convenience for running of the data loading script, some of the default parameters
-of the data loading script may be specified in operating system environment variables. 
+of the data loading script may be specified in operating system environment variables. (**Note**: this is only temporary per terminal session)
 
 For example, under Ubuntu Linux, you may set the Mongo database, user and passwords as follows:
 
@@ -106,6 +106,8 @@ $ export MONGODB_DB=<your-database-name>
 $ export MONGODB_SERVICE_USER=<your-ireceptor-service-account-username>
 $ export MONGODB_SERVICE_SECRET=<your-ireceptor-service-account-secret-password>
 ```
+**Note**: You must enter the *variables names* exactly as shown, since the dataloading script will use the exact same spelling (e.g. 'MONGODB_DB') to run its logic. 
+
 
 See the script usage (below) for additional options that may be set this way. Note that some of these options 
 may have reasonable default values. For example, the MONGODB_HOST variable defaults to 'localhost' which is normally ok 

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#! /opt/ireceptor/data/bin/python
 """
  ireceptor_data_loader.py is a batch loading script for loading
  iReceptor sample metadata and sequence annotation
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     context = Context.getContext(options)
 
     if context:
-        
+
         if options.type == "sample":
             # process samples
             print("processing Sample metadata file: ", context.filename)
