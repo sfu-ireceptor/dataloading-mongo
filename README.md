@@ -49,7 +49,7 @@ If you are using another version of Linux, consult your respective operating sys
 
 ## Running Virtualenv
 
-The full [user guide]((https://virtualenv.pypa.io/en/stable/userguide/)) for virtualenv is available, but for our purposes, the required operation is simply to create a suitable location and initialize it with the tool. The one important detail to remember is to make Python3 the default Python interpreter used by the environment:
+The full [user guide](https://virtualenv.pypa.io/en/stable/userguide/) for virtualenv is available, but for our purposes, the required operation is simply to create a suitable location and initialize it with the tool. The one important detail to remember is to make Python3 the default Python interpreter used by the environment:
 
 ```
 $ cd /opt/ireceptor
