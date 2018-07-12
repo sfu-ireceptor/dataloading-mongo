@@ -209,6 +209,28 @@ def inputParameters():
 
 class Context:
     def __init__(self, type, library, filename, path, samples, sequences, counter, verbose):
+        """Create an execution context with various info.
+
+
+        Keyword arguments:
+        
+        type -- the type of data file. e.g. imgt
+
+        library -- ?
+
+        filename -- name of the data file
+
+        path -- path to the data file
+
+        samples -- the mongo collection named 'sample'
+
+        sequences -- the mongo collection named 'sequence'
+
+        counter -- ?
+
+        verbose -- make output verbose
+        """
+
         self.type = type
         self.library = library
         self.filename = filename
@@ -279,9 +301,7 @@ if __name__ == "__main__":
                 print("ERROR: Sample input file not found?")
 
         elif options.type == "imgt":
-
             # process imgt
-
             print("processing IMGT data file: ", context.filename)
 
             imgt = IMGT(context)
@@ -292,9 +312,7 @@ if __name__ == "__main__":
                 print("ERROR: IMGT data file not found?")
 
         elif options.type == "mixcr":
-
             # process mixcr
-
             print("Processing MiXCR data file: ", context.filename)
 
             mixcr = MiXCR(context)

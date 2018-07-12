@@ -67,6 +67,8 @@ Make sure your regular Linux account, not root, owns the directory:
 $ sudo chown -R user:user /opt/ireceptor/data
 ```
 
+To find out what is the value of `user`, type `whoami` or `id -un` in the terminal. 
+
 Activate the virtualenv:
 
 ```
@@ -74,7 +76,7 @@ $ cd data
 $ source bin/activate
 ```
 
-you should now be running within a virtual environment inside *data*. Note that the command line prompt will change to something like the following:
+You should now be running within a virtual environment inside a directory called *data*. Note that the command line prompt will change to something like the following:
 
 ```
 (data) user@host:/opt/ireceptor/data$
@@ -85,8 +87,6 @@ To exit the virtualenv, type the following:
 ```
 $ deactivate
 ```
-
-**Note:** If you decide to use virtualenv, then from this point onward the '$' command line prompt is assumed to be the virtualenv prompt, unless stated otherwise.
 
 You should now be back to your normal Linux system shell prompt.
 To re-enter virtualenv, rerun the *source bin/activate* command as above,
@@ -103,7 +103,7 @@ We assume this aliased location of the turnkey code in some of our commands whic
 
 ## Installing Dependencies
 
-The data loading scripts use several Python 3 libraries. These are listed in the pip 'requirements.txt' file and may be installed as follows (if you are using virtualenv, make sure that it is activated):
+The data loading scripts use several Python 3 libraries. These are listed in the 'requirements.txt' file and may be installed as follows (if you are using virtualenv, make sure that it is activated):
 
 ```
 $ cd /opt/ireceptor/data/
