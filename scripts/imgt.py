@@ -16,8 +16,6 @@ import json
 import pandas as pd
 
 from parser import Parser
-from ireceptor_indices import indices
-
 
 def setGene(gene):
 
@@ -63,18 +61,12 @@ class IMGT(Parser):
             if isfile(self.getDataPath(f))
         ]
 
-        print("Dropping sequence indices...")
-        self.context.sequences.drop_indexes()
         
         # Process annotation files
         for f in onlyfiles:
             self.processImgtArchive(f)
 
         rmtree(self.getDataFolder())
-
-        print("Building sequence indices...")
-        for index in indices:
-            self.context.sequences.create_index(index)
 
         # print("v_call...")
         # self.context.sequences.create_index("v_call")

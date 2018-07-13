@@ -25,6 +25,7 @@ import optparse
 from sample import Sample
 from imgt import IMGT
 from mixcr import MiXCR
+from ireceptor_indices import indices
 
 _type2ext = {
     "sample": "csv",
@@ -216,7 +217,7 @@ class Context:
         
         type -- the type of data file. e.g. imgt
 
-        library -- ?
+        library -- path to 'library' directory of data files. Defaults to the current working directory.
 
         filename -- name of the data file
 
@@ -288,6 +289,9 @@ if __name__ == "__main__":
     context = Context.getContext(options)
 
     if context:
+        dataloaded = False
+        print("Dropping sequence indices...")
+        context.sequences.drop_indexes()
 
         if options.type == "sample":
             # process samples
@@ -307,6 +311,7 @@ if __name__ == "__main__":
             imgt = IMGT(context)
 
             if imgt.process():
+                dataloaded = True
                 print("IMGT data file loaded")
             else:
                 print("ERROR: IMGT data file not found?")
@@ -318,9 +323,15 @@ if __name__ == "__main__":
             mixcr = MiXCR(context)
 
             if mixcr.process():
+                dataloaded = True
                 print("MiXCR data file loaded")
             else:
                 print("ERROR: MiXCR data file not found?")
 
         else:
             print("ERROR: unknown input data type:", context.type)
+
+        if dataloaded:
+            print("Building sequence indices...")
+            for index in indices:
+                context.sequences.create_index(index)

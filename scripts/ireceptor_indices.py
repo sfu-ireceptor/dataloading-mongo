@@ -1,5 +1,7 @@
 """The list of standard indices iReceptor has on the sequence level for collections in the Mongo repositories"""
-# Author: Colin Qiao
+
+__author__ = ("Colin Qiao <colinq@sfu.ca>")
+
 
 I = [{
     "ir_project_sample_id": 1
