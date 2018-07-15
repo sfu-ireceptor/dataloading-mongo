@@ -32,15 +32,6 @@ class MiXCR(Parser):
             print("Reading text file: "+self.context.path)
             self.processMiXcrFile(self.context.path)
 
-        # Rebuild indices 
-        print("Rebuilding sequence indices:")      
-        print("junction_aa_length...")
-        self.context.sequences.create_index("junction_aa_length")
-        print("functional...")
-        self.context.sequences.create_index("functional")
-        print("ir_project_sample_id...")
-        self.context.sequences.create_index("ir_project_sample_id")
-
         return True
 
     def processMiXcrFile( self, path ):

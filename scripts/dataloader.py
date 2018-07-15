@@ -20,11 +20,13 @@ import pandas as pd
 import urllib.parse
 import pymongo
 import json
-import optparse
+import optparse # deprecated
+import argparse
 
 from sample import Sample
 from imgt import IMGT
 from mixcr import MiXCR
+from ireceptor_indices import indices
 
 _type2ext = {
     "sample": "csv",
@@ -32,93 +34,93 @@ _type2ext = {
     "mixcr": "zip",  # assume a zip archive
 }
 
-
 def inputParameters():
-
-    parser = optparse.OptionParser(
-        usage="%prog [options]\n\n" +
-        "Note: for proper data processing, project --samples metadata should\n" +
-        "generally be read first into the database before loading other data types.",
-        version='1.0',
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Note: for proper data processing, project --samples metadata should\n" +
+        "generally be read first into the database before loading other data types."
     )
 
-    mode_opts = optparse.OptionGroup(
-        parser,
-        'Data Type Options',
-        'Options to specify the type of data to load.',
-    )
+    parser.add_argument("--version", action="version", version="%(prog)s 2.0")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="increase output verbosity")
 
-    mode_opts.add_option(
-        '--sample',
+    type_group = parser.add_argument_group("data type arguments")
+    type_group = type_group.add_mutually_exclusive_group()
+
+    type_group.add_argument(
+        "-s",
+        "--sample",
         action="store_const",
-        const='sample',
-        dest='type',
+        const="sample",
+        dest="type",
         default='sample',
         help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
     )
 
-    mode_opts.add_option(
-        '--imgt',
+    type_group.add_argument(
+        "-i",
+        "--imgt",
         action='store_const',
-        const='imgt',
-        dest='type',
+        const="imgt",
+        dest="type",
         help="Load a zip archive of IMGT analysis results.")
 
-    mode_opts.add_option(
-        '--mixcr',
+    type_group.add_argument(
+        "-m",
+        "--mixcr",
         action='store_const',
-        const='mixcr',
-        dest='type',
+        const="mixcr",
+        dest="type",
         help="Load a zip archive of MiXCR analysis results.")
 
-    parser.add_option_group(mode_opts)
+    counter_group = parser.add_argument_group(
+        "sample counter reset arguments",
+        "options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset').")
+    counter_group = counter_group.add_mutually_exclusive_group()
 
-    counter_reset_opts = optparse.OptionGroup(
-        parser, 'Sample Counter Reset Options',
-        "Options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset')."
-    )
-
-    counter_reset_opts.add_option(
-        '--reset',
+    counter_group.add_argument(
+        "--reset",
         action="store_const",
-        const='reset',
-        dest='counter',
-        default='reset',
+        const="reset",
+        dest="counter",
+        default="reset",
         help="Reset sample counter when loading current annotated sequence data set."
     )
 
-    counter_reset_opts.add_option(
-        '--increment',
+    counter_group.add_argument(
+        "--increment",
         action="store_const",
-        const='increment',
-        dest='counter',
+        const="increment",
+        dest="counter",
         help="Increment sample counter when loading current annotated sequence data set."
     )
 
-    parser.add_option_group(counter_reset_opts)
+    db_group = parser.add_argument_group("database control access arguments")
 
-    db_opts = optparse.OptionGroup(
-        parser, 'Database Connection Options',
-        'These options control access to the database.')
-
-    db_opts.add_option(
-        '--host',
+    db_group.add_argument(
+        "--host",
         dest="host",
-        default='localhost',
-        help="MongoDb server hostname. Defaults to 'localhost'.")
+        default="localhost",
+        help="MongoDb server hostname. Defaults to 'localhost'."
+    )
 
-    db_opts.add_option(
-        '--port',
+    db_group.add_argument(
+        "--port",
         dest="port",
         default=27017,
-        type="int",
-        help="MongoDb server port number. Defaults to 27017.")
+        type=int,
+        help="MongoDb server port number. Defaults to 27017."
+    )
 
-    default_user = os.environ.get('MONGODB_SERVICE_USER', 'admin')
+    default_user = os.environ.get("MONGODB_SERVICE_USER", "admin")
 
-    db_opts.add_option(
-        '-u',
-        '--user',
+    db_group.add_argument(
+        "-u",
+        "--user",
         dest="user",
         default=default_user,
         help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
@@ -126,59 +128,43 @@ def inputParameters():
 
     default_password = os.environ.get('MONGODB_SERVICE_SECRET', '')
 
-    db_opts.add_option(
-        '-p',
-        '--password',
+    db_group.add_argument(
+        "-p",
+        "--password",
         dest="password",
         default=default_password,
         help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
     )
 
-    default_database = os.environ.get('MONGODB_DB', 'ireceptor')
+    default_database = os.environ.get("MONGODB_DB", "ireceptor")
 
-    db_opts.add_option(
-        '-d',
-        '--database',
+    db_group.add_argument(
+        "-d",
+        "--database",
         dest="database",
         default=default_database,
         help="Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise."
     )
 
-    parser.add_option_group(db_opts)
-
-    data_opts = optparse.OptionGroup(
-        parser,
-        'Data Source Options',
-        'These options specify the identity and location of data files to be loaded.',
-    )
-
-    data_opts.add_option(
-        '-l',
-        '--library',
+    path_group = parser.add_argument_group("file path arguments")
+    
+    path_group.add_argument(
+        "-l",
+        "--library",
         dest="library",
         default=".",
         help="Path to 'library' directory of data files. Defaults to the current working directory."
     )
 
-    data_opts.add_option(
-        '-f',
-        '--filename',
+    path_group.add_argument(
+        "-f",
+        "--filename",
         dest="filename",
         default="",
         help="Name of file to load. Defaults to a data file with the --type name as the root name (appropriate file format and extension assumed)."
     )
 
-    parser.add_option_group(data_opts)
-
-    parser.add_option(
-        '-v',
-        '--verbose',
-        dest="verbose",
-        default=False,
-        action="store_true",
-    )
-
-    options = parser.parse_args()[0]
+    options = parser.parse_args()
 
     if not options.filename:
         options.filename = options.type + "." + _type2ext[options.type]
@@ -209,6 +195,28 @@ def inputParameters():
 
 class Context:
     def __init__(self, type, library, filename, path, samples, sequences, counter, verbose):
+        """Create an execution context with various info.
+
+
+        Keyword arguments:
+        
+        type -- the type of data file. e.g. imgt
+
+        library -- path to 'library' directory of data files. Defaults to the current working directory.
+
+        filename -- name of the data file
+
+        path -- path to the data file
+
+        samples -- the mongo collection named 'sample'
+
+        sequences -- the mongo collection named 'sequence'
+
+        counter -- ?
+
+        verbose -- make output verbose
+        """
+
         self.type = type
         self.library = library
         self.filename = filename
@@ -266,6 +274,9 @@ if __name__ == "__main__":
     context = Context.getContext(options)
 
     if context:
+        dataloaded = False
+        print("Dropping sequence indices...")
+        context.sequences.drop_indexes()
 
         if options.type == "sample":
             # process samples
@@ -279,30 +290,33 @@ if __name__ == "__main__":
                 print("ERROR: Sample input file not found?")
 
         elif options.type == "imgt":
-
             # process imgt
-
             print("processing IMGT data file: ", context.filename)
 
             imgt = IMGT(context)
 
             if imgt.process():
+                dataloaded = True
                 print("IMGT data file loaded")
             else:
                 print("ERROR: IMGT data file not found?")
 
         elif options.type == "mixcr":
-
             # process mixcr
-
             print("Processing MiXCR data file: ", context.filename)
 
             mixcr = MiXCR(context)
 
             if mixcr.process():
+                dataloaded = True
                 print("MiXCR data file loaded")
             else:
                 print("ERROR: MiXCR data file not found?")
 
         else:
             print("ERROR: unknown input data type:", context.type)
+
+        if dataloaded:
+            print("Building sequence indices...")
+            for index in indices:
+                context.sequences.create_index(index)

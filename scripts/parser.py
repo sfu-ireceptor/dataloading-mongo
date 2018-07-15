@@ -4,8 +4,9 @@
 from os.path import join
 import pandas as pd
 
-class Parser:
 
+class Parser:
+    @staticmethod
     def get_all_substrings(string):
         if type(string) == float:
             return
@@ -13,41 +14,40 @@ class Parser:
             length = len(string)
             for i in range(length):
                 for j in range(i + 1, length + 1):
-                    yield(string[i:j])
+                    yield (string[i:j])
 
+    @staticmethod
     def get_substring(string):
-        strlist=[]
+        strlist = []
         for i in Parser.get_all_substrings(string):
-            if len(i)>3:
+            if len(i) > 3:
                 strlist.append(i)
         return strlist
 
-    
-    def __init__(self,context):
+    def __init__(self, context):
         self.context = context
 
     def getDataFolder(self):
-        return self.context.library + "/"+self.context.type+"/"
-    
-    def getDataPath( self, fileName ):
-        return join( self.getDataFolder(), fileName )
+        return self.context.library + "/" + self.context.type + "/"
+
+    def getDataPath(self, fileName):
+        return join(self.getDataFolder(), fileName)
 
     scratchFolder = ""
-    
+
     # We create a specific temporary 'scratch' folder for each sequence archive
-    def setScratchFolder( self, fileName):
+    def setScratchFolder(self, fileName):
         folderName = fileName[:fileName.index('.')]
-        self.scratchFolder = self.getDataFolder()+folderName + "/"
+        self.scratchFolder = self.getDataFolder() + folderName + "/"
 
     def getScratchFolder(self):
         return self.scratchFolder
-    
-    def getScratchPath( self, fileName ):
-        return join( self.getScratchFolder(), fileName )
-    
-    def readDf( self, fileName ):
-        return pd.read_table( self.getScratchPath(fileName) )
 
-    def readDfNoHeader( self, fileName ):
-            return pd.read_table( self.getScratchPath(fileName), header=None )
+    def getScratchPath(self, fileName):
+        return join(self.getScratchFolder(), fileName)
 
+    def readDf(self, fileName):
+        return pd.read_table(self.getScratchPath(fileName))
+
+    def readDfNoHeader(self, fileName):
+        return pd.read_table(self.getScratchPath(fileName), header=None)
