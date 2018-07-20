@@ -39,10 +39,11 @@ class AIRR_TSV(Parser):
 
         print("Reading in AIRR TSV file...")
         #df_raw = pd.read_table(path)
-        airr_data = airr.read_rearrangement(open(path, 'r'))
-        print(data.fields)
-        print(data.external_fields)
-        for r in data:  print(r)
+        file_handle = open(path, 'r')
+        airr_data = airr.read_rearrangement(file_handle)
+        print(airr_data.fields)
+        print(airr_data.external_fields)
+        for r in airr_data:  print(r)
         """
         print("Processing raw data frame...")
         df = df_raw[['bestVHit','bestDHit','bestJHit','bestVGene','bestDGene','bestJGene','bestVFamily','bestDFamily',
@@ -94,5 +95,6 @@ class AIRR_TSV(Parser):
 
         print("MiXCR data loading complete for file: "+filename)
         """
+        close(file_handle)
         print("AIRR TSV data not yet written to Mongo")
         
