@@ -51,6 +51,7 @@ def inputParameters():
     type_group = parser.add_argument_group("data type arguments")
     type_group = type_group.add_mutually_exclusive_group()
 
+    # Processing sample metadata
     type_group.add_argument(
         "-s",
         "--sample",
@@ -61,6 +62,7 @@ def inputParameters():
         help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
     )
 
+    # Processing IMGT VQuest data, in the form of a zip archive
     type_group.add_argument(
         "-i",
         "--imgt",
@@ -69,6 +71,7 @@ def inputParameters():
         dest="type",
         help="Load a zip archive of IMGT analysis results.")
 
+    # Processing MiXCR data
     type_group.add_argument(
         "-m",
         "--mixcr",
@@ -76,6 +79,15 @@ def inputParameters():
         const="mixcr",
         dest="type",
         help="Load a zip archive of MiXCR analysis results.")
+
+    # Processing AIRR TSV annotation data, typically (but not limited to) from igblast
+    type_group.add_argument(
+        "-a",
+        "--airr",
+        action='store_const',
+        const="airr",
+        dest="type",
+        help="Load data from AIRR TSV analysis results.")
 
     counter_group = parser.add_argument_group(
         "sample counter reset arguments",
@@ -312,6 +324,18 @@ if __name__ == "__main__":
                 print("MiXCR data file loaded")
             else:
                 print("ERROR: MiXCR data file not found?")
+        
+        elif options.type == "airr":
+            # process mixcr
+            print("Processing AIRR TSV annotation data file: ", context.filename)
+
+            airr = AIRR_TSV(context)
+
+            if airr.process():
+                dataloaded = True
+                print("AIRR TSV data file loaded")
+            else:
+                print("ERROR: AIRR TSV data file not found?")
 
         else:
             print("ERROR: unknown input data type:", context.type)
