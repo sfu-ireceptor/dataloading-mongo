@@ -26,6 +26,7 @@ import argparse
 from sample import Sample
 from imgt import IMGT
 from mixcr import MiXCR
+from airr_tsv import AIRR_TSV
 from ireceptor_indices import indices
 
 _type2ext = {
@@ -287,8 +288,8 @@ if __name__ == "__main__":
 
     if context:
         dataloaded = False
-        print("Dropping sequence indices...")
-        context.sequences.drop_indexes()
+        #print("Dropping sequence indices...")
+        #context.sequences.drop_indexes()
 
         if options.type == "sample":
             # process samples
@@ -335,12 +336,12 @@ if __name__ == "__main__":
                 dataloaded = True
                 print("AIRR TSV data file loaded")
             else:
-                print("ERROR: AIRR TSV data file not found?")
+                print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
 
         else:
             print("ERROR: unknown input data type:", context.type)
 
-        if dataloaded:
-            print("Building sequence indices...")
-            for index in indices:
-                context.sequences.create_index(index)
+        #if dataloaded:
+        #    print("Building sequence indices...")
+        #    for index in indices:
+        #        context.sequences.create_index(index)

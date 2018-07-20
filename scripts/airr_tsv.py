@@ -27,13 +27,13 @@ class AIRR_TSV(Parser):
             with gzip.open(self.context.path, 'rb') as f:
                 # read file directly from the file handle 
                 # (Panda read_table call handles this...)
-                self.processAIRRTSVFile(f)
+                success = self.processAIRRTSVFile(f)
 
         else: # read directly as a regular text file
             print("Reading text file: "+self.context.path)
-            self.processAIRRTSVFile(self.context.path)
+            success = self.processAIRRTSVFile(self.context.path)
 
-        return True
+        return success
 
     def processAIRRTSVFile( self, path ):
 
@@ -95,6 +95,6 @@ class AIRR_TSV(Parser):
 
         print("MiXCR data loading complete for file: "+filename)
         """
-        close(file_handle)
+        file_handle.close()
         print("AIRR TSV data not yet written to Mongo")
-        
+        return False;
