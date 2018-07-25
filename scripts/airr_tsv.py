@@ -66,9 +66,33 @@ class AIRR_TSV(Parser):
         print("Processing raw data frame...")
         airr_df = airr.load_rearrangement(file_handle)
 
-        # Build the substring index for fast searching of Junction AA substrings.
+        # Build the substring array that allows index for fast searching of Junction AA substrings.
         print("Retrieving junction amino acids and building substrings...")
         airr_df['substring'] = airr_df['junction_aa'].apply(Parser.get_substring)
+
+        # Build the vgene_gene field (with no allele)
+        print("Constructing vgene_gene from v_call")
+        airr_df['vgene_gene'] = airr_df['v_call'].apply(Parser.setGeneGene)
+
+        # Build the vgene_family field (with no allele and no gene)
+        print("Constructing vgene_family from v_call")
+        airr_df['vgene_family'] = airr_df['v_call'].apply(Parser.setGeneFamily)
+
+        # Build the dgene_gene field (with no allele)
+        print("Constructing dgene_gene from d_call")
+        airr_df['dgene_gene'] = airr_df['d_call'].apply(Parser.setGeneGene)
+
+        # Build the dgene_family field (with no allele and no gene)
+        print("Constructing dgene_family from d_call")
+        airr_df['dgene_family'] = airr_df['d_call'].apply(Parser.setGeneFamily)
+
+        # Build the jgene_gene field (with no allele)
+        print("Constructing jgene_gene from j_call")
+        airr_df['jgene_gene'] = airr_df['j_call'].apply(Parser.setGeneGene)
+
+        # Build the jgene_family field (with no allele and no gene)
+        print("Constructing jgene_family from j_call")
+        airr_df['jgene_family'] = airr_df['j_call'].apply(Parser.setGeneFamily)
 
         # The AIRR TSV format doesn't have AA length, we want it in our repository.
         print("Computing junction amino acids length...")
