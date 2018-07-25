@@ -24,6 +24,40 @@ class Parser:
                 strlist.append(i)
         return strlist
 
+    #function  to extract just the gene from V/D/J-GENE fields   
+    # essentially ignore the part of the gene after *, if it exists     
+    @staticmethod
+    def setGeneGene(gene_array):
+        gene_gene = list()
+        for gene in gene_array:
+            pattern = re.search('([^\*]*)\*', gene)
+            if pattern == None:
+                #there wasn't an allele - gene is same as _call
+                if gene not in gene_gene:
+                    gene_gene.append(gene)                
+            else:
+                if pattern.group(1) not in gene_gene:               
+                    gene_gene.append(pattern.group(1))
+        return gene_gene 
+
+    #function to extract just the family from V/D/J-GENE fields
+    # ignore part of the gene after -, or after * if there's no -
+    @staticmethod
+    def setGeneFamily(gene_array):
+        gene_family = list()
+        for gene in gene_array:
+            pattern = re.search('([^\*^-]*)[\*\-]', gene)
+            if pattern == None:
+                #there wasn't an allele - gene is same as _call
+                if gene not in gene_family:
+                    gene_family.append(gene)
+                else:
+                    1
+            else:
+                if pattern.group(1) not in gene_family:
+                    gene_family.append(pattern.group(1))
+        return gene_family
+
     def __init__(self, context):
         self.context = context
 
