@@ -66,17 +66,31 @@ class AIRR_TSV(Parser):
         print("Processing raw data frame...")
         airr_df = airr.load_rearrangement(file_handle)
 
-        # Build the substring array that allows index for fast searching of Junction AA substrings.
+        # Build the substring array that allows index for fast searching of
+        # Junction AA substrings.
         print("Retrieving junction amino acids and building substrings...")
         airr_df['substring'] = airr_df['junction_aa'].apply(Parser.get_substring)
+
+        # Build the v_call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+        print("Constructing v_call array from v_call")
+        airr_df['v_call'] = airr_df['v_call'].apply(Parser.setGene)
+        print("v_call = ", airr_df['v_call'])
 
         # Build the vgene_gene field (with no allele)
         print("Constructing vgene_gene from v_call")
         airr_df['vgene_gene'] = airr_df['v_call'].apply(Parser.setGeneGene)
+        print("vgene_gene = ", airr_df['vgene_gene'])
 
         # Build the vgene_family field (with no allele and no gene)
         print("Constructing vgene_family from v_call")
         airr_df['vgene_family'] = airr_df['v_call'].apply(Parser.setGeneFamily)
+
+        # Build the d_call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+        print("Constructing d_call array from d_call")
+        airr_df['d_call'] = airr_df['d_call'].apply(Parser.setGene)
+        print("d_call = ", airr_df['d_call'])
 
         # Build the dgene_gene field (with no allele)
         print("Constructing dgene_gene from d_call")
@@ -85,6 +99,12 @@ class AIRR_TSV(Parser):
         # Build the dgene_family field (with no allele and no gene)
         print("Constructing dgene_family from d_call")
         airr_df['dgene_family'] = airr_df['d_call'].apply(Parser.setGeneFamily)
+
+        # Build the j_call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+        print("Constructing j_call array from j_call")
+        airr_df['j_call'] = airr_df['j_call'].apply(Parser.setGene)
+        print("j_call = ", airr_df['j_call'])
 
         # Build the jgene_gene field (with no allele)
         print("Constructing jgene_gene from j_call")

@@ -2,6 +2,7 @@
 # Extracted common code patterns shared across various parsers.
 
 from os.path import join
+import re
 import pandas as pd
 
 
@@ -23,6 +24,38 @@ class Parser:
             if len(i) > 3:
                 strlist.append(i)
         return strlist
+
+
+    # A method to take a list of gene assignments from an annotation tool
+    # and create an array of strings with just the allele strings without
+    # the cruft that the annotators add.
+    @staticmethod
+    def setGene(gene):
+    
+        gene_string = re.split(',| ', gene)
+        gene_list = list(set(gene_string))
+
+        if len(gene_list) == 1 or 0:
+            return gene_list
+        else:
+            if '' in gene_list:
+                gene_list.remove('')
+            if 'or' in gene_list:
+                gene_list.remove('or')
+            if 'F' in gene_list:
+                gene_list.remove('F')
+            if 'P' in gene_list:
+                gene_list.remove('P')
+            if '[F]' in gene_list:
+                gene_list.remove('[F]')
+            if 'Homsap' in gene_list:
+                gene_list.remove('Homsap')
+            if '(see' in gene_list:
+                gene_list.remove('(see')
+            if 'comment)' in gene_list:
+                gene_list.remove('comment)')
+
+            return gene_list
 
     #function  to extract just the gene from V/D/J-GENE fields   
     # essentially ignore the part of the gene after *, if it exists     
