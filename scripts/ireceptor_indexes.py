@@ -48,7 +48,7 @@ I = [{
     "ir_project_sample_id": 1
 }]
 
-def indices():
+def indexes():
     """Return a list of list of tuples containing the name of index and its value"""
 
     indices = []
@@ -59,4 +59,4 @@ def indices():
         indices.append(index)
     return indices
 
-indices = indices()
+indexes = indexes()
