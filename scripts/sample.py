@@ -32,20 +32,17 @@ class Sample:
 	
 	def process(self):
 	
-		df = pd.read_csv( self.context.path , sep=None )
-		
-		# Yang: there is an extra field with the same name library_source
-		# if bojan delete that field, I need to change this code
-		# df = df.drop('library_source.1', axis=1)"
-		
+                # Read in the CSV file
+		df = pd.read_csv( self.context.path , sep=None, engine='python' )
+		# Remove any records that are Unnamed
 		df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-		
+		# Add the sequence count field
 		df['ir_sequence_count'] = 0
-		
+		# Conver to JSON
 		records = json.loads(df.T.to_json()).values()
 		record_list = list(records)
 		
-		# .. then load records
+		# Iterate over the list and load records
 		for r in record_list:
 		    self.insertDocument( r )
 	
