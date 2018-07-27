@@ -51,21 +51,35 @@ class IMGT(Parser):
 
     def process(self):
 
-        # Assuming that you have a zip file like 'imgt.zip'
+        # The IMGT parser assumes that the IMGT data consists of a single
+        # ZIP file and that the ZIP file contains a single directory with
+        # the directory name "imgt". This MUST be the case at this time.
+        # Within the imgt directory, there should be one or more IMGT
+        # annotation archives. Each annotation archive should be a tgz file
+        # (a tar'ed, gzip'ed file) as provided from IMGT vQUEST.
+        #
+        # The data is extracted in the "library" folder provided (the same
+        # folder in which the original zip file was found.
+        if not isfile(self.context.path):
+            print("Could not find IMGT ZIP archive ", self.context.path)
+            return False
+
         with zipfile.ZipFile(self.context.path, "r") as zip:
-            # unzip to local directory for now
+            # unzip to library directory
             zip.extractall(self.context.library)
 
+	# Get a list of the files in the data folder. The getDataFolder
+        # method adds on the "imgt" suffix to the library path.
         onlyfiles = [
             f for f in os.listdir(self.getDataFolder())
             if isfile(self.getDataPath(f))
         ]
-
         
         # Process annotation files
         for f in onlyfiles:
             self.processImgtArchive(f)
 
+	# Clean up the "imgt" directory tree once the files are processed
         rmtree(self.getDataFolder())
 
         # print("v_call...")
@@ -88,7 +102,7 @@ class IMGT(Parser):
         path = self.getDataPath(fileName)
 
         if self.context.verbose:
-            print("Extracting IMGT file to: ", path)
+            print("Extracting IMGT file: ", path)
 
         self.setScratchFolder(fileName)
 
