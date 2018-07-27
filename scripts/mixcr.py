@@ -36,24 +36,64 @@ class MiXCR(Parser):
 
     def processMiXcrFile( self, path ):
 
+        # Read in the MiXCR columns we care about from the MiXCR file
         print("Reading in table...")
-        df_raw = pd.read_table(path)
+        mixcrColumns = ['bestVHit','bestDHit','bestJHit', 'bestVHitScore','nSeqCDR3','aaSeqCDR3', 'readSequence', 'descrR1' ]
+        df = pd.read_table(path, usecols=mixcrColumns)
 
         print("Processing raw data frame...")
-        df = df_raw[['bestVHit','bestDHit','bestJHit','bestVGene','bestDGene','bestJGene','bestVFamily','bestDFamily',
-                   'bestJFamily','bestVHitScore','nSeqCDR3','aaSeqCDR3','descrR1']]
+        df.columns = ['v_call', 'd_call', 'j_call', 'v_score','junction','junction_aa', 'sequence', 'seq_name']
 
-        df.columns = ['vgene', 'dgene', 'jgene', 'vgene_gene', 'dgene_gene', 'jgene_gene', 'vgene_family', 'dgene_family',
-                       'jgene_family','v_score','junction','junction_aa', 'seqId']
-
+        # Build the substring array that allows index for fast searching of
+        # Junction AA substrings.
         print("Retrieving junction amino acids...")
         df['substring'] = df['junction_aa'].apply(Parser.get_substring)
 
+        # MiXCR doesn't have junction length, we want it in our repository.
         print("Computing junction length...")
         df['junction_length'] = df['junction'].apply(str).apply(len)
 
         print("Computing junction amino acids length...")
         df['junction_aa_length'] = df['junction_aa'].apply(str).apply(len)
+
+        # Build the v_call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+        print("Constructing v_call array from v_call")
+        df['v_call'] = df['v_call'].apply(Parser.setGene)
+
+        # Build the vgene_gene field (with no allele)
+        print("Constructing vgene_gene from v_call")
+        df['vgene_gene'] = df['v_call'].apply(Parser.setGeneGene)
+
+        # Build the vgene_family field (with no allele and no gene)
+        print("Constructing vgene_family from v_call")
+        df['vgene_family'] = df['v_call'].apply(Parser.setGeneFamily)
+
+        # Build the d_call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+        print("Constructing d_call array from d_call")
+        df['d_call'] = df['d_call'].apply(Parser.setGene)
+
+        # Build the dgene_gene field (with no allele)
+        print("Constructing dgene_gene from d_call")
+        df['dgene_gene'] = df['d_call'].apply(Parser.setGeneGene)
+
+        # Build the dgene_family field (with no allele and no gene)
+        print("Constructing dgene_family from d_call")
+        df['dgene_family'] = df['d_call'].apply(Parser.setGeneFamily)
+
+        # Build the j_call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+        print("Constructing j_call array from j_call")
+        df['j_call'] = df['j_call'].apply(Parser.setGene)
+
+        # Build the jgene_gene field (with no allele)
+        print("Constructing jgene_gene from j_call")
+        df['jgene_gene'] = df['j_call'].apply(Parser.setGeneGene)
+
+        # Build the jgene_family field (with no allele and no gene)
+        print("Constructing jgene_family from j_call")
+        df['jgene_family'] = df['j_call'].apply(Parser.setGeneFamily)
 
         df['functional'] = 'productive'
         df['annotation_tool'] = 'MiXCR'
@@ -72,7 +112,7 @@ class MiXCR(Parser):
         num_to_insert = 10000
         (runNumber,rest)= divmod(count_row,num_to_insert)
 
-        print("Inserting "+runNumber+" records in MongoDb sequence collection")
+        print("Inserting ",runNumber," records in MongoDb sequence collection")
         for i in range(runNumber+1):
             df_insert = df.iloc[10000*i:10000*(i+1)]
             records = json.loads(df_insert.T.to_json()).values()
