@@ -49,7 +49,7 @@ def getArguments():
         action="store_true",
         help="print out the list of options given to this script")
 
-    type_group = parser.add_argument_group("data type options", "(Default: 'sample')")
+    type_group = parser.add_argument_group("data type options", "")
     type_group = type_group.add_mutually_exclusive_group()
 
     # Processing sample metadata
@@ -59,7 +59,6 @@ def getArguments():
         action="store_const",
         const="sample",
         dest="type",
-        default='sample',
         help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
     )
 
@@ -154,6 +153,7 @@ def getArguments():
         "-l",
         "--library",
         dest="library",
+        default=".",
         help="Path to 'library' directory of data files."
     )
     path_group.add_argument(
@@ -192,7 +192,9 @@ def getArguments():
     # if not options.filename:
     #     options.filename = options.type + "." + _type2ext[options.type]
 
-    if options.type != 'sample' and options.counter == 'reset':
+    # If we have a type and the type isn't a sample then we are processing sequences
+    # If we are doing a reset on the sequences, confirm that we really want to do it.
+    if options.type != 'sample' and options.type != None and options.counter == 'reset':
         while True:
             decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No):")
             if decision.upper().startswith('Y'):
@@ -343,7 +345,7 @@ if __name__ == "__main__":
         context.sequences.drop_indexes()
 
     # load data files
-    if exists(context.path):
+    if context.type != None:
         load_data(context)
 
     # build indexes
