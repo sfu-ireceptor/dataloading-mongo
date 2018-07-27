@@ -31,10 +31,20 @@ class Parser:
     # the cruft that the annotators add.
     @staticmethod
     def setGene(gene):
-    
+        # Do some error checking to ensure we have a string. If not return
+        # an empty list.
+        gene_list = list()
+        if gene == None or not type(gene) is str or gene == '':
+            return gene_list
+
+        # Split the string based on possible string delimeters.
         gene_string = re.split(',| ', gene)
         gene_list = list(set(gene_string))
 
+        # If only a single string, return the list. Otherwise throw
+        # away all of the garbage bits and just keep the actual gene strings.
+        # This is mostly required to clean up the messy IMGT mappings and is
+        # can be error prone if an annotator throws in some garbage.
         if len(gene_list) == 1 or 0:
             return gene_list
         else:
@@ -57,11 +67,12 @@ class Parser:
 
             return gene_list
 
-    #function  to extract just the gene from V/D/J-GENE fields   
+    # function  to extract just the gene from V/D/J-GENE fields   
     # essentially ignore the part of the gene after *, if it exists     
     @staticmethod
     def setGeneGene(gene_array):
         gene_gene = list()
+
         for gene in gene_array:
             pattern = re.search('([^\*]*)\*', gene)
             if pattern == None:
