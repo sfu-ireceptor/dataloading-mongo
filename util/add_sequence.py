@@ -69,7 +69,6 @@ def load_file(file_path, collection):
 
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
-        print('Done. Stats:')
         print(' Read ' + str(i) + ' sequences in file.')
         print(' Found ' + str(nb_matched) + ' corresponding documents in database')
         print(' Added sequence  to ' + str(nb_modified) + ' documents')
