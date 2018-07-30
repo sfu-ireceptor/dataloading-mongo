@@ -74,7 +74,7 @@ def main(database, collection, files_folder):
     mongodb_collection = mongodb_client[database][collection]
 
     # generate list of files
-    file_list = [files_folder + f for f in listdir(files_folder) if isfile(join(files_folder, f))]
+    file_list = [os.path.join(files_folder, f) for f in listdir(files_folder) if isfile(join(files_folder, f))]
 
     # process each file
     for file_path in file_list:
