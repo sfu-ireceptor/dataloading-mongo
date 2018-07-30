@@ -47,10 +47,11 @@ def load_file(file_path, collection):
     with gzip.open(file_path) as f:
         with open(tempfile, 'wb') as out:
             shutil.copyfileobj(f, out)
-        i = 1
+        i = 0
         nb_matched = 0
         nb_modified = 0
         for record in SeqIO.parse(tempfile, 'fasta'):
+            i += 1
             header = record.description
             sequence = str(record.seq)
             update_query = collection.update_many({'seq_name': header}, {'$set': {'sequence': sequence}})
@@ -68,7 +69,6 @@ def load_file(file_path, collection):
 
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
-            i += 1
         print('Done. Stats:')
         print(' Read ' + str(i) + ' sequences in file.')
         print(' Found ' + str(nb_matched) + ' corresponding documents in database')
