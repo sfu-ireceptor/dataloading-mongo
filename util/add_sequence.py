@@ -61,8 +61,8 @@ def load_file(file_path, collection):
                 imgt_header = re.sub(r'\s', '_', header)
                 imgt_header = imgt_header[0:50]
                 update_query = collection.update_many({'seq_name': imgt_header}, {'$set': {'sequence': sequence}})
-                if update_query.matched_count == 0:
-                    print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
+                # if update_query.matched_count == 0:
+                #     print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
 
             nb_matched += update_query.matched_count
             nb_modified += update_query.modified_count
