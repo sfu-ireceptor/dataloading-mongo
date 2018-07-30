@@ -54,11 +54,11 @@ def load_file(file_path, collection):
             sequence = str(record.seq)
             update_query = collection.update_many({'seq_name': header},
                     {'$set': {'sequence': sequence}})
-            if update_query['nModified'] == 0:
+            if update_query.matched_count == 0:
                 update_query = \
                     collection.update_many({'seq_name': imgt_header},
                         {'$set': {'sequence': sequence}})
-                if update_query['nModified'] == 0:
+                if update_query.matched_count == 0:
                     print ('Header + ' + header + ' converted to ' \
                         + imgt_header + ' not found!')
             counter += 1
