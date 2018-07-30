@@ -4,6 +4,7 @@
 """
  Parse a folder of gzipped fasta files
  Add each sequence in fasta files to the corresponding MongoDB document (using sequence id) 
+ To check it worked: db.sequence.findOne({seq_name:'SRR873440.14976 GIMRZBB09FS80E length=224'})
 """
 
 import re
@@ -41,29 +42,37 @@ def load_file(file_path, collection):
 #        print("Unknown file")
 #        return();
 
-    print('Processing file: ' + file_path)
-    counter = 0
+    print('-> Processing file: ' + file_path)
     tempfile = '/tmp/temp.fasta'
     with gzip.open(file_path) as f:
         with open(tempfile, 'wb') as out:
             shutil.copyfileobj(f, out)
+        i = 1
+        nb_matched = 0
+        nb_modified = 0
         for record in SeqIO.parse(tempfile, 'fasta'):
             header = record.description
-            imgt_header = re.sub(r'\s', '_', header)
-            imgt_header = imgt_header[0:50]
             sequence = str(record.seq)
-            update_query = collection.update_many({'seq_name': header},
-                    {'$set': {'sequence': sequence}})
+            update_query = collection.update_many({'seq_name': header}, {'$set': {'sequence': sequence}})
+
             if update_query.matched_count == 0:
-                update_query = \
-                    collection.update_many({'seq_name': imgt_header},
+                imgt_header = re.sub(r'\s', '_', header)
+                imgt_header = imgt_header[0:50]
+                update_query = collection.update_many({'seq_name': imgt_header},
                         {'$set': {'sequence': sequence}})
                 if update_query.matched_count == 0:
-                    print ('Header + ' + header + ' converted to ' \
-                        + imgt_header + ' not found!')
-            counter += 1
-            if counter % 200000 == 0:
-                print('Processed ' + str(counter) + ' lines')
+                    print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
+
+            nb_matched += update_query.matched_count
+            nb_modified += update_query.modified_count
+
+            if i % 200000 == 0:
+                print('Processed ' + str(i) + ' lines')
+            i += 1
+        print('Done. Stats:')
+        print(' Read ' + str(i) + 'sequences in file.')
+        print(' Found ' + str(nb_matched) + 'corresponding documents in database')
+        print(' Added sequence  to ' + str(nb_modified) + 'documents')
 
     os.remove(tempfile)
 
