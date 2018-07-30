@@ -23,8 +23,7 @@ import pymongo
 from Bio import SeqIO
 from Bio import Seq
 
-def loadData(path, filename):
-    fullname = path + filename
+def load_file(file_path, collection):
     filelist = []
 
 #    if fullname.endswith(".zip"):
@@ -41,10 +40,10 @@ def loadData(path, filename):
 #        print("Unknown file")
 #        return();
 
-    print 'Processing file: ' + fullname
+    print 'Processing file: ' + file_path
     counter = 0
     tempfile = mypath + 'temp.fasta'
-    with gzip.open(fullname) as f:
+    with gzip.open(file_path) as f:
         with open(tempfile, 'wb') as out:
             shutil.copyfileobj(f, out)
         for record in SeqIO.parse(tempfile, 'fasta'):
@@ -52,11 +51,11 @@ def loadData(path, filename):
             imgt_header = re.sub(r'\s', '_', header)
             imgt_header = imgt_header[0:50]
             sequence = str(record.seq)
-            update_query = sequence_db_cm.update({'seq_name': header},
+            update_query = collection.update({'seq_name': header},
                     {'$set': {'sequence': sequence}})
             if update_query['nModified'] == 0:
                 update_query = \
-                    sequence_db_cm.update({'seq_name': imgt_header},
+                    sequence_collection.update({'seq_name': imgt_header},
                         {'$set': {'sequence': sequence}})
                 if update_query['nModified'] == 0:
                     print 'Header + ' + header + ' converted to ' \
@@ -68,20 +67,31 @@ def loadData(path, filename):
     os.remove(tempfile)
 
 
-def main(mypath):
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    for filename in onlyfiles:
-        loadData(mypath, filename)
+def main(database, collection, files_folder):
+    # connect to MongoDB
+    mongodb_client = pymongo.MongoClient('localhost', 27017)
+    mongodb_collection = mongodb_client[database][collection]
+
+    # generate list of files
+    file_list = [f for f in listdir(files_folder) if isfile(join(files_folder, f))]
+
+    # process each file
+    for file_name in file_list:
+        file_path = files_folder + file_name
+        load_file(file_path, mongodb_collection)
 
 if __name__ == '__main__':
-    db_name = sys.argv[1]
-    sequence_cname = sys.argv[2]
-    mypath = sys.argv[3]
+    # define CLI arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('database', help='database name')
+    parser.add_argument('collection', help='collection name')
+    parser.add_argument('fasta', help='fasta file name')
 
-    mng_client = pymongo.MongoClient('localhost', 27017)
-    mng_db = mng_client[db_name]
-    sequence_db_cm = mng_db[sequence_cname]
-    main(mypath)
+    # get arguments
+    args = parser.parse_args()
+   
+    database = args.database
+    collection = args.collection
+    files_folder = args.files_folder
 
-
-            
+    main(database, collection, files_folder)
