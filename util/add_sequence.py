@@ -83,15 +83,20 @@ def main(database, collection, files_folder):
 if __name__ == '__main__':
     # define CLI arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('database', help='database name')
-    parser.add_argument('collection', help='collection name')
+
+    # parser.add_argument('database', help='database name')
+    # parser.add_argument('collection', help='collection name')
     parser.add_argument('folder', help='folder of fasta files')
 
     # get arguments
     args = parser.parse_args()
    
-    database = args.database
-    collection = args.collection
+    # database = args.database
+    # collection = args.collection
     folder = args.folder
+
+    # temporary, for convenience
+    database = 'mydb'
+    collection = 'sequence'
 
     main(database, collection, folder)
