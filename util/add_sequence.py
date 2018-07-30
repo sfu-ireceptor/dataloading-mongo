@@ -71,7 +71,7 @@ def load_file(file_path, collection):
                 print('Processed ' + str(i) + ' lines')
         print(' Read ' + str(i) + ' sequences in file.')
         print(' Found ' + str(nb_matched) + ' corresponding documents in database')
-        print(' Added sequence  to ' + str(nb_modified) + ' documents')
+        print(' Added sequence to ' + str(nb_modified) + ' documents')
 
     os.remove(tempfile)
 
