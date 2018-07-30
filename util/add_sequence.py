@@ -74,11 +74,10 @@ def main(database, collection, files_folder):
     mongodb_collection = mongodb_client[database][collection]
 
     # generate list of files
-    file_list = [f for f in listdir(files_folder) if isfile(join(files_folder, f))]
+    file_list = [files_folder + f for f in listdir(files_folder) if isfile(join(files_folder, f))]
 
     # process each file
-    for file_name in file_list:
-        file_path = files_folder + file_name
+    for file_path in file_list:
         load_file(file_path, mongodb_collection)
 
 if __name__ == '__main__':
