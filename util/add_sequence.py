@@ -56,10 +56,10 @@ def load_file(file_path, collection):
             update_query = collection.update_many({'seq_name': header}, {'$set': {'sequence': sequence}})
 
             if update_query.matched_count == 0:
+                # redo an update query with an IMGT-style header
                 imgt_header = re.sub(r'\s', '_', header)
                 imgt_header = imgt_header[0:50]
-                update_query = collection.update_many({'seq_name': imgt_header},
-                        {'$set': {'sequence': sequence}})
+                update_query = collection.update_many({'seq_name': imgt_header}, {'$set': {'sequence': sequence}})
                 if update_query.matched_count == 0:
                     print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
 
@@ -70,9 +70,9 @@ def load_file(file_path, collection):
                 print('Processed ' + str(i) + ' lines')
             i += 1
         print('Done. Stats:')
-        print(' Read ' + str(i) + 'sequences in file.')
-        print(' Found ' + str(nb_matched) + 'corresponding documents in database')
-        print(' Added sequence  to ' + str(nb_modified) + 'documents')
+        print(' Read ' + str(i) + ' sequences in file.')
+        print(' Found ' + str(nb_matched) + ' corresponding documents in database')
+        print(' Added sequence  to ' + str(nb_modified) + ' documents')
 
     os.remove(tempfile)
 
