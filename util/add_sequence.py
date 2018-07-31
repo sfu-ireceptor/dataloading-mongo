@@ -33,18 +33,14 @@ def load_file(file_path, collection):
             i += 1
 
             header = record.description
+            imgt_header = re.sub(r'\s', '_', header)[0:50]
             sequence = str(record.seq)
 
-            # try update query
-            update_query = collection.update_many({'seq_name': header}, {'$set': {'sequence': sequence}})
+            # do update query
+            update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}})
 
-            # if no match, redo with  an IMGT-style header
-            if update_query.matched_count == 0:
-                imgt_header = re.sub(r'\s', '_', header)
-                imgt_header = imgt_header[0:50]
-                update_query = collection.update_many({'seq_name': imgt_header}, {'$set': {'sequence': sequence}})
-                # if update_query.matched_count == 0:
-                #     print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
+            # if update_query.matched_count == 0:
+            #     print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
 
             nb_matched += update_query.matched_count
             nb_modified += update_query.modified_count
