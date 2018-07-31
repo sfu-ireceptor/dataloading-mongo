@@ -28,6 +28,8 @@ def load_file(file_path, collection):
     nb_matched = 0
     nb_modified = 0
 
+    bulk_size = 10000
+
     # initialize bulk update
     bulk = collection.initialize_unordered_bulk_op()
     with gzip.open(file_path, 'rt') as handle:
@@ -44,7 +46,7 @@ def load_file(file_path, collection):
             # nb_matched += update_query.matched_count
             # nb_modified += update_query.modified_count
 
-            if (i % 500 == 0):
+            if (i % bulk_size == 0):
                 bulk_result = bulk.execute()
                 bulk = collection.initialize_ordered_bulk_op()
                 nb_matched += bulk_result['nMatched']
@@ -53,7 +55,7 @@ def load_file(file_path, collection):
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
 
-    if (i % 500 != 0):
+    if (i % bulk_size != 0):
         bulk_result = bulk.execute()
         nb_matched += bulk_result['nMatched']
         nb_modified += bulk_result['nModified']
