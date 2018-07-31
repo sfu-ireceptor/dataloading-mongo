@@ -53,10 +53,10 @@ def load_file(file_path, collection):
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
 
-    # if (i % 500 != 0):
-    #     bulk.execute()
-    #     nb_matched += bulk_result['nMatched']
-    #     nb_modified += bulk_result['nModified']
+    if (i % 500 != 0):
+        bulk_result = bulk.execute()
+        nb_matched += bulk_result['nMatched']
+        nb_modified += bulk_result['nModified']
 
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
