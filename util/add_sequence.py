@@ -7,57 +7,39 @@
  To check it worked: db.sequence.findOne({seq_name:'SRR873440.14976 GIMRZBB09FS80E length=224'})
 """
 
-import re
-
-import os
 import sys
+import os
 from os import listdir
 from os.path import isfile, join
 import argparse
 
-import tarfile
-import zipfile
-import gzip
+import re
 
-import shutil
+import gzip
 import pymongo
 
 from Bio import SeqIO
 from Bio import Seq
 
 def load_file(file_path, collection):
-    filelist = []
-
-#    if fullname.endswith(".zip"):
-#        f= zipfile.ZipFile(fullname)
-#        filelist = f.namelist()
-        # f.extractall()
-#    elif fullname.endswith(".gz"):
-#        f= tarfile.open(fullname, 'r')
-#        filelist = f.getnames()
-#        #f.extractall()
-#    elif fullname.endswith(".fasta"):
-#        filelist.push(fullname)
-#    else:
-#        print("Unknown file")
-#        return();
-
     print('-> Processing file: ' + file_path)
-    tempfile = '/tmp/temp.fasta'
-    with gzip.open(file_path) as f:
-        with open(tempfile, 'wb') as out:
-            shutil.copyfileobj(f, out)
-        i = 0
-        nb_matched = 0
-        nb_modified = 0
+
+    i = 0
+    nb_matched = 0
+    nb_modified = 0
+
+    with gzip.open(file_path, 'rt') as handle:
         for record in SeqIO.parse(tempfile, 'fasta'):
             i += 1
+
             header = record.description
             sequence = str(record.seq)
+
+            # try update query
             update_query = collection.update_many({'seq_name': header}, {'$set': {'sequence': sequence}})
 
+            # if no match, redo with  an IMGT-style header
             if update_query.matched_count == 0:
-                # redo an update query with an IMGT-style header
                 imgt_header = re.sub(r'\s', '_', header)
                 imgt_header = imgt_header[0:50]
                 update_query = collection.update_many({'seq_name': imgt_header}, {'$set': {'sequence': sequence}})
@@ -69,11 +51,10 @@ def load_file(file_path, collection):
 
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
-        print(' Read ' + str(i) + ' sequences in file.')
-        print(' Found ' + str(nb_matched) + ' corresponding documents in database')
-        print(' Added sequence to ' + str(nb_modified) + ' documents')
 
-    os.remove(tempfile)
+    print(' Read ' + str(i) + ' sequences in file.')
+    print(' Found ' + str(nb_matched) + ' corresponding documents in database')
+    print(' Added sequence to ' + str(nb_modified) + ' documents')
 
 
 def main(database, collection, files_folder):
