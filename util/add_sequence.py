@@ -29,7 +29,7 @@ def load_file(file_path, collection):
     nb_modified = 0
 
     with gzip.open(file_path, 'rt') as handle:
-        for record in SeqIO.parse(tempfile, 'fasta'):
+        for record in SeqIO.parse(handle, 'fasta'):
             i += 1
 
             header = record.description
