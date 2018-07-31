@@ -37,11 +37,7 @@ def load_file(file_path, collection):
             sequence = str(record.seq)
 
             # do update query
-            update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}})
-
-            # if update_query.matched_count == 0:
-            #     print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
-
+            update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}})            
             nb_matched += update_query.matched_count
             nb_modified += update_query.modified_count
 
@@ -69,15 +65,11 @@ if __name__ == '__main__':
     # define CLI arguments
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('database', help='database name')
-    # parser.add_argument('collection', help='collection name')
     parser.add_argument('folder', help='folder of fasta files')
 
     # get arguments
     args = parser.parse_args()
    
-    # database = args.database
-    # collection = args.collection
     folder = args.folder
 
     # temporary, for convenience
