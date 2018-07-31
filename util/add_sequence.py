@@ -28,6 +28,8 @@ def load_file(file_path, collection):
     nb_matched = 0
     nb_modified = 0
 
+    # initialize bulk update
+    collection.initialize_unordered_bulk_op()
     with gzip.open(file_path, 'rt') as handle:
         for record in SeqIO.parse(handle, 'fasta'):
             i += 1
@@ -37,13 +39,21 @@ def load_file(file_path, collection):
             sequence = str(record.seq)
 
             # do update query
-            update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}})            
-            nb_matched += update_query.matched_count
-            nb_modified += update_query.modified_count
+            # update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}}) 
+            bulk.find({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}).update({'$set': {'sequence': sequence}})           
+            # nb_matched += update_query.matched_count
+            # nb_modified += update_query.modified_count
+
+            if (i % 500 == 0):
+                bulk.execute()
+                bulk = collection.initialize_ordered_bulk_op()
 
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
 
+    if (counter % 500 != 0):
+        bulk.execute()
+    
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
     print(' Added sequence to ' + str(nb_modified) + ' documents')
