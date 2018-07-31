@@ -47,12 +47,16 @@ def load_file(file_path, collection):
             if (i % 500 == 0):
                 bulk.execute()
                 bulk = collection.initialize_ordered_bulk_op()
+                nb_matched += bulk.matched_count
+                nb_modified += bulk.modified_count
 
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
 
     if (i % 500 != 0):
         bulk.execute()
+        nb_matched += bulk.matched_count
+        nb_modified += bulk.modified_count
 
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
