@@ -29,7 +29,7 @@ def load_file(file_path, collection):
     nb_modified = 0
 
     # initialize bulk update
-    collection.initialize_unordered_bulk_op()
+    bulk = collection.initialize_unordered_bulk_op()
     with gzip.open(file_path, 'rt') as handle:
         for record in SeqIO.parse(handle, 'fasta'):
             i += 1
@@ -51,9 +51,9 @@ def load_file(file_path, collection):
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
 
-    if (counter % 500 != 0):
+    if (i % 500 != 0):
         bulk.execute()
-    
+
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
     print(' Added sequence to ' + str(nb_modified) + ' documents')
