@@ -2,6 +2,8 @@
 # into an iReceptor data node MongoDb database
 #
 
+from os.path import isfile
+
 import pandas as pd
 import json
 import gzip
@@ -38,12 +40,15 @@ class AIRR_TSV(Parser):
     def processAIRRTSVFile( self, path ):
 
         print("Reading in AIRR TSV file...")
-        # Open the file and get a rearrangment object iterator
+        # Open the file (it it exists) and get a rearrangment object iterator
+        if not isfile(path):
+            print("Could not open AIRR TSV file ", path)
+            return False
         file_handle = open(path, 'r')
         airr_data = airr.read_rearrangement(file_handle)
         # Print out the fields in the AIRR TSV file
-        print(airr_data.fields)
-        print(airr_data.external_fields)
+        # print(airr_data.fields)
+        # print(airr_data.external_fields)
         # Validate the AIRR TSV file and confirm if loading is desired if 
         # the file is not valid. Note, the validate method uses the
         # iterator to iterate to the end of the file. So once validated
@@ -68,55 +73,57 @@ class AIRR_TSV(Parser):
 
         # Build the substring array that allows index for fast searching of
         # Junction AA substrings.
-        print("Retrieving junction amino acids and building substrings...")
-        airr_df['substring'] = airr_df['junction_aa'].apply(Parser.get_substring)
+        if 'junction_aa' in airr_df:
+            print("Retrieving junction amino acids and building substrings...")
+            airr_df['substring'] = airr_df['junction_aa'].apply(Parser.get_substring)
+
+            # The AIRR TSV format doesn't have AA length, we want it in our repository.
+            if not ('junction_aa_length' in airr_df):
+                print("Computing junction amino acids length...")
+                airr_df['junction_aa_length'] = airr_df['junction_aa'].apply(str).apply(len)
 
         # Build the v_call field, as an array if there is more than one gene
         # assignment made by the annotator.
-        print("Constructing v_call array from v_call")
-        airr_df['v_call'] = airr_df['v_call'].apply(Parser.setGene)
-        print("v_call = ", airr_df['v_call'])
+        if 'v_call' in airr_df:
+            print("Constructing v_call array from v_call")
+            airr_df['v_call'] = airr_df['v_call'].apply(Parser.setGene)
 
-        # Build the vgene_gene field (with no allele)
-        print("Constructing vgene_gene from v_call")
-        airr_df['vgene_gene'] = airr_df['v_call'].apply(Parser.setGeneGene)
-        print("vgene_gene = ", airr_df['vgene_gene'])
+            # Build the vgene_gene field (with no allele)
+            print("Constructing vgene_gene from v_call")
+            airr_df['vgene_gene'] = airr_df['v_call'].apply(Parser.setGeneGene)
 
-        # Build the vgene_family field (with no allele and no gene)
-        print("Constructing vgene_family from v_call")
-        airr_df['vgene_family'] = airr_df['v_call'].apply(Parser.setGeneFamily)
+            # Build the vgene_family field (with no allele and no gene)
+            print("Constructing vgene_family from v_call")
+            airr_df['vgene_family'] = airr_df['v_call'].apply(Parser.setGeneFamily)
 
         # Build the d_call field, as an array if there is more than one gene
         # assignment made by the annotator.
-        print("Constructing d_call array from d_call")
-        airr_df['d_call'] = airr_df['d_call'].apply(Parser.setGene)
-        print("d_call = ", airr_df['d_call'])
+        if 'd_call' in airr_df:
+            print("Constructing d_call array from d_call")
+            airr_df['d_call'] = airr_df['d_call'].apply(Parser.setGene)
 
-        # Build the dgene_gene field (with no allele)
-        print("Constructing dgene_gene from d_call")
-        airr_df['dgene_gene'] = airr_df['d_call'].apply(Parser.setGeneGene)
+            # Build the dgene_gene field (with no allele)
+            print("Constructing dgene_gene from d_call")
+            airr_df['dgene_gene'] = airr_df['d_call'].apply(Parser.setGeneGene)
 
-        # Build the dgene_family field (with no allele and no gene)
-        print("Constructing dgene_family from d_call")
-        airr_df['dgene_family'] = airr_df['d_call'].apply(Parser.setGeneFamily)
+            # Build the dgene_family field (with no allele and no gene)
+            print("Constructing dgene_family from d_call")
+            airr_df['dgene_family'] = airr_df['d_call'].apply(Parser.setGeneFamily)
 
         # Build the j_call field, as an array if there is more than one gene
         # assignment made by the annotator.
-        print("Constructing j_call array from j_call")
-        airr_df['j_call'] = airr_df['j_call'].apply(Parser.setGene)
-        print("j_call = ", airr_df['j_call'])
+        if 'j_call' in airr_df:
+            print("Constructing j_call array from j_call")
+            airr_df['j_call'] = airr_df['j_call'].apply(Parser.setGene)
 
-        # Build the jgene_gene field (with no allele)
-        print("Constructing jgene_gene from j_call")
-        airr_df['jgene_gene'] = airr_df['j_call'].apply(Parser.setGeneGene)
+            # Build the jgene_gene field (with no allele)
+            print("Constructing jgene_gene from j_call")
+            airr_df['jgene_gene'] = airr_df['j_call'].apply(Parser.setGeneGene)
 
-        # Build the jgene_family field (with no allele and no gene)
-        print("Constructing jgene_family from j_call")
-        airr_df['jgene_family'] = airr_df['j_call'].apply(Parser.setGeneFamily)
+            # Build the jgene_family field (with no allele and no gene)
+            print("Constructing jgene_family from j_call")
+            airr_df['jgene_family'] = airr_df['j_call'].apply(Parser.setGeneFamily)
 
-        # The AIRR TSV format doesn't have AA length, we want it in our repository.
-        print("Computing junction amino acids length...")
-        airr_df['junction_aa_length'] = airr_df['junction_aa'].apply(str).apply(len)
 
         # For now we assume that an AIRR TSV file, when loaded into iReceptor, has
         # been produced by igblast. This in general is not the case, but as a loader
@@ -124,21 +131,35 @@ class AIRR_TSV(Parser):
         print("Setting annotation tool to be igblast...")
         airr_df['annotation_tool'] = 'igblast'
 
-        print (airr_df.columns)
-
         # Get root filename: may need to strip off any gzip 'archive' file extension
         filename = self.context.filename.replace(".gz","")
         print("For igblast filename: "+filename)
 
+        # Query for the sample and create an array of sample IDs
         print("Retrieving associated sample...")
-        sampleid = self.context.samples.find({"igblast_file_name":{'$regex': filename}},{'_id':1})
-
-        ir_project_sample_id = [i['_id'] for i in sampleid][0]
+        samples_cursor = self.context.samples.find({"igblast_file_name":{'$regex': filename}},{'_id':1})
+        idarray = [sample['_id'] for sample in samples_cursor]
+        # Check to see that we found it and that we only found one. Fail if not.
+        num_samples = len(idarray)
+        if num_samples == 0:
+            print("Could not find annotation file", filename)
+            print("No sample could be associated with this annotation file.")
+            return False
+        elif num_samples > 1:
+            print("Annotation file can not be associated with a unique sample, found", num_samples)
+            print("Unique assignment of annotations to a single sample are required.")
+            return False
+            
+        # Get the sample ID and assign it to sample ID field
+        ir_project_sample_id = idarray[0]
         airr_df['ir_project_sample_id']=ir_project_sample_id
-        print("ir_project_sample_id = ", ir_project_sample_id)
+        print("Inserting into sample ID", ir_project_sample_id)
 
+        # Get the number of sequences we want to insert
         count_row = len(airr_df.index)
+        # Assign a block size of number of records to insert at a time
         num_to_insert = 10000
+        # Calculate how many iterations and the remainder
         (runNumber,rest)= divmod(count_row,num_to_insert)
         print("count_row = ", count_row, ", runNumber = ", runNumber, ", rest = ", rest)
         print("Inserting ",runNumber+1," batches in MongoDb sequence collection")
