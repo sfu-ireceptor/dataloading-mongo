@@ -14,6 +14,7 @@ from os.path import isfile, join
 import argparse
 
 import re
+import time
 
 import gzip
 import pymongo
@@ -23,6 +24,7 @@ from Bio import Seq
 
 def load_file(file_path, collection):
     print('-> Processing file: ' + file_path)
+    start_time = time.time()
 
     i = 0
     nb_matched = 0
@@ -60,9 +62,13 @@ def load_file(file_path, collection):
         nb_matched += bulk_result['nMatched']
         nb_modified += bulk_result['nModified']
 
+    end_time = time.time()
+    duration = end_time - start_time
+
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
     print(' Added sequence to ' + str(nb_modified) + ' documents')
+    print('It took {} minutes '.format((duration) / 60))
 
 
 def main(database, collection, files_folder):
