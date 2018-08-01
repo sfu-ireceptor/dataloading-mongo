@@ -7,73 +7,68 @@
  To check it worked: db.sequence.findOne({seq_name:'SRR873440.14976 GIMRZBB09FS80E length=224'})
 """
 
-import re
-
-import os
 import sys
+import os
 from os import listdir
 from os.path import isfile, join
 import argparse
 
-import tarfile
-import zipfile
-import gzip
+import re
+import time
 
-import shutil
+import gzip
 import pymongo
 
 from Bio import SeqIO
 from Bio import Seq
 
 def load_file(file_path, collection):
-    filelist = []
-
-#    if fullname.endswith(".zip"):
-#        f= zipfile.ZipFile(fullname)
-#        filelist = f.namelist()
-        # f.extractall()
-#    elif fullname.endswith(".gz"):
-#        f= tarfile.open(fullname, 'r')
-#        filelist = f.getnames()
-#        #f.extractall()
-#    elif fullname.endswith(".fasta"):
-#        filelist.push(fullname)
-#    else:
-#        print("Unknown file")
-#        return();
-
     print('-> Processing file: ' + file_path)
-    tempfile = '/tmp/temp.fasta'
-    with gzip.open(file_path) as f:
-        with open(tempfile, 'wb') as out:
-            shutil.copyfileobj(f, out)
-        i = 0
-        nb_matched = 0
-        nb_modified = 0
-        for record in SeqIO.parse(tempfile, 'fasta'):
+    start_time = time.time()
+
+    i = 0
+    nb_matched = 0
+    nb_modified = 0
+
+    bulk_size = 10000
+
+    # initialize bulk update
+    bulk = collection.initialize_unordered_bulk_op()
+    with gzip.open(file_path, 'rt') as handle:
+        for record in SeqIO.parse(handle, 'fasta'):
             i += 1
+
             header = record.description
+            imgt_header = re.sub(r'\s', '_', header)[0:50]
             sequence = str(record.seq)
-            update_query = collection.update_many({'seq_name': header}, {'$set': {'sequence': sequence}})
 
-            if update_query.matched_count == 0:
-                # redo an update query with an IMGT-style header
-                imgt_header = re.sub(r'\s', '_', header)
-                imgt_header = imgt_header[0:50]
-                update_query = collection.update_many({'seq_name': imgt_header}, {'$set': {'sequence': sequence}})
-                # if update_query.matched_count == 0:
-                #     print ('Header + ' + header + ' converted to ' + imgt_header + ' not found!')
+            # do update query
+            # update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}}) 
+            bulk.find({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}).update({'$set': {'sequence': sequence}})           
+            # nb_matched += update_query.matched_count
+            # nb_modified += update_query.modified_count
 
-            nb_matched += update_query.matched_count
-            nb_modified += update_query.modified_count
+            if (i % bulk_size == 0):
+                bulk_result = bulk.execute()
+                bulk = collection.initialize_ordered_bulk_op()
+                nb_matched += bulk_result['nMatched']
+                nb_modified += bulk_result['nModified']
 
             if i % 200000 == 0:
                 print('Processed ' + str(i) + ' lines')
-        print(' Read ' + str(i) + ' sequences in file.')
-        print(' Found ' + str(nb_matched) + ' corresponding documents in database')
-        print(' Added sequence to ' + str(nb_modified) + ' documents')
 
-    os.remove(tempfile)
+    if (i % bulk_size != 0):
+        bulk_result = bulk.execute()
+        nb_matched += bulk_result['nMatched']
+        nb_modified += bulk_result['nModified']
+
+    end_time = time.time()
+    duration = end_time - start_time
+
+    print(' Read ' + str(i) + ' sequences in file.')
+    print(' Found ' + str(nb_matched) + ' corresponding documents in database')
+    print(' Added sequence to ' + str(nb_modified) + ' documents')
+    print('It took {} minutes '.format((duration) / 60))
 
 
 def main(database, collection, files_folder):
@@ -92,15 +87,11 @@ if __name__ == '__main__':
     # define CLI arguments
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('database', help='database name')
-    # parser.add_argument('collection', help='collection name')
     parser.add_argument('folder', help='folder of fasta files')
 
     # get arguments
     args = parser.parse_args()
    
-    # database = args.database
-    # collection = args.collection
     folder = args.folder
 
     # temporary, for convenience
