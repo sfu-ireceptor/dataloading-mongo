@@ -15,6 +15,7 @@ import argparse
 
 import re
 import time
+import math
 
 import gzip
 import pymongo
@@ -68,7 +69,7 @@ def load_file(file_path, collection):
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
     print(' Added sequence to ' + str(nb_modified) + ' documents')
-    print('It took {} minutes '.format((duration) / 60))
+    print('It took {} minutes '.format(math.ceil(duration / 60)))
 
 
 def main(database, collection, files_folder):
