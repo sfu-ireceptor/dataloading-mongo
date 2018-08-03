@@ -51,7 +51,7 @@ def load_file(file_path, collection):
 
             if (i % bulk_size == 0):
                 bulk_result = bulk.execute()
-                bulk = collection.initialize_ordered_bulk_op()
+                bulk = collection.initialize_unordered_bulk_op()
                 nb_matched += bulk_result['nMatched']
                 nb_modified += bulk_result['nModified']
 
