@@ -26,12 +26,14 @@ from Bio import Seq
 def load_file(file_path, collection):
     print('-> Processing file: ' + file_path)
     start_time = time.time()
+    lap_start_time = start_time
 
     i = 0
     nb_matched = 0
     nb_modified = 0
 
     bulk_size = 10000
+    log_interval = 200000
 
     # initialize bulk update
     bulk = collection.initialize_unordered_bulk_op()
@@ -39,34 +41,42 @@ def load_file(file_path, collection):
         for record in SeqIO.parse(handle, 'fasta'):
             i += 1
 
+            # extract header and sequence from file
             header = record.description
             imgt_header = re.sub(r'\s', '_', header)[0:50]
             sequence = str(record.seq)
 
-            # do update query
+            # generate update query
             bulk.find({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}).update({'$set': {'sequence': sequence}})           
 
+            # execute update queries in bulk
             if (i % bulk_size == 0):
                 bulk_result = bulk.execute()
                 bulk = collection.initialize_unordered_bulk_op()
                 nb_matched += bulk_result['nMatched']
                 nb_modified += bulk_result['nModified']
 
-            if i % 200000 == 0:
-                print('Processed ' + str(i) + ' lines')
+            # periodic log
+            if i % log_interval == 0:
+                lap_end_time = time.time()
+                lap_duration = math.ceil((lap_end_time - lap_start_time)/60)
+                print('Processed ' + str(i) + ' lines, last {} lines in {} minutes'.format(log_interval, lap_duration))
+                lap_start_time = time.time()
 
+    # execute remaining update queries
     if (i % bulk_size != 0):
         bulk_result = bulk.execute()
         nb_matched += bulk_result['nMatched']
         nb_modified += bulk_result['nModified']
 
     end_time = time.time()
-    duration = end_time - start_time
+    duration = math.ceil((end_time - start_time)/60)
 
+    # final log
     print(' Read ' + str(i) + ' sequences in file.')
     print(' Found ' + str(nb_matched) + ' corresponding documents in database')
     print(' Added sequence to ' + str(nb_modified) + ' documents')
-    print('It took {} minutes '.format(math.ceil(duration / 60)))
+    print('It took {} minutes '.format(duration))
 
 
 def main(database, collection, files_folder):
