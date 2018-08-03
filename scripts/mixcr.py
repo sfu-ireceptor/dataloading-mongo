@@ -51,7 +51,7 @@ class MiXCR(Parser):
     def processMiXcrFile( self, file_handle, filename ):
 
         # Define the number of records to iterate over
-        chunk_size = 10000
+        chunk_size = 100000
 
         # Define the columns from the MiXCR file we want
         mixcrColumns = ['bestVHit','bestDHit','bestJHit',
@@ -175,4 +175,5 @@ class MiXCR(Parser):
         self.context.samples.update({"mixcr_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":total_records+original_count}}, multi=True)
 
         print("MiXCR data loading complete for file: "+filename, flush=True)
+        return True
         
