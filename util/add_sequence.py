@@ -44,10 +44,7 @@ def load_file(file_path, collection):
             sequence = str(record.seq)
 
             # do update query
-            # update_query = collection.update_many({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}, {'$set': {'sequence': sequence}}) 
             bulk.find({'$or':[{'seq_name': header},{'seq_name': imgt_header}]}).update({'$set': {'sequence': sequence}})           
-            # nb_matched += update_query.matched_count
-            # nb_modified += update_query.modified_count
 
             if (i % bulk_size == 0):
                 bulk_result = bulk.execute()
