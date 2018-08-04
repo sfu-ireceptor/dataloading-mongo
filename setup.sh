@@ -40,4 +40,5 @@ source bin/activate
 
 # install dependencies
 cd ${IRECEPTOR}/turnkey-service/dataloading-mongo
+pip install --upgrade pip
 pip install -r requirements.txt
