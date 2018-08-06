@@ -59,6 +59,7 @@ def getArguments():
         action="store_const",
         const="sample",
         dest="type",
+        default="sample",
         help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
     )
 
@@ -153,7 +154,7 @@ def getArguments():
         "-l",
         "--library",
         dest="library",
-        default=".",
+        default="",
         help="Path to 'library' directory of data files."
     )
     path_group.add_argument(
@@ -189,14 +190,17 @@ def getArguments():
 
     options = parser.parse_args()
 
-    # if not options.filename:
-    #     options.filename = options.type + "." + _type2ext[options.type]
+    if options.library:
+        path = options.library + "/" + options.filename
+    else:
+        path = options.filename
+    options.path = path
 
     # If we have a type and the type isn't a sample then we are processing sequences
     # If we are doing a reset on the sequences, confirm that we really want to do it.
     if options.type != 'sample' and options.type != None and options.counter == 'reset':
         while True:
-            decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No):")
+            decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No): ")
             if decision.upper().startswith('Y'):
                 break
             elif decision.upper().startswith('N'):
@@ -213,14 +217,13 @@ def getArguments():
     if options.verbose:
         if options.type != 'sample':
             print('SAMPLE SEQUENCE COUNTER:', options.counter)
-        print('DATA_TYPE    :', options.type)
         print('HOST         :', options.host)
         print('PORT         :', options.port)
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
-        print('LIBRARY      :', options.library)
-        print('FILENAME     :', options.filename)
+        print('DATA_TYPE    :', options.type)
+        print('DATA_PATH    :', options.path)
         print('DROP_INDEX   :', options.drop_index)
         print('BUILD_INDEX  :', options.build_index)
         print('REBUILD_INDEX:', options.rebuild_index)
@@ -266,11 +269,6 @@ class Context:
 
     @classmethod
     def getContext(cls, options):
-        if options.library:
-            path = options.library + "/" + options.filename
-        else:
-            path = options.filename
-            
         # Connect with Mongo db
         username = urllib.parse.quote_plus(options.user)
         password = urllib.parse.quote_plus(options.password)
@@ -291,7 +289,7 @@ class Context:
         # Set Mongo db name
         mng_db = mng_client[options.database]
 
-        return cls(options.type, options.library, options.filename, path,
+        return cls(options.type, options.library, options.filename, options.path,
                     mng_db['sample'], mng_db['sequence'], options.counter,
                     options.verbose, options.drop_index, 
                     options.build_index, options.rebuild_index)
@@ -310,14 +308,12 @@ def load_data(context):
         print("processing IMGT data file: {}".format(context.filename))
         imgt = IMGT(context)
         if imgt.process():
-            # dataloaded = True
             print("IMGT data file loaded")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
         mixcr = MiXCR(context)
         if mixcr.process():
-            # dataloaded = True
             print("MiXCR data file loaded")
         else:
             print("ERROR: MiXCR data file not found?")
@@ -328,7 +324,6 @@ def load_data(context):
         airr = AIRR_TSV(context)
 
         if airr.process():
-            dataloaded = True
             print("AIRR TSV data file loaded")
         else:
             print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
@@ -345,14 +340,12 @@ if __name__ == "__main__":
         context.sequences.drop_indexes()
 
     # load data files
-    if context.type != None:
+    if exists(context.path):
         load_data(context)
+    else:
+        print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
     # build indexes
     if context.build_index or context.rebuild_index:
-        print("Building indexes on sequence level...")
-        t_start = time.perf_counter()
         for index in indexes:
             context.sequences.create_index(index)
-        t_end = time.perf_counter()
-        print("Done. It took {:.2f} seconds to build the indexes.".format(t_end - t_start))
