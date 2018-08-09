@@ -106,22 +106,22 @@ def loadData(mypath,filename,sample_db_cm):
         df_1 = Summary_1[['Sequence ID','V-GENE and allele', 'J-GENE and allele', 'D-GENE and allele', 'Functionality',
                           'V-REGION score', 'J-REGION score','V-REGION identity %', 'D-REGION reading frame',
                           'CDR1-IMGT length', 'CDR2-IMGT length','CDR3-IMGT length', 'Functionality comment',
-                          'Orientation', 'V-REGION identity %']]
+                          'Orientation', 'V-REGION identity %', 'Sequence']]
         df_1.columns = ['seq_name','v_string', 'j_string', 'd_string', 'functionality', 'v_score', 'j_score',
                         'vgene_probablity',
                         'dregion_reading_frame', 'cdr1_length', 'cdr2_length', 'cdr3_length',
                         'functionality_comment',
-                        'rev_comp', 'vgene_probability']
+                        'rev_comp', 'vgene_probability', 'sequence']
     elif 'V-DOMAIN Functionality' in Summary_column_list:
         df_1 = Summary_1[['Sequence ID','V-GENE and allele', 'J-GENE and allele', 'D-GENE and allele', 'V-DOMAIN Functionality',
                           'V-REGION score', 'J-REGION score','V-REGION identity %', 'D-REGION reading frame',
                           'CDR1-IMGT length','CDR2-IMGT length', 'CDR3-IMGT length', 'V-DOMAIN Functionality comment',
-                          'Orientation','V-REGION identity %']]
+                          'Orientation','V-REGION identity %', 'Sequence']]
         df_1.columns = ['seq_name','v_string', 'j_string', 'd_string', 'functionality', 'v_score', 'j_score',
                         'vgene_probablity',
                         'dregion_reading_frame', 'cdr1_length', 'cdr2_length', 'cdr3_length',
                         'functionality_comment',
-                        'rev_comp', 'vgene_probability']
+                        'rev_comp', 'vgene_probability', 'sequence']
     df_2 = IMGT_gapped_nt_sequences_2[['V-D-J-REGION','V-J-REGION','V-REGION','J-REGION','FR1-IMGT','FR2-IMGT','FR3-IMGT',
                                        'FR4-IMGT','CDR1-IMGT','CDR2-IMGT','CDR3-IMGT','JUNCTION']]
     df_2.columns = ['vdjregion_sequence_nt_gapped','vjregion_sequence_nt_gapped','vregion_sequence_nt_gapped',

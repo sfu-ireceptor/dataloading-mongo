@@ -29,9 +29,9 @@ def get_substring(string):
 def loaddata(fullfilename,filename):
     df_raw = pd.read_table(fullfilename, compression='gzip', header=0, sep='\t', quotechar='"')
     df = df_raw[['bestVHit','bestDHit','bestJHit','bestVGene','bestDGene','bestJGene','bestVFamily','bestDFamily',
-               'bestJFamily','bestVHitScore','nSeqCDR3','aaSeqCDR3','descrR1']]
+               'bestJFamily','bestVHitScore','nSeqCDR3','aaSeqCDR3','descrR1', 'readSequence']]
     df.columns = ['v_call', 'd_call', 'j_call', 'vgene_gene', 'dgene_gene', 'jgene_gene', 'vgene_family', 'dgene_family',
-                   'jgene_family','v_score','junction','junction_aa', 'seqId']
+                   'jgene_family','v_score','junction','junction_aa', 'seq_name', 'sequence']
     df['substring'] = df['junction_aa'].apply(get_substring)
     df['junction_length'] = df['junction'].apply(str).apply(len)
     df['junction_aa_length'] = df['junction_aa'].apply(str).apply(len)
