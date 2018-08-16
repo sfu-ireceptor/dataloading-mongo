@@ -194,11 +194,12 @@ def getArguments():
         path = options.library + "/" + options.filename
     else:
         path = options.filename
+        options.library = "."
     options.path = path
 
     # If we have a type and the type isn't a sample then we are processing sequences
     # If we are doing a reset on the sequences, confirm that we really want to do it.
-    if options.type != 'sample' and options.type != None and options.counter == 'reset':
+    if options.type and options.type != 'sample' and options.counter == 'reset':
         while True:
             decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No): ")
             if decision.upper().startswith('Y'):
@@ -223,7 +224,9 @@ def getArguments():
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
         print('DATA_TYPE    :', options.type)
-        print('DATA_PATH    :', options.path)
+        print('LIBRARY_PATH :', options.library)
+        print('FILE_NAME:   :', options.filename)
+        print('FILE_PATH    :', options.path)
         print('DROP_INDEX   :', options.drop_index)
         print('BUILD_INDEX  :', options.build_index)
         print('REBUILD_INDEX:', options.rebuild_index)
@@ -269,6 +272,10 @@ class Context:
 
     @classmethod
     def getContext(cls, options):
+
+        if not options.path:
+            return
+
         # Connect with Mongo db
         username = urllib.parse.quote_plus(options.user)
         password = urllib.parse.quote_plus(options.password)
@@ -334,6 +341,9 @@ if __name__ == "__main__":
     options = getArguments()
     context = Context.getContext(options)
 
+    if not context:
+        raise SystemExit(0)
+
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
         print("Dropping indexes on sequence level...")
@@ -341,7 +351,10 @@ if __name__ == "__main__":
 
     # load data files
     if exists(context.path):
+        t_start = time.process_time()
         load_data(context)
+        t_end = time.process_time()
+        print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
     else:
         print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
