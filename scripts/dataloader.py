@@ -229,7 +229,6 @@ def getArguments():
         print('FILE_PATH    :', options.path)
         print('DROP_INDEX   :', options.drop_index)
         print('BUILD_INDEX  :', options.build_index)
-        print('REBUILD_INDEX:', options.rebuild_index)
 
     return options
 
@@ -272,9 +271,6 @@ class Context:
 
     @classmethod
     def getContext(cls, options):
-
-        if not options.path:
-            return
 
         # Connect with Mongo db
         username = urllib.parse.quote_plus(options.user)
@@ -350,15 +346,17 @@ if __name__ == "__main__":
         context.sequences.drop_indexes()
 
     # load data files
-    if exists(context.path):
-        t_start = time.process_time()
-        load_data(context)
-        t_end = time.process_time()
-        print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
-    else:
-        print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
+    if (context.filename):
+        if exists(context.path):
+            t_start = time.process_time()
+            load_data(context)
+            t_end = time.process_time()
+            print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+        else:
+            print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
     # build indexes
     if context.build_index or context.rebuild_index:
+        print("Building indexes on sequence level...")
         for index in indexes:
             context.sequences.create_index(index)
