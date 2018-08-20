@@ -14,7 +14,7 @@
  
 """
 import os
-from os.path import exists
+# from os.path import exists, isfile, basename, join
 
 import pandas as pd
 import urllib.parse
@@ -150,6 +150,7 @@ def getArguments():
     )
 
     path_group = parser.add_argument_group("file path options")
+    # making the default value to "" instead of "." creates the possiblity of the path being empty, therefore skip display error message to the user
     path_group.add_argument(
         "-l",
         "--library",
@@ -190,12 +191,9 @@ def getArguments():
 
     options = parser.parse_args()
 
-    if options.library:
-        path = options.library + "/" + options.filename
-    else:
-        path = options.filename
-        options.library = "."
-    options.path = path
+    validate_library(options.library)
+    validate_filename(options.filename)
+    set_path(options)
 
     # If we have a type and the type isn't a sample then we are processing sequences
     # If we are doing a reset on the sequences, confirm that we really want to do it.
@@ -231,6 +229,39 @@ def getArguments():
         print('BUILD_INDEX  :', options.build_index)
 
     return options
+
+# determine path to a data file or a directory of data files
+def set_path(options):
+    path = ""
+    if options.library or options.filename:
+        if options.library and options.filename:
+            path = os.path.join(options.library, options.filename)
+        elif options.library and not options.filename:
+            path = options.library
+        else:
+            path = options.filename
+            options.library = "."
+    options.path = path
+
+def validate_filename(filename_path):
+    if filename_path:
+        if os.path.exists(filename_path):
+            if not os.path.isfile(filename_path):
+                print("error: file '{0}' is not a file?".format(filename_path))
+                raise SystemExit(1)
+        else:
+            print("error: file '{0}' does not exist?".format(filename_path))
+            raise SystemExit(1)
+
+def validate_library(library_path):
+    if library_path:
+        if os.path.exists(library_path):
+            if not os.path.isdir(library_path):
+                print("error: library '{0}' is not a directory?".format(library_path))
+                raise SystemExit(1)
+        else:
+            print("error: library '{0}' does not exist?".format(library_path))
+            raise SystemExit(1)
 
 
 class Context:
@@ -297,7 +328,40 @@ class Context:
                     options.verbose, options.drop_index, 
                     options.build_index, options.rebuild_index)
 
+# load a directory of files or a single file depending on 'context.path'
 def load_data(context):
+    if os.path.isdir(context.path):
+        # skip directories
+        filenames = [f for f in os.listdir(context.path) if not os.path.isdir(f)]
+        filenames.sort()
+        prog_name = os.path.basename(__file__)
+        for filename in filenames:
+            # skip loading this program itself
+            if not prog_name in filename:
+                prompt_and_load(filename, context)
+    else:
+        load_file(context)
+
+# prompts the user whether to load the data file
+def prompt_and_load(filename, context):
+    while True:
+        load = input("load '{0}' into database? (Yes/No): ".format(filename))
+        if load.upper().startswith('Y'):
+            context.path = os.path.join(context.library, filename)
+            load_file(context)
+            break
+        elif load.upper().startswith('N'):
+            while True:
+                cancel = input("**Are you sure to skip loading '{0}'? (Yes/No): ".format(filename))
+                if cancel.upper().startswith('Y'):
+                    print("skipped '{0}'!".format(filename))
+                    break
+                elif cancel.upper().startswith('N'):
+                    prompt_and_load(filename, context)
+                    break
+            break
+
+def load_file(context):
     if context.type == "sample":
         # process samples
         print("processing Sample metadata file: {}".format(context.filename))
@@ -338,20 +402,20 @@ if __name__ == "__main__":
     context = Context.getContext(options)
 
     if not context:
-        raise SystemExit(0)
+        raise SystemExit(1)
 
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
         print("Dropping indexes on sequence level...")
         context.sequences.drop_indexes()
 
-    # load data files
-    if (context.filename):
-        if exists(context.path):
-            t_start = time.process_time()
-            load_data(context)
-            t_end = time.process_time()
-            print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+    # load data files if path is provided by user
+    if context.path:
+        if os.path.exists(context.path):
+                t_start = time.process_time()
+                load_data(context)
+                t_end = time.process_time()
+                print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
         else:
             print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
