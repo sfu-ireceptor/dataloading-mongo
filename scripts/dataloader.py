@@ -245,7 +245,7 @@ def set_path(options):
 
 def validate_filename(filename_path):
     if filename_path:
-        if not os.path.isfile(filename_path):
+        if os.path.isdir(filename_path):
             print("error: file '{0}' is not a file?".format(filename_path))
             raise SystemExit(1)
 
