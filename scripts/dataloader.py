@@ -245,12 +245,8 @@ def set_path(options):
 
 def validate_filename(filename_path):
     if filename_path:
-        if os.path.exists(filename_path):
-            if not os.path.isfile(filename_path):
-                print("error: file '{0}' is not a file?".format(filename_path))
-                raise SystemExit(1)
-        else:
-            print("error: file '{0}' does not exist?".format(filename_path))
+        if not os.path.isfile(filename_path):
+            print("error: file '{0}' is not a file?".format(filename_path))
             raise SystemExit(1)
 
 def validate_library(library_path):
