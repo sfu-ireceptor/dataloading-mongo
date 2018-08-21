@@ -358,6 +358,9 @@ def prompt_and_load(filename, context):
             break
 
 def load_file(context):
+    # time start
+    t_start = time.process_time()
+
     if context.type == "sample":
         # process samples
         print("processing Sample metadata file: {}".format(context.filename))
@@ -393,6 +396,10 @@ def load_file(context):
     else:
         print("Unknown data type: {}".format(context.type))
 
+    # time end
+    t_end = time.process_time()
+    print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+
 if __name__ == "__main__":
     options = getArguments()
     context = Context.getContext(options)
@@ -408,10 +415,7 @@ if __name__ == "__main__":
     # load data files if path is provided by user
     if context.path:
         if os.path.exists(context.path):
-                t_start = time.process_time()
                 load_data(context)
-                t_end = time.process_time()
-                print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
         else:
             print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
