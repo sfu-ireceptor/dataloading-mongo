@@ -364,7 +364,7 @@ def prompt_and_load(filename, context):
 
 def load_file(context):
     # time start
-    t_start = time.process_time()
+    t_start = time.perf_counter()
 
     if context.type == "sample":
         # process samples
@@ -403,7 +403,7 @@ def load_file(context):
         print("Unknown data type: {}".format(context.type))
 
     # time end
-    t_end = time.process_time()
+    t_end = time.perf_counter()
     print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
 
 if __name__ == "__main__":
