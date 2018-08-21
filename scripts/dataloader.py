@@ -195,16 +195,10 @@ def getArguments():
     validate_filename(options.filename)
     set_path(options)
 
-    # If we have a type and the type isn't a sample then we are processing sequences
-    # If we are doing a reset on the sequences, confirm that we really want to do it.
-    if options.type and options.type != 'sample' and options.counter == 'reset':
-        while True:
-            decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No): ")
-            if decision.upper().startswith('Y'):
-                break
-            elif decision.upper().startswith('N'):
-                options.counter = 'increment'
-                break
+    # # If we have a type and the type isn't a sample then we are processing sequences
+    # # If we are doing a reset on the sequences, confirm that we really want to do it.
+    # if options.type and options.type != 'sample' and options.counter == 'reset':
+    #     prompt_counter(options)
 
     if options.drop_index and options.build_index:
         options.rebuild_index = True
@@ -214,8 +208,8 @@ def getArguments():
         options.build_index = True
 
     if options.verbose:
-        if options.type != 'sample':
-            print('SAMPLE SEQUENCE COUNTER:', options.counter)
+        # if options.type != 'sample':
+        #     print('SAMPLE SEQUENCE COUNTER:', options.counter)
         print('HOST         :', options.host)
         print('PORT         :', options.port)
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
@@ -227,8 +221,19 @@ def getArguments():
         print('FILE_PATH    :', options.path)
         print('DROP_INDEX   :', options.drop_index)
         print('BUILD_INDEX  :', options.build_index)
+        print('REBUILD_INDEX:', options.rebuild_index)
 
     return options
+
+def prompt_counter(context):
+    while True:
+        decision = input("### WARNING: reset the sample sequence counter to zero? (Yes/No): ")
+        if decision.upper().startswith('Y'):
+            context.counter = "reset"
+            break
+        elif decision.upper().startswith('N'):
+            context.counter = "increment"
+            break
 
 # determine path to a data file or a directory of data files
 def set_path(options):
@@ -372,12 +377,14 @@ def load_file(context):
     elif context.type == "imgt":
         # process imgt
         print("processing IMGT data file: {}".format(context.filename))
+        prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
             print("IMGT data file loaded")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
+        prompt_counter(context)
         mixcr = MiXCR(context)
         if mixcr.process():
             print("MiXCR data file loaded")
@@ -386,9 +393,8 @@ def load_file(context):
     elif options.type == "airr":
         # process AIRR TSV
         print("Processing AIRR TSV annotation data file: ", context.filename)
-
+        prompt_counter(context)
         airr = AIRR_TSV(context)
-
         if airr.process():
             print("AIRR TSV data file loaded")
         else:
