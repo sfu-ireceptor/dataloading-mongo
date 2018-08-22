@@ -339,6 +339,8 @@ def load_data(context):
         for filename in filenames:
             # skip loading this program itself
             if not prog_name in filename:
+                context.filename = filename
+                context.path = os.path.join(context.library, filename)
                 prompt_and_load(filename, context)
     else:
         load_file(context)
@@ -348,7 +350,6 @@ def prompt_and_load(filename, context):
     while True:
         load = input("load '{0}' into database? (Yes/No): ".format(filename))
         if load.upper().startswith('Y'):
-            context.path = os.path.join(context.library, filename)
             load_file(context)
             break
         elif load.upper().startswith('N'):
