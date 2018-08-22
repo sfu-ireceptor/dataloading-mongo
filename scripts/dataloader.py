@@ -217,7 +217,7 @@ def getArguments():
         print('DATABASE     :', options.database)
         print('DATA_TYPE    :', options.type)
         print('LIBRARY_PATH :', options.library)
-        print('FILE_NAME:   :', options.filename)
+        print('FILE_NAME    :', options.filename)
         print('FILE_PATH    :', options.path)
         print('DROP_INDEX   :', options.drop_index)
         print('BUILD_INDEX  :', options.build_index)
