@@ -82,9 +82,14 @@ class MiXCR(Parser):
         # Get the sample ID and assign it to sample ID field
         ir_project_sample_id = idarray[0]
 
-	# Get a Pandas reader iterator for the file.
+	# Get a Pandas reader iterator for the file. When reading the file we only want to
+        # read in the mixcrColumns we care about. We want to read in only a fixed number of 
+        # records so we don't have any memory contraints reading really large files. And
+        # we don't want to map empty strings to Pandas NaN values. This causes an issue as
+        # missing strings get read as a NaN value, which is interpreted as a string. One can
+        # then not tell the difference between a "nan" string and a "NAN" Junction sequence.
         print("Preparing the file reader...", flush=True)
-        df_reader = pd.read_table(file_handle, usecols=mixcrColumns, chunksize=chunk_size)
+        df_reader = pd.read_table(file_handle, usecols=mixcrColumns, chunksize=chunk_size, na_filter=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
         total_records = 0
