@@ -430,4 +430,8 @@ if __name__ == "__main__":
     if context.build_index or context.rebuild_index:
         print("Building indexes on sequence level...")
         for index in indexes:
+            print("Now building index: {0}".format(index))
+            t_start = time.perf_counter()
             context.sequences.create_index(index)
+            t_end = time.perf_counter()
+            print("Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
