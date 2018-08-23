@@ -18,7 +18,7 @@ I = [{
     "ir_project_sample_id": 1,
     "junction_aa_length": 1
 }, {
-    "annotation_tool": 1
+    "ir_annotation_tool": 1
 }, {
     "ir_project_sample_id": 1,
     "vgene_family": 1
@@ -42,7 +42,7 @@ I = [{
     "functional": 1
 }, {
     "ir_project_sample_id": 1,
-    "annotation_tool": 1
+    "ir_annotation_tool": 1
 }, {
     "substring": 1,
     "ir_project_sample_id": 1
