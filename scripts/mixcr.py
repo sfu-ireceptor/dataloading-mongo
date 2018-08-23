@@ -168,7 +168,8 @@ class MiXCR(Parser):
 
             # Assign each record the constant fields for all records in the chunk
             df_chunk['functional'] = 'productive'
-            df_chunk['annotation_tool'] = 'MiXCR'
+            # Assign any iReceptor specific custom fields for the records in the chunk
+            df_chunk['ir_annotation_tool'] = 'MiXCR'
             df_chunk['ir_project_sample_id'] = ir_project_sample_id
 
             # Insert the chunk of records into Mongo.

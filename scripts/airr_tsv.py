@@ -129,7 +129,7 @@ class AIRR_TSV(Parser):
         # been produced by igblast. This in general is not the case, but as a loader
         # script we assume this to be the case.
         print("Setting annotation tool to be igblast...")
-        airr_df['annotation_tool'] = 'igblast'
+        airr_df['ir_annotation_tool'] = 'igblast'
 
         # Get root filename: may need to strip off any gzip 'archive' file extension
         filename = self.context.filename.replace(".gz","")
