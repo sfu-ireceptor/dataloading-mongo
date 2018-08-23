@@ -11,10 +11,10 @@ start_time = new Date();
 
 // Change the collection based on which repository being used...
 // This needs to be fixed!
-// On big-mongo repository has a sequence collection (no s)
-collection = 'sequences';
+// On big-mongo and Turnkey repository has a sequence collection (no s)
+// collection = 'sequences';
 // On mini-mongo repository has a sequences collection (with an s)
-//collection = 'sequence';
+collection = 'sequence';
 
 queries['total'] = {};
 // Junction Length
