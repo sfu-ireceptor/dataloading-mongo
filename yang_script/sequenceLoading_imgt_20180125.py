@@ -227,7 +227,7 @@ def main(mypath):
         os.remove(f)
 
 if __name__ == "__main__":
-    mng_client = pymongo.MongoClient('192.168.108.210', 27017)
+    mng_client = pymongo.MongoClient('localhost', 27017)
     db_name = sys.argv[1]
     sequence_cname = sys.argv[2]
     sample_cname = sys.argv[3]
