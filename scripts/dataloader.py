@@ -14,7 +14,7 @@
  
 """
 import os
-from os.path import exists
+# from os.path import exists, isfile, basename, join
 
 import pandas as pd
 import urllib.parse
@@ -150,6 +150,7 @@ def getArguments():
     )
 
     path_group = parser.add_argument_group("file path options")
+    # making the default value to "" instead of "." creates the possiblity of the path being empty, therefore skip display error message to the user
     path_group.add_argument(
         "-l",
         "--library",
@@ -190,22 +191,14 @@ def getArguments():
 
     options = parser.parse_args()
 
-    if options.library:
-        path = options.library + "/" + options.filename
-    else:
-        path = options.filename
-    options.path = path
+    validate_library(options.library)
+    validate_filename(options.filename)
+    set_path(options)
 
-    # If we have a type and the type isn't a sample then we are processing sequences
-    # If we are doing a reset on the sequences, confirm that we really want to do it.
-    if options.type != 'sample' and options.type != None and options.counter == 'reset':
-        while True:
-            decision = input("### WARNING: you are resetting the sample sequence counter to zero? (Yes/No): ")
-            if decision.upper().startswith('Y'):
-                break
-            elif decision.upper().startswith('N'):
-                options.counter = 'increment'
-                break
+    # # If we have a type and the type isn't a sample then we are processing sequences
+    # # If we are doing a reset on the sequences, confirm that we really want to do it.
+    # if options.type and options.type != 'sample' and options.counter == 'reset':
+    #     prompt_counter(options)
 
     if options.drop_index and options.build_index:
         options.rebuild_index = True
@@ -215,20 +208,61 @@ def getArguments():
         options.build_index = True
 
     if options.verbose:
-        if options.type != 'sample':
-            print('SAMPLE SEQUENCE COUNTER:', options.counter)
+        # if options.type != 'sample':
+        #     print('SAMPLE SEQUENCE COUNTER:', options.counter)
         print('HOST         :', options.host)
         print('PORT         :', options.port)
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
         print('DATA_TYPE    :', options.type)
-        print('DATA_PATH    :', options.path)
+        print('LIBRARY_PATH :', options.library)
+        print('FILE_NAME    :', options.filename)
+        print('FILE_PATH    :', options.path)
         print('DROP_INDEX   :', options.drop_index)
         print('BUILD_INDEX  :', options.build_index)
         print('REBUILD_INDEX:', options.rebuild_index)
 
     return options
+
+def prompt_counter(context):
+    while True:
+        decision = input("### WARNING: reset the sample sequence counter to zero? (Yes/No): ")
+        if decision.upper().startswith('Y'):
+            context.counter = "reset"
+            break
+        elif decision.upper().startswith('N'):
+            context.counter = "increment"
+            break
+
+# determine path to a data file or a directory of data files
+def set_path(options):
+    path = ""
+    if options.library or options.filename:
+        if options.library and options.filename:
+            path = os.path.join(options.library, options.filename)
+        elif options.library and not options.filename:
+            path = options.library
+        else:
+            path = options.filename
+            options.library = "."
+    options.path = path
+
+def validate_filename(filename_path):
+    if filename_path:
+        if os.path.isdir(filename_path):
+            print("error: file '{0}' is not a file?".format(filename_path))
+            raise SystemExit(1)
+
+def validate_library(library_path):
+    if library_path:
+        if os.path.exists(library_path):
+            if not os.path.isdir(library_path):
+                print("error: library '{0}' is not a directory?".format(library_path))
+                raise SystemExit(1)
+        else:
+            print("error: library '{0}' does not exist?".format(library_path))
+            raise SystemExit(1)
 
 
 class Context:
@@ -269,6 +303,7 @@ class Context:
 
     @classmethod
     def getContext(cls, options):
+
         # Connect with Mongo db
         username = urllib.parse.quote_plus(options.user)
         password = urllib.parse.quote_plus(options.password)
@@ -294,7 +329,44 @@ class Context:
                     options.verbose, options.drop_index, 
                     options.build_index, options.rebuild_index)
 
+# load a directory of files or a single file depending on 'context.path'
 def load_data(context):
+    if os.path.isdir(context.path):
+        # skip directories
+        filenames = [f for f in os.listdir(context.path) if not os.path.isdir(f)]
+        filenames.sort()
+        prog_name = os.path.basename(__file__)
+        for filename in filenames:
+            # skip loading this program itself
+            if not prog_name in filename:
+                context.filename = filename
+                context.path = os.path.join(context.library, filename)
+                prompt_and_load(filename, context)
+    else:
+        load_file(context)
+
+# prompts the user whether to load the data file
+def prompt_and_load(filename, context):
+    while True:
+        load = input("load '{0}' into database? (Yes/No): ".format(filename))
+        if load.upper().startswith('Y'):
+            load_file(context)
+            break
+        elif load.upper().startswith('N'):
+            while True:
+                cancel = input("**Are you sure to skip loading '{0}'? (Yes/No): ".format(filename))
+                if cancel.upper().startswith('Y'):
+                    print("skipped '{0}'!".format(filename))
+                    break
+                elif cancel.upper().startswith('N'):
+                    prompt_and_load(filename, context)
+                    break
+            break
+
+def load_file(context):
+    # time start
+    t_start = time.perf_counter()
+
     if context.type == "sample":
         # process samples
         print("processing Sample metadata file: {}".format(context.filename))
@@ -306,12 +378,14 @@ def load_data(context):
     elif context.type == "imgt":
         # process imgt
         print("processing IMGT data file: {}".format(context.filename))
+        prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
             print("IMGT data file loaded")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
+        prompt_counter(context)
         mixcr = MiXCR(context)
         if mixcr.process():
             print("MiXCR data file loaded")
@@ -320,9 +394,8 @@ def load_data(context):
     elif options.type == "airr":
         # process AIRR TSV
         print("Processing AIRR TSV annotation data file: ", context.filename)
-
+        prompt_counter(context)
         airr = AIRR_TSV(context)
-
         if airr.process():
             print("AIRR TSV data file loaded")
         else:
@@ -330,22 +403,35 @@ def load_data(context):
     else:
         print("Unknown data type: {}".format(context.type))
 
+    # time end
+    t_end = time.perf_counter()
+    print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+
 if __name__ == "__main__":
     options = getArguments()
     context = Context.getContext(options)
+
+    if not context:
+        raise SystemExit(1)
 
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
         print("Dropping indexes on sequence level...")
         context.sequences.drop_indexes()
 
-    # load data files
-    if exists(context.path):
-        load_data(context)
-    else:
-        print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
+    # load data files if path is provided by user
+    if context.path:
+        if os.path.exists(context.path):
+                load_data(context)
+        else:
+            print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
     # build indexes
     if context.build_index or context.rebuild_index:
+        print("Building indexes on sequence level...")
         for index in indexes:
+            print("Now building index: {0}".format(index))
+            t_start = time.perf_counter()
             context.sequences.create_index(index)
+            t_end = time.perf_counter()
+            print("Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
