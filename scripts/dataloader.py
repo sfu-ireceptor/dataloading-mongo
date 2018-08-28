@@ -59,7 +59,7 @@ def getArguments():
         action="store_const",
         const="sample",
         dest="type",
-        default="sample",
+        default="",
         help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
     )
 
@@ -401,7 +401,7 @@ def load_file(context):
         else:
             print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
     else:
-        print("Unknown data type: {}".format(context.type))
+        print("Error: unknown data type '{}'".format(context.type))
 
     # time end
     t_end = time.perf_counter()
