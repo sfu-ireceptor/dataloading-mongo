@@ -14,6 +14,7 @@ else
     exit
 fi
 
+TEST="dbtest"
 OUT="out"
 perf_js_file="test_performance_explain.js"
 cache_js_file="cache_dump.js"
@@ -27,12 +28,12 @@ echo "Test performed at: $current_time"
 
 mkdir -p $RECENT
 
-sudo docker exec -it irdn-mongo mongo --authenticationDatabase admin $db_name -u $MONGODB_SERVICE_USER -p $MONGODB_SERVICE_SECRET ./$cache_js_file > $RECENT/cache-$host_name-$db_port-$db_name-$current_time.txt
+sudo docker exec -it irdn-mongo mongo --authenticationDatabase admin $db_name -u $MONGODB_SERVICE_USER -p $MONGODB_SERVICE_SECRET $TEST/$cache_js_file > $RECENT/cache-$host_name-$db_port-$db_name-$current_time.txt
 
 for i in `seq 1 $count`;
 do
     echo "Performing test iteration $i"
-    sudo docker exec -it irdn-mongo mongo --authenticationDatabase admin $db_name -u $MONGODB_SERVICE_USER -p $MONGODB_SERVICE_SECRET ./$perf_js_file > $RECENT/run$i-$host_name-$db_port-$db_name-$current_time.txt
+    sudo docker exec -it irdn-mongo mongo --authenticationDatabase admin $db_name -u $MONGODB_SERVICE_USER -p $MONGODB_SERVICE_SECRET $TEST/$perf_js_file > $RECENT/run$i-$host_name-$db_port-$db_name-$current_time.txt
 
 done
 end_time=$(date "+%Y.%m.%d-%H.%M.%S")
