@@ -64,6 +64,7 @@ class MiXCR(Parser):
                         'junction','junction_aa', 'sequence', 'sequence_id']
 
         # Query for the sample and create an array of sample IDs
+        filename = filename.replace(".gz", "")
         print("Retrieving associated sample for file", filename)
         samples_cursor = self.context.samples.find({"mixcr_file_name":{'$regex': filename}},{'_id':1})
         idarray = [sample['_id'] for sample in samples_cursor]
