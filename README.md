@@ -24,30 +24,6 @@ $ ./setup.sh
 
 Follow the [manual configuration instructions](./MANUAL.md).
 
-## Activate the virtual environment
-
-After setting up all the necessary packages, activate your python virtualenv as follows:
-
-```
-$ source /opt/ireceptor/data/bin/activate
-```
-
-You should now be running within a virtual environment inside a directory called *data*. Note that the command line prompt will change to something like the following:
-
-```
-(data) user@host:/opt/ireceptor/data$
-```
-
-To exit the virtualenv, type the following:
-
-```
-$ deactivate
-```
-
-You should now be back to your normal Linux system shell prompt.
-To re-enter virtualenv, rerun the *source bin/activate* command as above,
-from within the */opt/ireceptor/data* directory
-
 ## (Optional) Linux Environment Variables
 
 Note that, For added convenience for running of the data loading script, some of the default parameters
