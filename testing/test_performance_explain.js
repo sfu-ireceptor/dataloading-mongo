@@ -60,6 +60,12 @@ query_setup_time = new Date();
 /****************************************************************************************
  MAIN */
 
+// Get the cache status before we start doing our queries.
+cacheData = db.serverStatus().wiredTiger.cache;
+cachePagesReadStart = cacheData["pages read into cache"];
+cachePagesRequestedStart = cacheData["pages requested from the cache"];
+print("Start - Cache pages read = "+cachePagesReadStart + ", Cache pages requested = " + cachePagesRequestedStart);
+
 // get samples ids directly from sequences collection
 //sample_id_list = [110];
 sample_id_list = db[collection].distinct('ir_project_sample_id');
@@ -99,6 +105,17 @@ print("Total run time = " + (end_time - start_time)/1000);
 print("Query setup time = " + (query_setup_time - start_time)/1000);
 print("Sample ID time = " + (sample_id_time - query_setup_time)/1000);
 print("Primary query time = " + (end_time - sample_id_time)/1000);
+// Print cache performance
+cacheData = db.serverStatus().wiredTiger.cache;
+cachePagesReadEnd = cacheData["pages read into cache"];
+cachePagesRequestedEnd = cacheData["pages requested from the cache"];
+print("End - Cache pages read = " + cachePagesReadEnd + ", Cache pages requested = " + cachePagesRequestedEnd);
+cachePageReads = cachePagesReadEnd - cachePagesReadStart;
+cachePageRequests = cachePagesRequestedEnd - cachePagesRequestedStart;
+cacheHitRatio = 1.0 - (cachePageReads/cachePageRequests);
+
+print("Cache pages read = " + cachePageReads + ", Cache pages requested = " + cachePageRequests);
+print("Cache hit ratio = " + cacheHitRatio);
 
 
 /****************************************************************************************
