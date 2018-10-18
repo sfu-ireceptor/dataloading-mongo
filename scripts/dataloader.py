@@ -378,14 +378,14 @@ def load_file(context):
     elif context.type == "imgt":
         # process imgt
         print("processing IMGT data file: {}".format(context.filename))
-        prompt_counter(context)
+        #prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
             print("IMGT data file loaded")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
-        prompt_counter(context)
+        #prompt_counter(context)
         mixcr = MiXCR(context)
         if mixcr.process():
             print("MiXCR data file loaded")
@@ -394,7 +394,7 @@ def load_file(context):
     elif options.type == "airr":
         # process AIRR TSV
         print("Processing AIRR TSV annotation data file: ", context.filename)
-        prompt_counter(context)
+        #prompt_counter(context)
         airr = AIRR_TSV(context)
         if airr.process():
             print("AIRR TSV data file loaded")
