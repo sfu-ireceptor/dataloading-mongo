@@ -168,7 +168,7 @@ class MiXCR(Parser):
                 df_chunk['jgene_family'] = df_chunk['j_call'].apply(Parser.setGeneFamily)
 
             # Assign each record the constant fields for all records in the chunk
-            df_chunk['functional'] = 'productive'
+            df_chunk['functional'] = 1
             # Assign any iReceptor specific custom fields for the records in the chunk
             df_chunk['ir_annotation_tool'] = 'MiXCR'
             df_chunk['ir_project_sample_id'] = ir_project_sample_id
