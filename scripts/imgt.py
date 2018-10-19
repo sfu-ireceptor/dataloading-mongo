@@ -44,6 +44,15 @@ def setGene(gene):
 
         return gene_string
 
+# IMGT has a "functionality" field which has a text string that indcates
+# a functional annotation with the string "productive". Note that the 
+# string sometimes contains "productinge (see comment..." so we need to
+# check to ensure that the string starts with "productive".
+def functional_boolean(functionality):
+    if functionality.startswith("productive"):
+        return 1
+    else:
+        return 0
 
 class IMGT(Parser):
     def __init__(self, context):
@@ -145,7 +154,7 @@ class IMGT(Parser):
             ]]
 
             df_1.columns = [
-                'seq_name', 'v_string', 'j_string', 'd_string', 'functional',
+                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
                 'v_score', 'j_score', 'vgene_probablity',
                 'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
                 'cdr3_length', 'functionality_comment', 'rev_comp',
@@ -165,7 +174,7 @@ class IMGT(Parser):
             ]]
 
             df_1.columns = [
-                'seq_name', 'v_string', 'j_string', 'd_string', 'functional',
+                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
                 'v_score', 'j_score', 'vgene_probablity',
                 'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
                 'cdr3_length', 'functionality_comment', 'rev_comp',
@@ -282,6 +291,7 @@ class IMGT(Parser):
             len)
         df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(
             len)
+        df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
 
         sampleid = self.context.samples.find({
             "imgt_file_name": {
