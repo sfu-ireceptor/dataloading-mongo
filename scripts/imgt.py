@@ -294,7 +294,7 @@ class IMGT(Parser):
         # for all sequences in this file.
         df_concat['ir_project_sample_id'] = ir_project_sample_id
         # The annotation tool used
-        df_concat['ir_annotation_tool'] = "IMGT V-Quest " + Para_dict['IMGT/V-QUEST programme version'] + " - " + Para_dict['IMGT/V-QUEST reference directory release']
+        df_concat['ir_annotation_tool'] = "V-Quest"
 
         df_concat['substring'] = df_concat['junction_aa'].apply(
             Parser.get_substring)
