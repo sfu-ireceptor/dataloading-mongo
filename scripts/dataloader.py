@@ -49,6 +49,15 @@ def getArguments():
         action="store_true",
         help="print out the list of options given to this script")
 
+    # Add configuration options 
+    config_group = parser.add_argument_group("Configuration file options", "")
+    config_group.add_argument(
+        "--mapfile",
+        dest="mapfile",
+        default="ireceptor.cfg",
+        help="iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run."
+    )
+
     type_group = parser.add_argument_group("data type options", "")
     type_group = type_group.add_mutually_exclusive_group()
 
@@ -215,6 +224,7 @@ def getArguments():
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
+        print('MAPFILE      :', options.mapfile)
         print('DATA_TYPE    :', options.type)
         print('LIBRARY_PATH :', options.library)
         print('FILE_NAME    :', options.filename)
@@ -311,7 +321,14 @@ class Context:
         print("Connecting to Mongo as user '%s' on '%s:%s'" %
                 (username, options.host, options.port))
 
-        mng_client = pymongo.MongoClient(uri)
+        # Connect to the Mongo server and return if not able to connect.
+        try:
+            mng_client = pymongo.MongoClient(uri)
+        except pymongo.errors.ConfigurationError as err:
+            print("Unable to connect to %s:%s - %s"
+                    % (options.host, options.port, err))
+            return None
+
         # Constructor doesn't block - need to check to see if the connection works.
         try:
             # The ismaster command is cheap and does not require auth.
