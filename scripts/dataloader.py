@@ -27,6 +27,7 @@ from sample import Sample
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
+from airr_map import AIRRMap
 from ireceptor_indexes import indexes
 
 _type2ext = {
@@ -276,7 +277,7 @@ def validate_library(library_path):
 
 
 class Context:
-    def __init__(self, type, library, filename, path, samples, sequences, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
+    def __init__(self, mapfile, type, library, filename, path, samples, sequences, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
         """Create an execution context with various info.
 
 
@@ -299,6 +300,8 @@ class Context:
         verbose -- make output verbose
         """
 
+        # Keep track of the data for this instance.
+        self.mapfile = mapfile
         self.type = type
         self.library = library
         self.filename = filename
@@ -310,6 +313,8 @@ class Context:
         self.drop_index = drop_index
         self.build_index = build_index
         self.rebuild_index = rebuild_index
+        # Create the AIRR Mapping object from the mapfile.
+        self.airr_map = AIRRMap(mapfile)
 
     @classmethod
     def getContext(cls, options):
@@ -341,7 +346,7 @@ class Context:
         # Set Mongo db name
         mng_db = mng_client[options.database]
 
-        return cls(options.type, options.library, options.filename, options.path,
+        return cls(options.mapfile, options.type, options.library, options.filename, options.path,
                     mng_db['sample'], mng_db['sequence'], options.counter,
                     options.verbose, options.drop_index, 
                     options.build_index, options.rebuild_index)
