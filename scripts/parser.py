@@ -43,8 +43,7 @@ class Parser:
         # Build the gene call field, as an array if there is more than one gene
         # assignment made by the annotator.
             if base_tag in dataframe:
-                #if context.verbose:
-                if True:
+                if context.verbose:
                     print("Constructing %s array from %s"%(call_tag, base_tag), flush=True)
                 dataframe[call_tag] = dataframe[base_tag].apply(Parser.setGene)
 
