@@ -279,13 +279,17 @@ class IMGT(Parser):
         # The annotation tool used
         df_concat['ir_annotation_tool'] = "V-Quest"
 
-        df_concat['substring'] = df_concat['junction_aa'].apply(
-            Parser.get_substring)
-        #     df_concat['substring'] = df_concat['cdr3region_sequence_aa'].apply(Parser.get_substring)
+        # Generate the substring field, which we use to heavily optmiize junction AA
+        # searches.
+        df_concat['substring'] = df_concat['junction_aa'].apply(Parser.get_substring)
+
+        # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
+        # needs, which is [vdj]_call, [vdj]gene_gene, [vdj]gene_family
         Parser.processGene(self.context, df_concat, "v_string", "v_call", "vgene_gene", "vgene_family")
         Parser.processGene(self.context, df_concat, "j_string", "j_call", "jgene_gene", "jgene_family")
         Parser.processGene(self.context, df_concat, "d_string", "d_call", "dgene_gene", "dgene_family")
 
+        # Generate the junction length values as required.
         df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
         df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
 
