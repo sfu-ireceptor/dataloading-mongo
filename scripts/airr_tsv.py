@@ -16,6 +16,15 @@ class AIRR_TSV(Parser):
     def __init__( self, context ):
         Parser.__init__(self,context)
 
+    # We nedd to convert the AIRR TSV T/F to our mechanism for storing functionality
+    # which is 1/0 
+    def functional_boolean(self, functionality):
+        print("functionality = ", functionality)
+        if functionality or functionality == "T":
+            return 1
+        else:
+            return 0
+
     def process(self):
 
         # This first iteration just reads one AIRR TSV file
@@ -85,6 +94,16 @@ class AIRR_TSV(Parser):
                 if self.context.verbose:
                     print("Computing junction amino acids length...")
                 airr_df['junction_aa_length'] = airr_df['junction_aa'].apply(str).apply(len)
+
+        # Check to see if we have a productive field (later versions of AIRR TSV). If
+        # so conver to our repositories boolean storage mechanism. Similarly if the
+        # older AIRR TSV version of the functional field is present, handle that as well.
+        if 'productive' in airr_df:
+            print("FOUND PRODUCTIVE")
+            airr_df['functional'] = airr_df['productive'].apply(self.functional_boolean)
+        elif 'functional' in airr_df:
+            airr_df['functional'] = airr_df['functional'].apply(self.functional_boolean)
+            print("FOUND FUNCTIONAL")
 
         # Build the v_call field, as an array if there is more than one gene
         # assignment made by the annotator.
