@@ -118,54 +118,9 @@ class MiXCR(Parser):
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
-            if 'v_call' in df_chunk:
-                if self.context.verbose:
-                    print("Constructing v_call array from v_call", flush=True)
-                df_chunk['v_call'] = df_chunk['v_call'].apply(Parser.setGene)
-
-                # Build the vgene_gene field (with no allele)
-                if self.context.verbose:
-                    print("Constructing vgene_gene from v_call", flush=True)
-                df_chunk['vgene_gene'] = df_chunk['v_call'].apply(Parser.setGeneGene)
-
-                # Build the vgene_family field (with no allele and no gene)
-                if self.context.verbose:
-                    print("Constructing vgene_family from v_call", flush=True)
-                df_chunk['vgene_family'] = df_chunk['v_call'].apply(Parser.setGeneFamily)
-
-            # Build the d_call field, as an array if there is more than one gene
-            # assignment made by the annotator.
-            if 'd_call' in df_chunk:
-                if self.context.verbose:
-                    print("Constructing d_call array from d_call", flush=True)
-                df_chunk['d_call'] = df_chunk['d_call'].apply(Parser.setGene)
-
-                # Build the dgene_gene field (with no allele)
-                if self.context.verbose:
-                    print("Constructing dgene_gene from d_call", flush=True)
-                df_chunk['dgene_gene'] = df_chunk['d_call'].apply(Parser.setGeneGene)
-
-                # Build the dgene_family field (with no allele and no gene)
-                if self.context.verbose:
-                    print("Constructing dgene_family from d_call", flush=True)
-                df_chunk['dgene_family'] = df_chunk['d_call'].apply(Parser.setGeneFamily)
-
-            # Build the j_call field, as an array if there is more than one gene
-            # assignment made by the annotator.
-            if 'j_call' in df_chunk:
-                if self.context.verbose:
-                    print("Constructing j_call array from j_call", flush=True)
-                df_chunk['j_call'] = df_chunk['j_call'].apply(Parser.setGene)
-
-                # Build the jgene_gene field (with no allele)
-                if self.context.verbose:
-                    print("Constructing jgene_gene from j_call", flush=True)
-                df_chunk['jgene_gene'] = df_chunk['j_call'].apply(Parser.setGeneGene)
-
-                # Build the jgene_family field (with no allele and no gene)
-                if self.context.verbose:
-                    print("Constructing jgene_family from j_call", flush=True)
-                df_chunk['jgene_family'] = df_chunk['j_call'].apply(Parser.setGeneFamily)
+            Parser.processGene(self.context, df_chunk, "v_call", "v_call", "vgene_gene", "vgene_family")
+            Parser.processGene(self.context, df_chunk, "j_call", "j_call", "jgene_gene", "jgene_family")
+            Parser.processGene(self.context, df_chunk, "d_call", "d_call", "dgene_gene", "dgene_family")
 
             # Assign each record the constant fields for all records in the chunk
             df_chunk['functional'] = 1
