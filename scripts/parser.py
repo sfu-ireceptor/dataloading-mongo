@@ -72,31 +72,16 @@ class Parser:
 
         # Split the string based on possible string delimeters.
         gene_string = re.split(',| ', gene)
-        gene_list = list(set(gene_string))
+        gene_orig_list = list(set(gene_string))
 
-        # If only a single string, return the list. Otherwise throw
-        # away all of the garbage bits and just keep the actual gene strings.
-        # This is mostly required to clean up the messy IMGT mappings and is
-        # can be error prone if an annotator throws in some garbage.
-        if len(gene_list) == 1 or 0:
+        # If there are no strings in the list, return the empty list.
+        if len(gene_orig_list) == 0:
             return gene_list
         else:
-            if '' in gene_list:
-                gene_list.remove('')
-            if 'or' in gene_list:
-                gene_list.remove('or')
-            if 'F' in gene_list:
-                gene_list.remove('F')
-            if 'P' in gene_list:
-                gene_list.remove('P')
-            if '[F]' in gene_list:
-                gene_list.remove('[F]')
-            if 'Homsap' in gene_list:
-                gene_list.remove('Homsap')
-            if '(see' in gene_list:
-                gene_list.remove('(see')
-            if 'comment)' in gene_list:
-                gene_list.remove('comment)')
+            # Only keep genes that start with either IG or TR.
+            for gene in gene_orig_list:
+                if gene.startswith("IG") or gene.startswith("TR"):
+                    gene_list.append(gene)
 
             return gene_list
 
