@@ -17,33 +17,6 @@ import pandas as pd
 
 from parser import Parser
 
-def setGene(gene):
-
-    gene_string = re.split(',| ', gene)
-    gene_string = list(set(gene_string))
-
-    if len(gene_string) == 1 or 0:
-        return gene_string
-    else:
-        if '' in gene_string:
-            gene_string.remove('')
-        if 'or' in gene_string:
-            gene_string.remove('or')
-        if 'F' in gene_string:
-            gene_string.remove('F')
-        if 'P' in gene_string:
-            gene_string.remove('P')
-        if '[F]' in gene_string:
-            gene_string.remove('[F]')
-        if 'Homsap' in gene_string:
-            gene_string.remove('Homsap')
-        if '(see' in gene_string:
-            gene_string.remove('(see')
-        if 'comment)' in gene_string:
-            gene_string.remove('comment)')
-
-        return gene_string
-
 # IMGT has a "functionality" field which has a text string that indcates
 # a functional annotation with the string "productive". Note that the 
 # string sometimes contains "productinge (see comment..." so we need to
@@ -313,9 +286,6 @@ class IMGT(Parser):
         Parser.processGene(self.context, df_concat, "j_string", "j_call", "jgene_gene", "jgene_family")
         Parser.processGene(self.context, df_concat, "d_string", "d_call", "dgene_gene", "dgene_family")
 
-        #df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
-        #df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
-        #df_concat['d_call'] = df_concat['d_string'].apply(str).apply(setGene)
         df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
         df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
 
