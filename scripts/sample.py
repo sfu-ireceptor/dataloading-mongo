@@ -34,7 +34,12 @@ class Sample:
 	
                 # Read in the CSV file
 		df = pd.read_csv( self.context.path , sep=None, engine='python' )
-		# Remove any records that are Unnamed
+		# Remove any records that are Unnamed. Note: This occurs when a 
+		# Pandas dataframe has a column without a name. In general, this 
+		# should not occur and it should probably be detected as an error or
+		# at least a warning given.
+		if (df.columns.str.contains('^Unnamed').any()):
+			print("Warning: column without a title detected in file ", self.context.path)	
 		df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 		# Add the sequence count field
 		df['ir_sequence_count'] = 0

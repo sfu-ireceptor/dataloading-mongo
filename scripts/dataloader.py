@@ -27,6 +27,7 @@ from sample import Sample
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
+from airr_map import AIRRMap
 from ireceptor_indexes import indexes
 
 _type2ext = {
@@ -48,6 +49,15 @@ def getArguments():
         "--verbose",
         action="store_true",
         help="print out the list of options given to this script")
+
+    # Add configuration options 
+    config_group = parser.add_argument_group("Configuration file options", "")
+    config_group.add_argument(
+        "--mapfile",
+        dest="mapfile",
+        default="ireceptor.cfg",
+        help="iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run."
+    )
 
     type_group = parser.add_argument_group("data type options", "")
     type_group = type_group.add_mutually_exclusive_group()
@@ -215,6 +225,7 @@ def getArguments():
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
+        print('MAPFILE      :', options.mapfile)
         print('DATA_TYPE    :', options.type)
         print('LIBRARY_PATH :', options.library)
         print('FILE_NAME    :', options.filename)
@@ -266,7 +277,7 @@ def validate_library(library_path):
 
 
 class Context:
-    def __init__(self, type, library, filename, path, samples, sequences, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
+    def __init__(self, mapfile, type, library, filename, path, samples, sequences, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
         """Create an execution context with various info.
 
 
@@ -289,6 +300,8 @@ class Context:
         verbose -- make output verbose
         """
 
+        # Keep track of the data for this instance.
+        self.mapfile = mapfile
         self.type = type
         self.library = library
         self.filename = filename
@@ -300,6 +313,8 @@ class Context:
         self.drop_index = drop_index
         self.build_index = build_index
         self.rebuild_index = rebuild_index
+        # Create the AIRR Mapping object from the mapfile.
+        self.airr_map = AIRRMap(mapfile)
 
     @classmethod
     def getContext(cls, options):
@@ -311,7 +326,14 @@ class Context:
         print("Connecting to Mongo as user '%s' on '%s:%s'" %
                 (username, options.host, options.port))
 
-        mng_client = pymongo.MongoClient(uri)
+        # Connect to the Mongo server and return if not able to connect.
+        try:
+            mng_client = pymongo.MongoClient(uri)
+        except pymongo.errors.ConfigurationError as err:
+            print("Unable to connect to %s:%s - %s"
+                    % (options.host, options.port, err))
+            return None
+
         # Constructor doesn't block - need to check to see if the connection works.
         try:
             # The ismaster command is cheap and does not require auth.
@@ -324,7 +346,7 @@ class Context:
         # Set Mongo db name
         mng_db = mng_client[options.database]
 
-        return cls(options.type, options.library, options.filename, options.path,
+        return cls(options.mapfile, options.type, options.library, options.filename, options.path,
                     mng_db['sample'], mng_db['sequence'], options.counter,
                     options.verbose, options.drop_index, 
                     options.build_index, options.rebuild_index)
@@ -378,14 +400,14 @@ def load_file(context):
     elif context.type == "imgt":
         # process imgt
         print("processing IMGT data file: {}".format(context.filename))
-        prompt_counter(context)
+        #prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
             print("IMGT data file loaded")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
-        prompt_counter(context)
+        #prompt_counter(context)
         mixcr = MiXCR(context)
         if mixcr.process():
             print("MiXCR data file loaded")
@@ -394,7 +416,7 @@ def load_file(context):
     elif options.type == "airr":
         # process AIRR TSV
         print("Processing AIRR TSV annotation data file: ", context.filename)
-        prompt_counter(context)
+        #prompt_counter(context)
         airr = AIRR_TSV(context)
         if airr.process():
             print("AIRR TSV data file loaded")

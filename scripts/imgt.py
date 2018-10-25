@@ -17,33 +17,15 @@ import pandas as pd
 
 from parser import Parser
 
-def setGene(gene):
-
-    gene_string = re.split(',| ', gene)
-    gene_string = list(set(gene_string))
-
-    if len(gene_string) == 1 or 0:
-        return gene_string
+# IMGT has a "functionality" field which has a text string that indcates
+# a functional annotation with the string "productive". Note that the 
+# string sometimes contains "productinge (see comment..." so we need to
+# check to ensure that the string starts with "productive".
+def functional_boolean(functionality):
+    if functionality.startswith("productive"):
+        return 1
     else:
-        if '' in gene_string:
-            gene_string.remove('')
-        if 'or' in gene_string:
-            gene_string.remove('or')
-        if 'F' in gene_string:
-            gene_string.remove('F')
-        if 'P' in gene_string:
-            gene_string.remove('P')
-        if '[F]' in gene_string:
-            gene_string.remove('[F]')
-        if 'Homsap' in gene_string:
-            gene_string.remove('Homsap')
-        if '(see' in gene_string:
-            gene_string.remove('(see')
-        if 'comment)' in gene_string:
-            gene_string.remove('comment)')
-
-        return gene_string
-
+        return 0
 
 class IMGT(Parser):
     def __init__(self, context):
@@ -145,7 +127,7 @@ class IMGT(Parser):
             ]]
 
             df_1.columns = [
-                'seq_name', 'v_string', 'j_string', 'd_string', 'functional',
+                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
                 'v_score', 'j_score', 'vgene_probablity',
                 'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
                 'cdr3_length', 'functionality_comment', 'rev_comp',
@@ -165,7 +147,7 @@ class IMGT(Parser):
             ]]
 
             df_1.columns = [
-                'seq_name', 'v_string', 'j_string', 'd_string', 'functional',
+                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
                 'v_score', 'j_score', 'vgene_probablity',
                 'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
                 'cdr3_length', 'functionality_comment', 'rev_comp',
@@ -282,6 +264,7 @@ class IMGT(Parser):
             len)
         df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(
             len)
+        df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
 
         sampleid = self.context.samples.find({
             "imgt_file_name": {
@@ -294,14 +277,19 @@ class IMGT(Parser):
         # for all sequences in this file.
         df_concat['ir_project_sample_id'] = ir_project_sample_id
         # The annotation tool used
-        df_concat['ir_annotation_tool'] = "IMGT V-Quest " + Para_dict['IMGT/V-QUEST programme version'] + " - " + Para_dict['IMGT/V-QUEST reference directory release']
+        df_concat['ir_annotation_tool'] = "V-Quest"
 
-        df_concat['substring'] = df_concat['junction_aa'].apply(
-            Parser.get_substring)
-        #     df_concat['substring'] = df_concat['cdr3region_sequence_aa'].apply(Parser.get_substring)
-        df_concat['v_call'] = df_concat['v_string'].apply(str).apply(setGene)
-        df_concat['j_call'] = df_concat['j_string'].apply(str).apply(setGene)
-        df_concat['d_call'] = df_concat['d_string'].apply(str).apply(setGene)
+        # Generate the substring field, which we use to heavily optmiize junction AA
+        # searches.
+        df_concat['substring'] = df_concat['junction_aa'].apply(Parser.get_substring)
+
+        # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
+        # needs, which is [vdj]_call, [vdj]gene_gene, [vdj]gene_family
+        Parser.processGene(self.context, df_concat, "v_string", "v_call", "vgene_gene", "vgene_family")
+        Parser.processGene(self.context, df_concat, "j_string", "j_call", "jgene_gene", "jgene_family")
+        Parser.processGene(self.context, df_concat, "d_string", "d_call", "dgene_gene", "dgene_family")
+
+        # Generate the junction length values as required.
         df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
         df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
 

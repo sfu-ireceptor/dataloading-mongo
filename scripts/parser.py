@@ -25,6 +25,39 @@ class Parser:
                 strlist.append(i)
         return strlist
 
+    # Process a gene call to generate the appropriate call, gene, and family
+    # fields in teh data frame.
+    # Inputs:
+    #    - context: the context for the processing to take place
+    #    - dataframe: the dataframe to process. The call_tage should exist
+    #                 within this dataframe, and the gene_tag, family_tag
+    #                 columns will be created within this data frame based
+    #                 on the call_tag column
+    #    - call_tag: a string that represents the column name to be processed
+    #    - gene_tag: a string that represents the column name of the gene tag
+    #                 to be created
+    #    - family_tag: a string that represents the column name of the gene tag
+    #                 to be created
+    @staticmethod
+    def processGene(context, dataframe, base_tag, call_tag, gene_tag, family_tag):
+        # Build the gene call field, as an array if there is more than one gene
+        # assignment made by the annotator.
+            if base_tag in dataframe:
+                if context.verbose:
+                    print("Constructing %s array from %s"%(call_tag, base_tag), flush=True)
+                dataframe[call_tag] = dataframe[base_tag].apply(Parser.setGene)
+
+                # Build the vgene_gene field (with no allele)
+                if context.verbose:
+                    print("Constructing %s from %s"%(gene_tag, base_tag), flush=True)
+                dataframe[gene_tag] = dataframe[call_tag].apply(Parser.setGeneGene)
+
+                # Build the vgene_family field (with no allele and no gene)
+                if context.verbose:
+                    print("Constructing %s from %s"%(family_tag, base_tag), flush=True)
+                dataframe[family_tag] = dataframe[call_tag].apply(Parser.setGeneFamily)
+
+
 
     # A method to take a list of gene assignments from an annotation tool
     # and create an array of strings with just the allele strings without
@@ -39,31 +72,16 @@ class Parser:
 
         # Split the string based on possible string delimeters.
         gene_string = re.split(',| ', gene)
-        gene_list = list(set(gene_string))
+        gene_orig_list = list(set(gene_string))
 
-        # If only a single string, return the list. Otherwise throw
-        # away all of the garbage bits and just keep the actual gene strings.
-        # This is mostly required to clean up the messy IMGT mappings and is
-        # can be error prone if an annotator throws in some garbage.
-        if len(gene_list) == 1 or 0:
+        # If there are no strings in the list, return the empty list.
+        if len(gene_orig_list) == 0:
             return gene_list
         else:
-            if '' in gene_list:
-                gene_list.remove('')
-            if 'or' in gene_list:
-                gene_list.remove('or')
-            if 'F' in gene_list:
-                gene_list.remove('F')
-            if 'P' in gene_list:
-                gene_list.remove('P')
-            if '[F]' in gene_list:
-                gene_list.remove('[F]')
-            if 'Homsap' in gene_list:
-                gene_list.remove('Homsap')
-            if '(see' in gene_list:
-                gene_list.remove('(see')
-            if 'comment)' in gene_list:
-                gene_list.remove('comment)')
+            # Only keep genes that start with either IG or TR.
+            for gene in gene_orig_list:
+                if gene.startswith("IG") or gene.startswith("TR"):
+                    gene_list.append(gene)
 
             return gene_list
 
