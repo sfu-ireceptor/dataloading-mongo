@@ -314,7 +314,8 @@ class Context:
         self.build_index = build_index
         self.rebuild_index = rebuild_index
         # Create the AIRR Mapping object from the mapfile.
-        self.airr_map = AIRRMap(mapfile)
+        self.airr_map = AIRRMap(self.verbose)
+        self.airr_map.readMapFile(self.mapfile)
 
     @classmethod
     def getContext(cls, options):
@@ -391,15 +392,15 @@ def load_file(context):
 
     if context.type == "sample":
         # process samples
-        print("processing Sample metadata file: {}".format(context.filename))
+        print("Processing repertoire metadata file: {}".format(context.filename))
         sample = Sample(context)
         if sample.process():
-            print("Sample metadata file loaded")
+            print("Repertoire metadata file loaded")
         else:
-            print("ERROR: Sample input file not found?")
+            print("ERROR: Repertoire input file not found?")
     elif context.type == "imgt":
         # process imgt
-        print("processing IMGT data file: {}".format(context.filename))
+        print("Processing IMGT data file: {}".format(context.filename))
         #prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
