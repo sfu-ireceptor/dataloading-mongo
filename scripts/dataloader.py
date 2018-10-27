@@ -405,6 +405,8 @@ def load_file(context):
         imgt = IMGT(context)
         if imgt.process():
             print("IMGT data file loaded")
+        else:
+            print("ERROR: IMGT data file not found?")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
