@@ -41,6 +41,7 @@ class AIRRMap:
         self.airr_rearrangement_map = self.airr_mappings.loc[self.airr_mappings['airr_class'].isin(self.airr_rearrangement_classes)]
         self.airr_repertoire_map = self.airr_mappings.loc[self.airr_mappings['airr_class'].isin(self.airr_repertoire_classes)]
         #print(self.airr_repertoire_map['ir_id'])
+        #print(self.airr_rearrangement_map['vquest_file'])
         return True
 
 
