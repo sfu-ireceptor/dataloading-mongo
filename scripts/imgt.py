@@ -59,23 +59,11 @@ class IMGT(Parser):
         
         # Process annotation files
         for f in onlyfiles:
-            self.processImgtArchive(f)
+            if not self.processImgtArchive(f):
+                return False
 
 	# Clean up the "imgt" directory tree once the files are processed
         rmtree(self.getDataFolder())
-
-        # print("v_call...")
-        # self.context.sequences.create_index("v_call")
-        # print("d_call...")
-        # self.context.sequences.create_index("d_call")
-        # print("j_call...")
-        # self.context.sequences.create_index("j_call")
-        # print("junction_aa_length...")
-        # self.context.sequences.create_index("junction_aa_length")
-        # print("functional...")
-        # self.context.sequences.create_index("functional")
-        # print("ir_project_sample_id...")
-        # self.context.sequences.create_index("ir_project_sample_id")
 
         return True
 
@@ -93,6 +81,38 @@ class IMGT(Parser):
         tar.extractall(self.getScratchFolder())
 
         tar.close()
+
+        # Get the list of relevant vQuest files. Choose the vquest_file column,
+        # drop the NAs, and grab the unique members that remain.
+        vquest_file_map = self.context.airr_map.airr_rearrangement_map['vquest_file'].dropna()
+        vquest_files = vquest_file_map.unique()
+        print(vquest_files)
+        # Create a dictionary that stores an array of fields to process
+        # for each IMGT file that we need to process.
+        filedict = {}
+        for vquest_file in vquest_files:
+            # Read in the data frame for the file.
+            vquest_dataframe = self.readDf(vquest_file)
+            # Extract the fields that are of interest for this file.
+            # We first select the rows in the mapping that contain
+            # the current file in the "vquest_file" column.
+            file_fields = self.context.airr_map.airr_rearrangement_map.loc[self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])]
+            # Use the vquest column names to select the data of interest
+            # from the data frame.
+            airr_dataframe = vquest_dataframe[file_fields['vquest']]
+            # Replace the vquest column names with the AIRR column names we map
+            airr_dataframe.columns = file_fields['airr']
+            # Store it all in a dictionay so we can use it later.
+            filedict[vquest_file] = {'vquest': file_fields['vquest'],
+                                     'airr': file_fields['airr'],
+                                     'vquest_dataframe': vquest_dataframe,
+                                     'airr_dataframe': airr_dataframe}
+
+        print(filedict)
+        #print(filedict.keys())
+        #print(filedict.values())
+
+        return False
 
         Summary_1 = self.readDf('1_Summary.txt')
 
