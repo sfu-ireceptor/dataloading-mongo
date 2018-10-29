@@ -26,31 +26,21 @@ def get_substring(string):
     return strlist
 
 def setGene(gene):
+    gene_list = list();
     gene_string = re.split(',| ', gene)
     gene_string = list(set(gene_string))
     if len(gene_string) == 1 or 0:
         return gene_string
     else:
-        if '' in gene_string:
-            gene_string.remove('')
-        if 'or' in gene_string:
-            gene_string.remove('or')
-        if 'F' in gene_string:
-            gene_string.remove('F')
-        if 'P' in gene_string:
-            gene_string.remove('P')
-        if '[F]' in gene_string:
-            gene_string.remove('[F]')
-        if 'Homsap' in gene_string:
-            gene_string.remove('Homsap')
-        if '(see' in gene_string:
-            gene_string.remove('(see')
-        if 'comment)' in gene_string:
-            gene_string.remove('comment)')
-        return gene_string
+        # Only keep genes that start with either IG or TR.
+        for gene in gene_string:
+            if gene.startswith("IG") or gene.startswith("TR"):
+                gene_list.append(gene)
 
-#function  to extract just the gene from V/D/J-GENE fields   
-# essentially ignore the part of the gene after *, if it exists     
+    return gene_list
+
+#function  to extract just the gene from V/D/J-GENE fields
+# essentially ignore the part of the gene after *, if it exists
 def setGeneGene(gene_array):
     gene_gene = list()
     for gene in gene_array:
@@ -58,11 +48,11 @@ def setGeneGene(gene_array):
         if pattern == None:
             #there wasn't an allele - gene is same as _call
             if gene not in gene_gene:
-                gene_gene.append(gene)                
+                gene_gene.append(gene)
         else:
-            if pattern.group(1) not in gene_gene:               
+            if pattern.group(1) not in gene_gene:
                 gene_gene.append(pattern.group(1))
-    return gene_gene 
+    return gene_gene
 
 #function to extract just the family from V/D/J-GENE fields
 # ignore part of the gene after -, or after * if there's no -
@@ -184,7 +174,7 @@ def loadData(mypath,filename,sample_db_cm):
     df_concat['vgene_gene'] = df_concat['v_call'].apply(setGeneGene)
     df_concat['vgene_family'] = df_concat['v_call'].apply(setGeneFamily)
     df_concat['jgene_gene'] = df_concat['j_call'].apply(setGeneGene)
-    df_concat['jgene_family'] = df_concat['j_call'].apply(setGeneFamily)   
+    df_concat['jgene_family'] = df_concat['j_call'].apply(setGeneFamily)
     df_concat['dgene_gene'] = df_concat['d_call'].apply(setGeneGene)
     df_concat['dgene_family'] = df_concat['d_call'].apply(setGeneFamily)
     df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
@@ -212,7 +202,7 @@ def main(mypath):
         if len(idlist)>0:
             loadData(mypath,filename,sample_db_cm)
         else:
-            print ("Warning! The filename %s does not match the one in sample data" %filename)
+            print ("Warning! The filename %s does not match the one in sample data" %filename )
     filelist = [ f for f in os.listdir(".") if f.endswith(".txt") ]
     for f in filelist:
         os.remove(f)
