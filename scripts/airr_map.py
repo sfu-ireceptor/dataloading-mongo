@@ -36,12 +36,16 @@ class AIRRMap:
         if self.verbose:
             print("Successfully read in %d mapping columns" % (len(self.airr_mappings.columns)))
 
-        # Get the rows that we care about for MiAIRR repertiores (sample loading)
-        # and MiAIRR rearrangments.
-        self.airr_rearrangement_map = self.airr_mappings.loc[self.airr_mappings['airr_class'].isin(self.airr_rearrangement_classes)]
-        self.airr_repertoire_map = self.airr_mappings.loc[self.airr_mappings['airr_class'].isin(self.airr_repertoire_classes)]
+        # Get the labels for all of the fields that are in the airr rearrangements class.
+        labels = self.airr_mappings['airr_class'].isin(self.airr_rearrangement_classes)
+        # Get all of the rows that have the rearrangement class labels.
+        self.airr_rearrangement_map = self.airr_mappings.loc[labels]
+        # Get the labels for all of the fields that are in the airr repertoire class.
+        labels = self.airr_mappings['airr_class'].isin(self.airr_repertoire_classes)
+        # Get all of the rows that have the repertoire class labels.
+        self.airr_repertoire_map = self.airr_mappings.loc[labels]
         #print(self.airr_repertoire_map['ir_id'])
-        #print(self.airr_rearrangement_map['vquest_file'])
+        #print(self.airr_rearrangement_map['ir_id'])
         return True
 
 
