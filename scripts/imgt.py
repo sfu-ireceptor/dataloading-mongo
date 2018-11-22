@@ -83,33 +83,51 @@ class IMGT(Parser):
         tar.close()
 
         # Get the list of relevant vQuest files. Choose the vquest_file column,
-        # drop the NAs, and grab the unique members that remain.
-        vquest_file_map = self.context.airr_map.airr_rearrangement_map['vquest_file'].dropna()
-        vquest_files = vquest_file_map.unique()
+        # drop the NAs, and grab the unique members that remain. This gives us
+        # the list of relevant vQuest file names from the configuration file
+        # that we should be considering.
+        vquest_file_map = self.context.airr_map.airr_rearrangement_map['vquest_file']
+        vquest_files = vquest_file_map.dropna().unique()
+        print("VQuest Files")
         print(vquest_files)
         # Create a dictionary that stores an array of fields to process
         # for each IMGT file that we need to process.
         filedict = {}
+        first_dataframe = True
         for vquest_file in vquest_files:
+            if self.context.verbose:
+                print("Processing file ", vquest_file)
             # Read in the data frame for the file.
             vquest_dataframe = self.readDf(vquest_file)
             # Extract the fields that are of interest for this file.
-            # We first select the rows in the mapping that contain
-            # the current file in the "vquest_file" column.
-            file_fields = self.context.airr_map.airr_rearrangement_map.loc[self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])]
-            # Use the vquest column names to select the data of interest
-            # from the data frame.
+            field_of_interest = self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])
+            # We select the rows in the mapping that contain fields of interest for this file.
+            # At this point, file_fields contains N columns that contain our mappings for the
+            # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
+            # only data that is relevant to this specific vquest file.
+            file_fields = self.context.airr_map.airr_rearrangement_map.loc[field_of_interest]
+            # Use the vquest column in our mapping to select the columns we want from the 
+            # possibly quite large vquest data frame.
             airr_dataframe = vquest_dataframe[file_fields['vquest']]
-            # Replace the vquest column names with the AIRR column names we map
+            # We now have a data frame that has only the vquest data we want from this file. 
+            # We now replace the vquest column names with the AIRR column names from the map
             airr_dataframe.columns = file_fields['airr']
-            # Store it all in a dictionay so we can use it later.
+            # We now have a data frame with vquest data in it with AIRR compliant column names.
+            # Store all of this in a dictionay based on the file name so we can use it later.
             filedict[vquest_file] = {'vquest': file_fields['vquest'],
                                      'airr': file_fields['airr'],
                                      'vquest_dataframe': vquest_dataframe,
                                      'airr_dataframe': airr_dataframe}
+            if first_dataframe:
+                df_concat = airr_dataframe
+                first_dataframe = False
+            else:
+                df_concat = pd.concat([df_concat, airr_dataframe], axis=1)
+                
 
-        print(filedict)
-        #print(filedict.keys())
+        #print(filedict)
+        print(filedict.keys())
+        print(df_concat)
         #print(filedict.values())
 
         return False
