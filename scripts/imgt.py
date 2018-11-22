@@ -22,6 +22,7 @@ from parser import Parser
 # string sometimes contains "productinge (see comment..." so we need to
 # check to ensure that the string starts with "productive".
 def functional_boolean(functionality):
+    #print(functionality)
     if functionality.startswith("productive"):
         return 1
     else:
@@ -119,18 +120,19 @@ class IMGT(Parser):
                                      'vquest_dataframe': vquest_dataframe,
                                      'airr_dataframe': airr_dataframe}
             if first_dataframe:
-                df_concat = airr_dataframe
+                mongo_concat = airr_dataframe
+                vquest_concat = vquest_dataframe
                 first_dataframe = False
             else:
-                df_concat = pd.concat([df_concat, airr_dataframe], axis=1)
+                mongo_concat = pd.concat([mongo_concat, airr_dataframe], axis=1)
+                vquest_concat = pd.concat([vquest_concat, vquest_dataframe], axis=1)
                 
 
         #print(filedict)
         print(filedict.keys())
-        print(df_concat)
+        #print(mongo_concat)
         #print(filedict.values())
 
-        return False
 
         Summary_1 = self.readDf('1_Summary.txt')
 
@@ -148,8 +150,12 @@ class IMGT(Parser):
             '7_V-REGION-mutation-and-AA-change-table.txt')
 
         Parameters_11 = self.readDfNoHeader('11_Parameters.txt')
+        print(Parameters_11)
 
-        Para_dict = dict(zip(Parameters_11[0], Parameters_11[1]))
+        # Create a dictionary with keys the first column of the parameter file and the values
+        # the second column in the parameter file.
+        parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
+        print(parameter_dictionary)
 
         Summary_column_list = Summary_1.columns.values.tolist()
 
@@ -280,29 +286,34 @@ class IMGT(Parser):
             'cdr3region_mutation_string'
         ]
 
-        df_concat = pd.concat([df_1, df_2, df_3, df_4, df_5, df_7], axis=1)
-        df_concat['annotation_date'] = Para_dict['Date']
-        df_concat['tool_version'] = Para_dict['IMGT/V-QUEST programme version']
-        df_concat['reference_version'] = Para_dict[
+        #mongo_concat = pd.concat([df_1, df_2, df_3, df_4, df_5, df_7], axis=1)
+        # Need to grab some data out of the parameters dictionary.
+        mongo_concat['annotation_date'] = parameter_dictionary['Date']
+        mongo_concat['tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
+        mongo_concat['reference_version'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory release']
-        df_concat['species'] = Para_dict['Species']
-        df_concat['receptor_type'] = Para_dict['Receptor type or locus']
-        df_concat['reference_directory_set'] = Para_dict[
+        mongo_concat['species'] = parameter_dictionary['Species']
+        mongo_concat['receptor_type'] = parameter_dictionary['Receptor type or locus']
+        mongo_concat['reference_directory_set'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory set']
-        df_concat['search_insert_delete'] = Para_dict[
+        mongo_concat['search_insert_delete'] = parameter_dictionary[
             'Search for insertions and deletions']
-        df_concat['no_nucleotide_to_add'] = Para_dict[
+        mongo_concat['no_nucleotide_to_add'] = parameter_dictionary[
             "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
-        df_concat['no_nucleotide_to_exclude'] = Para_dict[
+        mongo_concat['no_nucleotide_to_exclude'] = parameter_dictionary[
             "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
-        df_concat = df_concat.where((pd.notnull(df_concat)), "")
-        df_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(
-            len)
-        df_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(
-            len)
-        df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(
-            len)
-        df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
+
+        # Get rid of columns where the column is null.
+        mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
+        #mongo_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(len)
+        #mongo_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(len)
+        #mongo_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(len)
+
+        # IMGT annotates a rearrangement with a text string. We have a utility function
+        # that takes the string and changes it to an integer 1/0 which the repository
+        # expects. We want to keep the original data in case we need further interpretation,
+        mongo_concat['ir_productive'] = mongo_concat['functional']
+        mongo_concat['functional'] = mongo_concat['functional'].apply(functional_boolean)
 
         sampleid = self.context.samples.find({
             "imgt_file_name": {
@@ -313,25 +324,32 @@ class IMGT(Parser):
         # Critical iReceptor specific fields
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
-        df_concat['ir_project_sample_id'] = ir_project_sample_id
+        mongo_concat['ir_project_sample_id'] = ir_project_sample_id
         # The annotation tool used
-        df_concat['ir_annotation_tool'] = "V-Quest"
+        mongo_concat['ir_annotation_tool'] = "V-Quest"
 
         # Generate the substring field, which we use to heavily optmiize junction AA
-        # searches.
-        df_concat['substring'] = df_concat['junction_aa'].apply(Parser.get_substring)
+        # searches. Technically, this should probably be an ir_ field, but because
+        # it is fundamental to the indexes that already exist, we won't change it for
+        # now.
+        mongo_concat['substring'] = mongo_concat['junction_aa'].apply(Parser.get_substring)
 
+        # We want to keep the original vQuest vdj_string data, so we capture that in the
+        # ir_vdj_string variables. We use the ir_ prefix because they are non AIRR fields.
+        mongo_concat['ir_v_string'] = mongo_concat['v_call']
+        mongo_concat['ir_j_string'] = mongo_concat['j_call']
+        mongo_concat['ir_d_string'] = mongo_concat['d_call']
         # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
         # needs, which is [vdj]_call, [vdj]gene_gene, [vdj]gene_family
-        Parser.processGene(self.context, df_concat, "v_string", "v_call", "vgene_gene", "vgene_family")
-        Parser.processGene(self.context, df_concat, "j_string", "j_call", "jgene_gene", "jgene_family")
-        Parser.processGene(self.context, df_concat, "d_string", "d_call", "dgene_gene", "dgene_family")
+        Parser.processGene(self.context, mongo_concat, "ir_v_string", "v_call", "vgene_gene", "vgene_family")
+        Parser.processGene(self.context, mongo_concat, "ir_j_string", "j_call", "jgene_gene", "jgene_family")
+        Parser.processGene(self.context, mongo_concat, "ir_d_string", "d_call", "dgene_gene", "dgene_family")
 
         # Generate the junction length values as required.
-        df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
-        df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
+        mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
+        mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
 
-        records = json.loads(df_concat.T.to_json()).values()
+        records = json.loads(mongo_concat.T.to_json()).values()
 
         # The climax: insert the records into the MongoDb collection!
         self.context.sequences.insert(records)
