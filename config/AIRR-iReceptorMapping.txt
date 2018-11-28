@@ -185,76 +185,76 @@ iReceptor Rearrangements	ir_seq_id	ir_seq_id									seq_id	seq_id	ir_rearrangem
 	ir_dgene_family	ir_dgene_family									dgene_family	dgene_family	ir_rearrangement						 
 	ir_dgene_gene	ir_dgene_gene									dgene_gene	dgene_gene	ir_rearrangement						 
 	ir_functionality	ir_functionality									functionality	functionality	ir_rearrangement						 
-	ir_functionality_comment	ir_functionality_comment									functionality_comment	functionality_comment	ir_rearrangement						 
+	ir_functionality_comment	ir_functionality_comment			1_Summary.txt	V-DOMAIN Functionality comment					functionality_comment	functionality_comment	ir_rearrangement						 
 	ir_orientation	ir_orientation									orientation	orientation	ir_rearrangement						 
 	ir_vgene_score	ir_vgene_score									vgene_score	vgene_score	ir_rearrangement						 
 	ir_vgene_probability	ir_vgene_probability									vgene_probability	vgene_probability	ir_rearrangement						 
-	ir_dregion_reading_frame	ir_dregion_reading_frame									dregion_reading_frame	dregion_reading_frame	ir_rearrangement						 
-	ir_cdr1_length	ir_cdr1_length									cdr1_length	cdr1_length	ir_rearrangement						 
-	ir_cdr2_length	ir_cdr2_length									cdr2_length	cdr2_length	ir_rearrangement						 
-	ir_cdr3_length	ir_cdr3_length									cdr3_length	cdr3_length	ir_rearrangement						 
-	ir_vdjregion_sequence_nt	ir_vdjregion_sequence_nt									vdjregion_sequence_nt	vdjregion_sequence_nt	ir_rearrangement						 
-	ir_vjregion_sequence_nt	ir_vjregion_sequence_nt									vjregion_sequence_nt	vjregion_sequence_nt	ir_rearrangement						 
-	ir_djregion_sequence_nt	ir_djregion_sequence_nt									djregion_sequence_nt	djregion_sequence_nt	ir_rearrangement						 
-	ir_vregion_sequence_nt	ir_vregion_sequence_nt									vregion_sequence_nt	vregion_sequence_nt	ir_rearrangement						 
-	ir_jregion_sequence_nt	ir_jregion_sequence_nt									jregion_sequence_nt	jregion_sequence_nt	ir_rearrangement						 
-	ir_dregion_sequence_nt	ir_dregion_sequence_nt									dregion_sequence_nt	dregion_sequence_nt	ir_rearrangement						 
-	ir_fr1region_sequence_nt	ir_fr1region_sequence_nt									fr1region_sequence_nt	fr1region_sequence_nt	ir_rearrangement						 
-	ir_fr2region_sequence_nt	ir_fr2region_sequence_nt									fr2region_sequence_nt	fr2region_sequence_nt	ir_rearrangement						 
-	ir_fr3region_sequence_nt	ir_fr3region_sequence_nt									fr3region_sequence_nt	fr3region_sequence_nt	ir_rearrangement						 
-	ir_fr4region_sequence_nt	ir_fr4region_sequence_nt									fr4region_sequence_nt	fr4region_sequence_nt	ir_rearrangement						 
-	ir_cdr1region_sequence_nt	ir_cdr1region_sequence_nt									cdr1region_sequence_nt	cdr1region_sequence_nt	ir_rearrangement						 
-	ir_cdr2region_sequence_nt	ir_cdr2region_sequence_nt									cdr2region_sequence_nt	cdr2region_sequence_nt	ir_rearrangement						 
-	ir_cdr3region_sequence_nt	ir_cdr3region_sequence_nt									cdr3region_sequence_nt	cdr3region_sequence_nt	ir_rearrangement						 
-	ir_vdjregion_sequence_nt_gapped	ir_vdjregion_sequence_nt_gapped									vdjregion_sequence_nt_gapped	vdjregion_sequence_nt_gapped	ir_rearrangement						 
-	ir_vjregion_sequence_nt_gapped	ir_vjregion_sequence_nt_gapped									vjregion_sequence_nt_gapped	vjregion_sequence_nt_gapped	ir_rearrangement						 
-	ir_vregion_sequence_nt_gapped	ir_vregion_sequence_nt_gapped									vregion_sequence_nt_gapped	vregion_sequence_nt_gapped	ir_rearrangement						 
-	ir_jregion_sequence_nt_gapped	ir_jregion_sequence_nt_gapped									jregion_sequence_nt_gapped	jregion_sequence_nt_gapped	ir_rearrangement						 
+	ir_dregion_reading_frame	ir_dregion_reading_frame			1_Summary.txt	D-REGION reading frame					dregion_reading_frame	dregion_reading_frame	ir_rearrangement						 
+	ir_cdr1_length	ir_cdr1_length			1_Summary.txt	CDR1-IMGT length					cdr1_length	cdr1_length	ir_rearrangement						 
+	ir_cdr2_length	ir_cdr2_length			1_Summary.txt	CDR2-IMGT length					cdr2_length	cdr2_length	ir_rearrangement						 
+	ir_cdr3_length	ir_cdr3_length			1_Summary.txt	CDR3-IMGT length					cdr3_length	cdr3_length	ir_rearrangement						 
+	ir_vdjregion_sequence_nt	ir_vdjregion_sequence_nt			3_Nt-sequences.txt	V-D-J-REGION					vdjregion_sequence_nt	vdjregion_sequence_nt	ir_rearrangement						 
+	ir_vjregion_sequence_nt	ir_vjregion_sequence_nt			3_Nt-sequences.txt	V-J-REGION					vjregion_sequence_nt	vjregion_sequence_nt	ir_rearrangement						 
+	ir_djregion_sequence_nt	ir_djregion_sequence_nt			3_Nt-sequences.txt	D-J-REGION					djregion_sequence_nt	djregion_sequence_nt	ir_rearrangement						 
+	ir_vregion_sequence_nt	ir_vregion_sequence_nt			3_Nt-sequences.txt	V-REGION					vregion_sequence_nt	vregion_sequence_nt	ir_rearrangement						 
+	ir_jregion_sequence_nt	ir_jregion_sequence_nt			3_Nt-sequences.txt	J-REGION					jregion_sequence_nt	jregion_sequence_nt	ir_rearrangement						 
+	ir_dregion_sequence_nt	ir_dregion_sequence_nt			3_Nt-sequences.txt	D-REGION					dregion_sequence_nt	dregion_sequence_nt	ir_rearrangement						 
+	ir_fr1region_sequence_nt	ir_fr1region_sequence_nt			3_Nt-sequences.txt	FR1-IMGT					fr1region_sequence_nt	fr1region_sequence_nt	ir_rearrangement						 
+	ir_fr2region_sequence_nt	ir_fr2region_sequence_nt			3_Nt-sequences.txt	FR2-IMGT					fr2region_sequence_nt	fr2region_sequence_nt	ir_rearrangement						 
+	ir_fr3region_sequence_nt	ir_fr3region_sequence_nt			3_Nt-sequences.txt	FR3-IMGT					fr3region_sequence_nt	fr3region_sequence_nt	ir_rearrangement						 
+	ir_fr4region_sequence_nt	ir_fr4region_sequence_nt			3_Nt-sequences.txt	FR4-IMGT					fr4region_sequence_nt	fr4region_sequence_nt	ir_rearrangement						 
+	ir_cdr1region_sequence_nt	ir_cdr1region_sequence_nt			3_Nt-sequences.txt	CDR1-IMGT					cdr1region_sequence_nt	cdr1region_sequence_nt	ir_rearrangement						 
+	ir_cdr2region_sequence_nt	ir_cdr2region_sequence_nt			3_Nt-sequences.txt	CDR2-IMGT					cdr2region_sequence_nt	cdr2region_sequence_nt	ir_rearrangement						 
+	ir_cdr3region_sequence_nt	ir_cdr3region_sequence_nt			3_Nt-sequences.txt	CDR3-IMGT					cdr3region_sequence_nt	cdr3region_sequence_nt	ir_rearrangement						 
+	ir_vdjregion_sequence_nt_gapped	ir_vdjregion_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	V-D-J-REGION					vdjregion_sequence_nt_gapped	vdjregion_sequence_nt_gapped	ir_rearrangement						 
+	ir_vjregion_sequence_nt_gapped	ir_vjregion_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	V-J-REGION					vjregion_sequence_nt_gapped	vjregion_sequence_nt_gapped	ir_rearrangement						 
+	ir_vregion_sequence_nt_gapped	ir_vregion_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	V-REGION					vregion_sequence_nt_gapped	vregion_sequence_nt_gapped	ir_rearrangement						 
+	ir_jregion_sequence_nt_gapped	ir_jregion_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	J-REGION					jregion_sequence_nt_gapped	jregion_sequence_nt_gapped	ir_rearrangement						 
 	ir_dregion_sequence_nt_gapped	ir_dregion_sequence_nt_gapped									dregion_sequence_nt_gapped	dregion_sequence_nt_gapped	ir_rearrangement						 
-	ir_fr1region_sequence_nt_gapped	ir_fr1region_sequence_nt_gapped									fr1region_sequence_nt_gapped	fr1region_sequence_nt_gapped	ir_rearrangement						 
-	ir_fr2region_sequence_nt_gapped	ir_fr2region_sequence_nt_gapped									fr2region_sequence_nt_gapped	fr2region_sequence_nt_gapped	ir_rearrangement						 
-	ir_fr3region_sequence_nt_gapped	ir_fr3region_sequence_nt_gapped									fr3region_sequence_nt_gapped	fr3region_sequence_nt_gapped	ir_rearrangement						 
-	ir_fr4region_sequence_nt_gapped	ir_fr4region_sequence_nt_gapped									fr4region_sequence_nt_gapped	fr4region_sequence_nt_gapped	ir_rearrangement						 
-	ir_cdr1region_sequence_nt_gapped	ir_cdr1region_sequence_nt_gapped									cdr1region_sequence_nt_gapped	cdr1region_sequence_nt_gapped	ir_rearrangement						 
-	ir_cdr2region_sequence_nt_gapped	ir_cdr2region_sequence_nt_gapped									cdr2region_sequence_nt_gapped	cdr2region_sequence_nt_gapped	ir_rearrangement						 
-	ir_cdr3region_sequence_nt_gapped	ir_cdr3region_sequence_nt_gapped									cdr3region_sequence_nt_gapped	cdr3region_sequence_nt_gapped	ir_rearrangement						 
-	ir_junction_sequence_nt_gapped	ir_junction_sequence_nt_gapped									junction_sequence_nt_gapped	junction_sequence_nt_gapped	ir_rearrangement						 
-	ir_vdjregion_sequence_aa	ir_vdjregion_sequence_aa									vdjregion_sequence_aa	vdjregion_sequence_aa	ir_rearrangement						 
-	ir_vjregion_sequence_aa	ir_vjregion_sequence_aa									vjregion_sequence_aa	vjregion_sequence_aa	ir_rearrangement						 
-	ir_vregion_sequence_aa	ir_vregion_sequence_aa									vregion_sequence_aa	vregion_sequence_aa	ir_rearrangement						 
-	ir_jregion_sequence_aa	ir_jregion_sequence_aa									jregion_sequence_aa	jregion_sequence_aa	ir_rearrangement						 
-	ir_fr1region_sequence_aa	ir_fr1region_sequence_aa									fr1region_sequence_aa	fr1region_sequence_aa	ir_rearrangement						 
-	ir_fr2region_sequence_aa	ir_fr2region_sequence_aa									fr2region_sequence_aa	fr2region_sequence_aa	ir_rearrangement						 
-	ir_fr3region_sequence_aa	ir_fr3region_sequence_aa									fr3region_sequence_aa	fr3region_sequence_aa	ir_rearrangement						 
-	ir_fr4region_sequence_aa	ir_fr4region_sequence_aa									fr4region_sequence_aa	fr4region_sequence_aa	ir_rearrangement						 
-	ir_cdr1region_sequence_aa	ir_cdr1region_sequence_aa									cdr1region_sequence_aa	cdr1region_sequence_aa	ir_rearrangement						 
-	ir_cdr2region_sequence_aa	ir_cdr2region_sequence_aa									cdr2region_sequence_aa	cdr2region_sequence_aa	ir_rearrangement						 
-	ir_cdr3region_sequence_aa	ir_cdr3region_sequence_aa									cdr3region_sequence_aa	cdr3region_sequence_aa	ir_rearrangement						 
-	ir_vdjregion_sequence_aa_gapped	ir_vdjregion_sequence_aa_gapped									vdjregion_sequence_aa_gapped	vdjregion_sequence_aa_gapped	ir_rearrangement						 
-	ir_vjregion_sequence_aa_gapped	ir_vjregion_sequence_aa_gapped									vjregion_sequence_aa_gapped	vjregion_sequence_aa_gapped	ir_rearrangement						 
-	ir_vregion_sequence_aa_gapped	ir_vregion_sequence_aa_gapped									vregion_sequence_aa_gapped	vregion_sequence_aa_gapped	ir_rearrangement						 
-	ir_jregion_sequence_aa_gapped	ir_jregion_sequence_aa_gapped									jregion_sequence_aa_gapped	jregion_sequence_aa_gapped	ir_rearrangement						 
-	ir_fr1region_sequence_aa_gapped	ir_fr1region_sequence_aa_gapped									fr1region_sequence_aa_gapped	fr1region_sequence_aa_gapped	ir_rearrangement						 
-	ir_fr2region_sequence_aa_gapped	ir_fr2region_sequence_aa_gapped									fr2region_sequence_aa_gapped	fr2region_sequence_aa_gapped	ir_rearrangement						 
-	ir_fr3region_sequence_aa_gapped	ir_fr3region_sequence_aa_gapped									fr3region_sequence_aa_gapped	fr3region_sequence_aa_gapped	ir_rearrangement						 
-	ir_fr4region_sequence_aa_gapped	ir_fr4region_sequence_aa_gapped									fr4region_sequence_aa_gapped	fr4region_sequence_aa_gapped	ir_rearrangement						 
-	ir_cdr1region_sequence_aa_gapped	ir_cdr1region_sequence_aa_gapped									cdr1region_sequence_aa_gapped	cdr1region_sequence_aa_gapped	ir_rearrangement						 
-	ir_cdr2region_sequence_aa_gapped	ir_cdr2region_sequence_aa_gapped									cdr2region_sequence_aa_gapped	cdr2region_sequence_aa_gapped	ir_rearrangement						 
-	ir_cdr3region_sequence_aa_gapped	ir_cdr3region_sequence_aa_gapped									cdr3region_sequence_aa_gapped	cdr3region_sequence_aa_gapped	ir_rearrangement						 
-	ir_junction_sequence_aa_gapped	ir_junction_sequence_aa_gapped									junction_sequence_aa_gapped	junction_sequence_aa_gapped	ir_rearrangement						 
-	ir_vdjregion_start	ir_vdjregion_start									vdjregion_start	vdjregion_start	ir_rearrangement						 
-	ir_vdjregion_end	ir_vdjregion_end									vdjregion_end	vdjregion_end	ir_rearrangement						 
-	ir_vjregion_start	ir_vjregion_start									vjregion_start	vjregion_start	ir_rearrangement						 
-	ir_vjregion_end	ir_vjregion_end									vjregion_end	vjregion_end	ir_rearrangement						 
-	ir_djregion_start	ir_djregion_start									djregion_start	djregion_start	ir_rearrangement						 
-	ir_djregion_end	ir_djregion_end									djregion_end	djregion_end	ir_rearrangement						 
-	ir_junction_start	ir_junction_start									junction_start	junction_start	ir_rearrangement						 
-	ir_junction_end	ir_junction_end									junction_end	junction_end	ir_rearrangement						 
-	ir_vregion_mutation_string	ir_vregion_mutation_string									vregion_mutation_string	vregion_mutation_string	ir_rearrangement						 
-	ir_fr1region_mutation_string	ir_fr1region_mutation_string									fr1region_mutation_string	fr1region_mutation_string	ir_rearrangement						 
-	ir_fr2region_mutation_string	ir_fr2region_mutation_string									fr2region_mutation_string	fr2region_mutation_string	ir_rearrangement						 
-	ir_fr3region_mutation_string	ir_fr3region_mutation_string									fr3region_mutation_string	fr3region_mutation_string	ir_rearrangement						 
-	ir_cdr1region_mutation_string	ir_cdr1region_mutation_string									cdr1region_mutation_string	cdr1region_mutation_string	ir_rearrangement						 
-	ir_cdr2region_mutation_string	ir_cdr2region_mutation_string									cdr2region_mutation_string		ir_rearrangement						 
-	ir_cdr3region_mutation_string	ir_cdr3region_mutation_string									cdr3region_mutation_string	cdr3region_mutation_string	ir_rearrangement						 
-	ir_annotation_tool	ir_annotation_tool	Annotation Tool								annotation_tool	annotation_tool	ir_rearrangement						 
+	ir_fr1region_sequence_nt_gapped	ir_fr1region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	FR1-IMGT					fr1region_sequence_nt_gapped	fr1region_sequence_nt_gapped	ir_rearrangement						 
+	ir_fr2region_sequence_nt_gapped	ir_fr2region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	FR2-IMGT					fr2region_sequence_nt_gapped	fr2region_sequence_nt_gapped	ir_rearrangement						 
+	ir_fr3region_sequence_nt_gapped	ir_fr3region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	FR3-IMGT					fr3region_sequence_nt_gapped	fr3region_sequence_nt_gapped	ir_rearrangement						 
+	ir_fr4region_sequence_nt_gapped	ir_fr4region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	FR4-IMGT					fr4region_sequence_nt_gapped	fr4region_sequence_nt_gapped	ir_rearrangement						 
+	ir_cdr1region_sequence_nt_gapped	ir_cdr1region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	CDR1-IMGT					cdr1region_sequence_nt_gapped	cdr1region_sequence_nt_gapped	ir_rearrangement						 
+	ir_cdr2region_sequence_nt_gapped	ir_cdr2region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	CDR2-IMGT					cdr2region_sequence_nt_gapped	cdr2region_sequence_nt_gapped	ir_rearrangement						 
+	ir_cdr3region_sequence_nt_gapped	ir_cdr3region_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	CDR3-IMGT					cdr3region_sequence_nt_gapped	cdr3region_sequence_nt_gapped	ir_rearrangement						 
+	ir_junction_sequence_nt_gapped	ir_junction_sequence_nt_gapped			2_IMGT-gapped-nt-sequences.txt	JUNCTION					junction_sequence_nt_gapped	junction_sequence_nt_gapped	ir_rearrangement						 
+	ir_vdjregion_sequence_aa	ir_vdjregion_sequence_aa			5_AA-sequences.txt	V-D-J-REGION					vdjregion_sequence_aa	vdjregion_sequence_aa	ir_rearrangement						 
+	ir_vjregion_sequence_aa	ir_vjregion_sequence_aa			5_AA-sequences.txt	V-J-REGION					vjregion_sequence_aa	vjregion_sequence_aa	ir_rearrangement						 
+	ir_vregion_sequence_aa	ir_vregion_sequence_aa			5_AA-sequences.txt	V-REGION					vregion_sequence_aa	vregion_sequence_aa	ir_rearrangement						 
+	ir_jregion_sequence_aa	ir_jregion_sequence_aa			5_AA-sequences.txt	J-REGION					jregion_sequence_aa	jregion_sequence_aa	ir_rearrangement						 
+	ir_fr1region_sequence_aa	ir_fr1region_sequence_aa			5_AA-sequences.txt	FR1-IMGT					fr1region_sequence_aa	fr1region_sequence_aa	ir_rearrangement						 
+	ir_fr2region_sequence_aa	ir_fr2region_sequence_aa			5_AA-sequences.txt	FR2-IMGT					fr2region_sequence_aa	fr2region_sequence_aa	ir_rearrangement						 
+	ir_fr3region_sequence_aa	ir_fr3region_sequence_aa			5_AA-sequences.txt	FR3-IMGT					fr3region_sequence_aa	fr3region_sequence_aa	ir_rearrangement						 
+	ir_fr4region_sequence_aa	ir_fr4region_sequence_aa			5_AA-sequences.txt	FR4-IMGT					fr4region_sequence_aa	fr4region_sequence_aa	ir_rearrangement						 
+	ir_cdr1region_sequence_aa	ir_cdr1region_sequence_aa			5_AA-sequences.txt	CDR1-IMGT					cdr1region_sequence_aa	cdr1region_sequence_aa	ir_rearrangement						 
+	ir_cdr2region_sequence_aa	ir_cdr2region_sequence_aa			5_AA-sequences.txt	CDR2-IMGT					cdr2region_sequence_aa	cdr2region_sequence_aa	ir_rearrangement						 
+	ir_cdr3region_sequence_aa	ir_cdr3region_sequence_aa			5_AA-sequences.txt	CDR3-IMGT					cdr3region_sequence_aa	cdr3region_sequence_aa	ir_rearrangement						 
+	ir_vdjregion_sequence_aa_gapped	ir_vdjregion_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	V-D-J-REGION					vdjregion_sequence_aa_gapped	vdjregion_sequence_aa_gapped	ir_rearrangement						 
+	ir_vjregion_sequence_aa_gapped	ir_vjregion_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	V-J-REGION					vjregion_sequence_aa_gapped	vjregion_sequence_aa_gapped	ir_rearrangement						 
+	ir_vregion_sequence_aa_gapped	ir_vregion_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	V-REGION					vregion_sequence_aa_gapped	vregion_sequence_aa_gapped	ir_rearrangement						 
+	ir_jregion_sequence_aa_gapped	ir_jregion_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	J-REGION					jregion_sequence_aa_gapped	jregion_sequence_aa_gapped	ir_rearrangement						 
+	ir_fr1region_sequence_aa_gapped	ir_fr1region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	FR1-IMGT					fr1region_sequence_aa_gapped	fr1region_sequence_aa_gapped	ir_rearrangement						 
+	ir_fr2region_sequence_aa_gapped	ir_fr2region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	FR2-IMGT					fr2region_sequence_aa_gapped	fr2region_sequence_aa_gapped	ir_rearrangement						 
+	ir_fr3region_sequence_aa_gapped	ir_fr3region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	FR3-IMGT					fr3region_sequence_aa_gapped	fr3region_sequence_aa_gapped	ir_rearrangement						 
+	ir_fr4region_sequence_aa_gapped	ir_fr4region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	FR4-IMGT					fr4region_sequence_aa_gapped	fr4region_sequence_aa_gapped	ir_rearrangement						 
+	ir_cdr1region_sequence_aa_gapped	ir_cdr1region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	CDR1-IMGT					cdr1region_sequence_aa_gapped	cdr1region_sequence_aa_gapped	ir_rearrangement						 
+	ir_cdr2region_sequence_aa_gapped	ir_cdr2region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	CDR2-IMGT					cdr2region_sequence_aa_gapped	cdr2region_sequence_aa_gapped	ir_rearrangement						 
+	ir_cdr3region_sequence_aa_gapped	ir_cdr3region_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	CDR3-IMGT					cdr3region_sequence_aa_gapped	cdr3region_sequence_aa_gapped	ir_rearrangement						 
+	ir_junction_sequence_aa_gapped	ir_junction_sequence_aa_gapped			4_IMGT-gapped-AA-sequences.txt	JUNCTION					junction_sequence_aa_gapped	junction_sequence_aa_gapped	ir_rearrangement						 
+	ir_vdjregion_start	ir_vdjregion_start			3_Nt-sequences.txt	V-D-J-REGION start					vdjregion_start	vdjregion_start	ir_rearrangement						 
+	ir_vdjregion_end	ir_vdjregion_end			3_Nt-sequences.txt	V-D-J-REGION end					vdjregion_end	vdjregion_end	ir_rearrangement						 
+	ir_vjregion_start	ir_vjregion_start			3_Nt-sequences.txt	V-J-REGION start					vjregion_start	vjregion_start	ir_rearrangement						 
+	ir_vjregion_end	ir_vjregion_end			3_Nt-sequences.txt	V-J-REGION end					vjregion_end	vjregion_end	ir_rearrangement						 
+	ir_djregion_start	ir_djregion_start			3_Nt-sequences.txt	D-J-REGION start					djregion_start	djregion_start	ir_rearrangement						 
+	ir_djregion_end	ir_djregion_end			3_Nt-sequences.txt	D-J-REGION end					djregion_end	djregion_end	ir_rearrangement						 
+	ir_junction_start	ir_junction_start			3_Nt-sequences.txt	JUNCTION start					junction_start	junction_start	ir_rearrangement						 
+	ir_junction_end	ir_junction_end			3_Nt-sequences.txt	JUNCTION end					junction_end	junction_end	ir_rearrangement						 
+	ir_vregion_mutation_string	ir_vregion_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	V-REGION					vregion_mutation_string	vregion_mutation_string	ir_rearrangement						 
+	ir_fr1region_mutation_string	ir_fr1region_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	FR1-IMGT					fr1region_mutation_string	fr1region_mutation_string	ir_rearrangement						 
+	ir_fr2region_mutation_string	ir_fr2region_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	FR2-IMGT					fr2region_mutation_string	fr2region_mutation_string	ir_rearrangement						 
+	ir_fr3region_mutation_string	ir_fr3region_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	FR3-IMGT					fr3region_mutation_string	fr3region_mutation_string	ir_rearrangement						 
+	ir_cdr1region_mutation_string	ir_cdr1region_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	CDR1-IMGT					cdr1region_mutation_string	cdr1region_mutation_string	ir_rearrangement						 
+	ir_cdr2region_mutation_string	ir_cdr2region_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	CDR2-IMGT					cdr2region_mutation_string	cdr2region_mutation_string	ir_rearrangement						 
+	ir_cdr3region_mutation_string	ir_cdr3region_mutation_string			7_V-REGION-mutation-and-AA-change-table.txt	CDR3-IMGT					cdr3region_mutation_string	cdr3region_mutation_string	ir_rearrangement						 
+	ir_annotation_tool	ir_annotation_tool	#NULL!								annotation_tool	annotation_tool	ir_rearrangement						 
