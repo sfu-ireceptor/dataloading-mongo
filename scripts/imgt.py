@@ -22,7 +22,6 @@ from parser import Parser
 # string sometimes contains "productinge (see comment..." so we need to
 # check to ensure that the string starts with "productive".
 def functional_boolean(functionality):
-    #print(functionality)
     if functionality.startswith("productive"):
         return 1
     else:
@@ -137,6 +136,9 @@ class IMGT(Parser):
                                      'ir_turnkey': file_fields['ir_turnkey'],
                                      'vquest_dataframe': vquest_dataframe,
                                      'mongo_dataframe': mongo_dataframe}
+            # Manage the data frames that we extract from each file. Essentially we 
+            # just concatentate the data frames from each file into a single large
+            # data frame.
             if first_dataframe:
                 mongo_concat = mongo_dataframe
                 vquest_concat = vquest_dataframe
@@ -145,160 +147,16 @@ class IMGT(Parser):
                 mongo_concat = pd.concat([mongo_concat, mongo_dataframe], axis=1)
                 vquest_concat = pd.concat([vquest_concat, vquest_dataframe], axis=1)
                 
+        # We now have the data in a data frame with the correct headers mapped from the
+        # IMGT data fields to the correct repository field names. Now we have to perform
+        # any specific mappings that are specific to IMGT.
 
-#        Summary_1 = self.readDf('1_Summary.txt')
-#
-#        IMGT_gapped_nt_sequences_2 = self.readDf(
-#            '2_IMGT-gapped-nt-sequences.txt')
-#
-#        Nt_sequences_3 = self.readDf('3_Nt-sequences.txt')
-#
-#        IMGT_gapped_AA_sequences_4 = self.readDf(
-#            '4_IMGT-gapped-AA-sequences.txt')
-#
-#        AA_sequences_5 = self.readDf('5_AA-sequences.txt')
-#
-#        V_REGION_mutation_and_AA_change_table_7 = self.readDf(
-#            '7_V-REGION-mutation-and-AA-change-table.txt')
-
-        Parameters_11 = self.readDfNoHeader('11_Parameters.txt')
-        #print(Parameters_11)
-
+        # First, we want to keep track of some of the data from the IMGT Parameters file.
         # Create a dictionary with keys the first column of the parameter file and the values
         # the second column in the parameter file.
+        Parameters_11 = self.readDfNoHeader('11_Parameters.txt')
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
-        #print(parameter_dictionary)
 
-#        Summary_column_list = Summary_1.columns.values.tolist()
-
-#        if 'Functionality' in Summary_column_list:
-#
-#            df_1 = Summary_1[[
-#                'XXSequence ID', 'XXV-GENE and allele', 'XXJ-GENE and allele',
-#                'XXD-GENE and allele', 'YYFunctionality', 'XXV-REGION score',
-#                'XXJ-REGION score', 'XXV-REGION identity %',
-#                'XXD-REGION reading frame', 'XXCDR1-IMGT length',
-#                'XXCDR2-IMGT length', 'XXCDR3-IMGT length',
-#                'YYFunctionality comment', 'XXOrientation', 'ERROR in OLD CODE - THIS should be J!!!V-REGION identity %'
-#            ]]
-#
-#            df_1.columns = [
-#                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
-#                'v_score', 'j_score', 'vgene_probablity',
-#                'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
-#                'cdr3_length', 'functionality_comment', 'rev_comp',
-#                'vgene_probability'
-#            ]
-#
-#        elif 'V-DOMAIN Functionality' in Summary_column_list:
-#
-#            df_1 = Summary_1[[
-#                'XXSequence ID', 'XXV-GENE and allele', 'XXJ-GENE and allele',
-#                'XXD-GENE and allele', 'XXV-DOMAIN Functionality',
-#                'XXV-REGION score', 'XXJ-REGION score', 'XXV-REGION identity %',
-#                'XXD-REGION reading frame', 'XXCDR1-IMGT length',
-#                'XXCDR2-IMGT length', 'XXCDR3-IMGT length',
-#                'XXV-DOMAIN Functionality comment', 'XXOrientation',
-#                'ERROR!!!V-REGION identity %'
-#            ]]
-#
-#            df_1.columns = [
-#                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
-#                'v_score', 'j_score', 'vgene_probablity',
-#                'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
-#                'cdr3_length', 'functionality_comment', 'rev_comp',
-#                'vgene_probability'
-#            ]
-#
-#        df_2 = IMGT_gapped_nt_sequences_2[[
-#            'XXV-D-J-REGION', 'XXV-J-REGION', 'XXV-REGION', 'XXJ-REGION', 'XXFR1-IMGT',
-#            'XXFR2-IMGT', 'XXFR3-IMGT', 'XXFR4-IMGT', 'XXCDR1-IMGT', 'XXCDR2-IMGT',
-#            'XXCDR3-IMGT', 'XXJUNCTION'
-#        ]]
-#
-#        df_2.columns = [
-#            'vdjregion_sequence_nt_gapped', 'vjregion_sequence_nt_gapped',
-#            'vregion_sequence_nt_gapped', 'jregion_sequence_nt_gapped',
-#            'fr1region_sequence_nt_gapped', 'fr2region_sequence_nt_gapped',
-#            'fr3region_sequence_nt_gapped', 'fr4region_sequence_nt_gapped',
-#            'cdr1region_sequence_nt_gapped', 'cdr2region_sequence_nt_gapped',
-#            'cdr3region_sequence_nt_gapped', 'junction_sequence_nt_gapped'
-#        ]
-#
-#        df_3 = Nt_sequences_3[[
-#            'XXV-D-J-REGION', 'XXV-J-REGION', 'XXD-J-REGION', 'XXV-REGION', 'XXJ-REGION',
-#            'XXD-REGION', 'XXFR1-IMGT', 'XXFR2-IMGT', 'XXFR3-IMGT', 'XXFR4-IMGT',
-#            'XXCDR1-IMGT', 'XXCDR2-IMGT', 'XXCDR3-IMGT', '???????????JUNCTION',
-#            'XXV-D-J-REGION start', 'XXV-D-J-REGION end', 'XXV-J-REGION start',
-#            'XXV-J-REGION end', 'XXV-REGION start', 'XXV-REGION end',
-#            'XXJ-REGION start', 'XXJ-REGION end', 'XXD-REGION start', 'XXD-REGION end',
-#            'XXFR1-IMGT start', 'XXFR1-IMGT end', 'XXFR2-IMGT start', 'XXFR2-IMGT end',
-#            'XXFR3-IMGT start', 'XXFR3-IMGT end', 'XXFR4-IMGT start', 'XXFR4-IMGT end',
-#            'XXCDR1-IMGT start', 'XXCDR1-IMGT end', 'XXCDR2-IMGT start',
-#            'XXCDR2-IMGT end', 'XXCDR3-IMGT start', 'XXCDR3-IMGT end',
-#            'XXJUNCTION start', 'XXJUNCTION end', 'XXD-J-REGION start',
-#            'XXD-J-REGION end'
-#        ]]
-#
-#        df_3.columns = [
-#            'vdjregion_sequence_nt', 'vjregion_sequence_nt',
-#            'djregion_sequence_nt', 'vregion_sequence_nt',
-#            'jregion_sequence_nt', 'dregion_sequence_nt',
-#            'fr1region_sequence_nt', 'fr2region_sequence_nt',
-#            'fr3region_sequence_nt', 'fr4region_sequence_nt',
-#            'cdr1region_sequence_nt', 'cdr2region_sequence_nt',
-#            'cdr3region_sequence_nt', 'junction_nt', 'vdjregion_start',
-#            'vdjregion_end', 'vjregion_start', 'vjregion_end', 'v_start',
-#            'v_end', 'j_start', 'j_end', 'd_start', 'd_end', 'fwr1_start',
-#            'fwr1_end', 'fwr2_start', 'fwr2_end', 'fwr3_start', 'fwr3_end',
-#            'fwr4_start', 'fwr4_end', 'cdr1_start', 'cdr1_end', 'cdr2_start',
-#            'cdr2_end', 'cdr3_start', 'cdr3_end', 'junction_start',
-#            'junction_end', 'djregion_start', 'djregion_end'
-#        ]
-#
-#        df_4 = IMGT_gapped_AA_sequences_4[[
-#            'XXV-D-J-REGION', 'XXV-J-REGION', 'XXV-REGION', 'XXJ-REGION', 'XXFR1-IMGT',
-#            'XXFR2-IMGT', 'XXFR3-IMGT', 'XXFR4-IMGT', 'XXCDR1-IMGT', 'XXCDR2-IMGT',
-#            'XXCDR3-IMGT', 'XXJUNCTION'
-#        ]]
-#
-#        df_4.columns = [
-#            'vdjregion_sequence_aa_gapped', 'vjregion_sequence_aa_gapped',
-#            'vregion_sequence_aa_gapped', 'jregion_sequence_aa_gapped',
-#            'fr1region_sequence_aa_gapped', 'fr2region_sequence_aa_gapped',
-#            'fr3region_sequence_aa_gapped', 'fr4region_sequence_aa_gapped',
-#            'cdr1region_sequence_aa_gapped', 'cdr2region_sequence_aa_gapped',
-#            'cdr3region_sequence_aa_gapped', 'junction_sequence_aa_gapped'
-#        ]
-#
-#        df_5 = AA_sequences_5[[
-#            'XXV-D-J-REGION', 'XXV-J-REGION', 'XXV-REGION', 'XXJ-REGION', 'XXFR1-IMGT',
-#            'XXFR2-IMGT', 'XXFR3-IMGT', 'XXFR4-IMGT', 'XXCDR1-IMGT', 'XXCDR2-IMGT',
-#            'XXCDR3-IMGT', 'XXJUNCTION'
-#        ]]
-#
-#        df_5.columns = [
-#            'vdjregion_sequence_aa', 'vjregion_sequence_aa',
-#            'vregion_sequence_aa', 'jregion_sequence_aa',
-#            'fr1region_sequence_aa', 'fr2region_sequence_aa',
-#            'fr3region_sequence_aa', 'fr4region_sequence_aa',
-#            'cdr1region_sequence_aa', 'cdr2region_sequence_aa',
-#            'cdr3region_sequence_aa', 'junction_aa'
-#        ]
-#
-        #df_7 = V_REGION_mutation_and_AA_change_table_7[[
-        #    'XXV-REGION', 'XXFR1-IMGT', 'XXFR2-IMGT', 'XXFR3-IMGT', 'XXCDR1-IMGT',
-        #    'XXCDR2-IMGT', 'XXCDR3-IMGT'
-        #]]
-
-        #df_7.columns = [
-        #    'vregion_mutation_string', 'fr1region_mutation_string',
-        #    'fr2region_mutation_string', 'fr3region_mutation_string',
-        #    'cdr1region_mutation_string', 'cdr2region_mutation_string',
-        #    'cdr3region_mutation_string'
-        #]
-
-        #mongo_concat = pd.concat([df_1, df_2, df_3, df_4, df_5, df_7], axis=1)
         # Need to grab some data out of the parameters dictionary.
         mongo_concat['annotation_date'] = parameter_dictionary['Date']
         mongo_concat['tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
@@ -317,26 +175,28 @@ class IMGT(Parser):
 
         # Get rid of columns where the column is null.
         mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
-        #mongo_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(len)
-        #mongo_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(len)
-        #mongo_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(len)
 
-        # IMGT annotates a rearrangement with a text string. We have a utility function
+        # Critical iReceptor specific fields that need to be built from existing IMGT
+        # generated fields.
+
+        # IMGT annotates a rearrangement's functionality  with a string. We have a function
         # that takes the string and changes it to an integer 1/0 which the repository
         # expects. We want to keep the original data in case we need further interpretation,
         mongo_concat['ir_productive'] = mongo_concat['functional']
         mongo_concat['functional'] = mongo_concat['functional'].apply(functional_boolean)
 
+        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # this at the moment, but this may not be the most robust method.
         sampleid = self.context.samples.find({
             "imgt_file_name": {
                 '$regex': fileName
             }
         }, {'_id': 1})
         ir_project_sample_id = [i['_id'] for i in sampleid][0]
-        # Critical iReceptor specific fields
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
         mongo_concat['ir_project_sample_id'] = ir_project_sample_id
+
         # The annotation tool used
         mongo_concat['ir_annotation_tool'] = "V-Quest"
 
@@ -361,6 +221,7 @@ class IMGT(Parser):
         mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
         mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
 
+        # Convert the mongo data frame dats int JSON.
         records = json.loads(mongo_concat.T.to_json()).values()
 
         # The climax: insert the records into the MongoDb collection!
@@ -394,7 +255,6 @@ class IMGT(Parser):
         # Clean up annotation files and scratch folder
         if self.context.verbose:
             print("Cleaning up scratch folder: ", self.getScratchFolder())
-
         rmtree(self.getScratchFolder())
 
         return True
