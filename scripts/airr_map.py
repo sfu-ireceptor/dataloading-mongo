@@ -10,7 +10,7 @@ class AIRRMap:
                                         "cell_processing", "nucleic_acid_processing",
                                         "sequencing_run", "software_processing"]
         # Rearrangement data has only one class in the MiAIRR standard.
-        self.airr_rearrangement_classes = ["rearrangement"]
+        self.airr_rearrangement_classes = ["rearrangement", "ir_rearrangement"]
         # Keep track of the mapfile being used.
         self.mapfile = ""
         # Keep track of the verbosity flag.
