@@ -108,27 +108,41 @@ class IMGT(Parser):
             # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
             # only data that is relevant to this specific vquest file.
             file_fields = self.context.airr_map.airr_rearrangement_map.loc[field_of_interest]
-            if self.context.verbose:
-                for index, row in file_fields.iterrows():
-                    print("    " + row['vquest'] + " -> " + row['airr'])
+
+            # We need to build the set of fields that the repository can store. We don't
+            # want to extract fields that the repository doesn't want.
+            vquest_fields = []
+            mongo_fields = []
+            for index, row in file_fields.iterrows():
+                if self.context.verbose:
+                    print("    " + str(row['vquest']) + " -> " + str(row['ir_turnkey']))
+                # If the repository column has a value for the IMGT field, track the field
+                # from both the IMGT and repository side.
+                if not pd.isnull(row['ir_turnkey']):
+                    vquest_fields.append(row['vquest'])
+                    mongo_fields.append(row['ir_turnkey'])
+                else:
+                    print("Repository does not support " + vquest_file + "/" + 
+                          str(row['vquest']) + ", not inserting into repository")
             # Use the vquest column in our mapping to select the columns we want from the 
             # possibly quite large vquest data frame.
-            airr_dataframe = vquest_dataframe[file_fields['vquest']]
+            mongo_dataframe = vquest_dataframe[vquest_fields]
             # We now have a data frame that has only the vquest data we want from this file. 
-            # We now replace the vquest column names with the AIRR column names from the map
-            airr_dataframe.columns = file_fields['airr']
+            # We now replace the vquest column names with the repository column names from
+            # the map
+            mongo_dataframe.columns = mongo_fields
             # We now have a data frame with vquest data in it with AIRR compliant column names.
             # Store all of this in a dictionay based on the file name so we can use it later.
             filedict[vquest_file] = {'vquest': file_fields['vquest'],
-                                     'airr': file_fields['airr'],
+                                     'ir_turnkey': file_fields['ir_turnkey'],
                                      'vquest_dataframe': vquest_dataframe,
-                                     'airr_dataframe': airr_dataframe}
+                                     'mongo_dataframe': mongo_dataframe}
             if first_dataframe:
-                mongo_concat = airr_dataframe
+                mongo_concat = mongo_dataframe
                 vquest_concat = vquest_dataframe
                 first_dataframe = False
             else:
-                mongo_concat = pd.concat([mongo_concat, airr_dataframe], axis=1)
+                mongo_concat = pd.concat([mongo_concat, mongo_dataframe], axis=1)
                 vquest_concat = pd.concat([vquest_concat, vquest_dataframe], axis=1)
                 
 
