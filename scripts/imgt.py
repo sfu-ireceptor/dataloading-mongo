@@ -240,32 +240,23 @@ class IMGT(Parser):
         records = json.loads(mongo_concat.T.to_json()).values()
 
         # The climax: insert the records into the MongoDb collection!
+        if self.context.verbose:
+            print("Inserting %d records into the repository"%(len(records)))
         self.context.sequences.insert(records)
 
-        ir_sequence_count = len(records)
+        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
+        if self.context.verbose:
+            print("Getting the number of annotations for this repertoire")
+        annotation_count = self.context.sequences.find(
+                {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
+            ).count()
+        if self.context.verbose:
+            print("Annotation count = %d" % (annotation_count))
 
-        #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":0}})
-
-        if self.context.counter == 'reset':
-            ori_count = 0
-        else:
-            ori_count = self.context.samples.find_one({
-                "imgt_file_name": {
-                    '$regex': fileName
-                }
-            }, {"ir_sequence_count": 1})["ir_sequence_count"]
-
+        # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
-            {
-                "imgt_file_name": {
-                    '$regex': fileName
-                }
-            }, {"$set": {
-                "ir_sequence_count": ir_sequence_count + ori_count
-            }},
-            multi=True)
-
-        #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
+            {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
+        )
 
         # Clean up annotation files and scratch folder
         if self.context.verbose:

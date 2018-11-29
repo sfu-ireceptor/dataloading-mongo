@@ -141,13 +141,20 @@ class MiXCR(Parser):
             total_records = total_records + num_records
 
         print("Total records loaded =", total_records, flush=True)
-        if self.context.counter == 'reset':
-            original_count = 0
-        else:
-            original_count = self.context.samples.find_one({"mixcr_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
 
-        self.context.samples.update({"mixcr_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":total_records+original_count}}, multi=True)
-        print("Updating sequence count to", total_records+original_count, flush=True)
+        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
+        if self.context.verbose:
+            print("Getting the number of annotations for this repertoire")
+        annotation_count = self.context.sequences.find(
+                {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
+            ).count()
+        if self.context.verbose:
+            print("Annotation count = %d" % (annotation_count))
+
+        # Set the cached ir_sequeunce_count field for the repertoire/sample.
+        self.context.samples.update(
+            {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
+        )
 
         print("MiXCR data loading complete for file: "+filename, flush=True)
         return True
