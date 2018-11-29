@@ -9,8 +9,12 @@ class AIRRMap:
         self.airr_repertoire_classes = ["study", "subject", "diagnosis", "sample",
                                         "cell_processing", "nucleic_acid_processing",
                                         "sequencing_run", "software_processing"]
-        # Rearrangement data has only one class in the MiAIRR standard.
+        # Rearrangement data has one or two classes, rearrangement defines the
+        # the fields in the MiAIRR standard. ir_rearrangement defines the 
+        # rearrangement fields that are specific to iReceptor outside of the
+        # MiAIRR standard.
         self.airr_rearrangement_classes = ["rearrangement", "ir_rearrangement"]
+        #self.airr_rearrangement_classes = ["rearrangement"]
         # Keep track of the mapfile being used.
         self.mapfile = ""
         # Keep track of the verbosity flag.
