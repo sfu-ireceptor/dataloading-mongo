@@ -82,6 +82,29 @@ class IMGT(Parser):
 
         tar.close()
 
+        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # this at the moment, but this may not be the most robust method.
+        print("Retrieving associated sample for file", fileName)
+        samples_cursor = self.context.samples.find(
+            {"imgt_file_name": { '$regex': fileName }},
+            {'_id': 1}
+        )
+        idarray = [sample['_id'] for sample in samples_cursor]
+
+        # Check to see that we found it and that we only found one. Fail if not.
+        num_samples = len(idarray)
+        if num_samples == 0:
+            print("Could not find annotation file" + fileName + " in the repository samples")
+            print("No sample could be associated with this annotation file.")
+            return False
+        elif num_samples > 1:
+            print("Annotation file can not be associated with a unique sample, found", num_samples)
+            print("Unique assignment of annotations to a single sample are required.")
+            return False
+
+        # Get the sample ID and assign it to sample ID field
+        ir_project_sample_id = idarray[0]
+
         # Get the list of relevant vQuest files. Choose the vquest_file column,
         # drop the NAs, and grab the unique members that remain. This gives us
         # the list of relevant vQuest file names from the configuration file
@@ -185,14 +208,6 @@ class IMGT(Parser):
         mongo_concat['ir_productive'] = mongo_concat['functional']
         mongo_concat['functional'] = mongo_concat['functional'].apply(functional_boolean)
 
-        # Get the sample ID of the data we are processing. We use the IMGT file name for
-        # this at the moment, but this may not be the most robust method.
-        sampleid = self.context.samples.find({
-            "imgt_file_name": {
-                '$regex': fileName
-            }
-        }, {'_id': 1})
-        ir_project_sample_id = [i['_id'] for i in sampleid][0]
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
         mongo_concat['ir_project_sample_id'] = ir_project_sample_id
