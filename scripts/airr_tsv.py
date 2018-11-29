@@ -160,15 +160,19 @@ class AIRR_TSV(Parser):
             records = json.loads(df_insert.T.to_json()).values()
             self.context.sequences.insert_many(records)
  
+        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
-            print("Updating sequence count")
-        if self.context.counter == 'reset':
-            ori_count = 0
-        else:
-            ori_count = self.context.samples.find_one({"igblast_file_name":{'$regex': filename}},{"ir_sequence_count":1})["ir_sequence_count"]
+            print("Getting the number of annotations for this repertoire")
+        annotation_count = self.context.sequences.find(
+                {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
+            ).count()
+        if self.context.verbose:
+            print("Annotation count = %d" % (annotation_count))
 
-        self.context.samples.update({"igblast_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":count_row+ori_count}}, multi=True)
-        # self.context.samples.update_one({"mixcr_file_name":{'$regex': filename}},{"$set" : {"ir_sequence_count":count_row}})
+        # Set the cached ir_sequeunce_count field for the repertoire/sample.
+        self.context.samples.update(
+            {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
+        )
 
         print("igblast data loading complete for file: "+filename)
         file_handle.close()
