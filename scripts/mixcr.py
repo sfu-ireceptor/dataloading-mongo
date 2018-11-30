@@ -53,16 +53,6 @@ class MiXCR(Parser):
         # Define the number of records to iterate over
         chunk_size = 100000
 
-        # Define the columns from the MiXCR file we want
-        mixcrColumns = ['bestVHit','bestDHit','bestJHit',
-                        'bestVHitScore', 'bestDHitScore', 'bestJHitScore',
-                        'nSeqCDR3','aaSeqCDR3', 'readSequence', 'descrR1' ]
-
-        # Define the mapping of MiXCR columns to Mongo repository columns
-        mongoColumns = ['v_call', 'd_call', 'j_call',
-                        'v_score', 'd_score', 'j_score',
-                        'junction','junction_aa', 'sequence', 'sequence_id']
-
         # Query for the sample and create an array of sample IDs
         filename = filename.replace(".gz", "")
         print("Retrieving associated sample for file", filename)
@@ -83,6 +73,31 @@ class MiXCR(Parser):
         # Get the sample ID and assign it to sample ID field
         ir_project_sample_id = idarray[0]
 
+        # Extract the fields that are of interest for this file. Essentiall all non null mixcr fields
+        field_of_interest = self.context.airr_map.airr_rearrangement_map['mixcr'].notnull()
+
+        # We select the rows in the mapping that contain fields of interest for MiXCR.
+        # At this point, file_fields contains N columns that contain our mappings for the
+        # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
+        # only data that is relevant to MiXCR
+        file_fields = self.context.airr_map.airr_rearrangement_map.loc[field_of_interest]
+
+        # We need to build the set of fields that the repository can store. We don't
+        # want to extract fields that the repository doesn't want.
+        mixcrColumns = []
+        columnMapping = {}
+        for index, row in file_fields.iterrows():
+            if self.context.verbose:
+                print("    " + str(row['mixcr']) + " -> " + str(row['ir_turnkey']))
+            # If the repository column has a value for the IMGT field, track the field
+            # from both the IMGT and repository side.
+            if not pd.isnull(row['ir_turnkey']):
+                mixcrColumns.append(row['mixcr'])
+                columnMapping[row['mixcr']] = row['ir_turnkey']
+            else:
+                print("Repository does not support " +
+                      str(row['mixcr']) + ", not inserting into repository")
+
 	# Get a Pandas reader iterator for the file. When reading the file we only want to
         # read in the mixcrColumns we care about. We want to read in only a fixed number of 
         # records so we don't have any memory contraints reading really large files. And
@@ -96,8 +111,11 @@ class MiXCR(Parser):
         total_records = 0
         for df_chunk in df_reader:
 
-            print("Processing raw data frame...", flush=True)
-            df_chunk.columns = mongoColumns
+            if self.context.verbose:
+                print("Processing raw data frame...", flush=True)
+            # Remap the column names. We need to remap because the columns may be in a differnt
+            # order in the file than in the column mapping.
+            df_chunk.rename(columnMapping, axis='columns', inplace=True)
 
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings. Also calculate junction AA length
@@ -109,11 +127,11 @@ class MiXCR(Parser):
                     print("Computing junction amino acids length...", flush=True)
                 df_chunk['junction_aa_length'] = df_chunk['junction_aa'].apply(str).apply(len)
 
-            # MiXCR doesn't have junction length, we want it in our repository.
-            if 'junction' in df_chunk:
+            # MiXCR doesn't have junction nucleotide length, we want it in our repository.
+            if 'junction_nt' in df_chunk:
                 if self.context.verbose:
                     print("Computing junction length...", flush=True)
-                df_chunk['junction_length'] = df_chunk['junction'].apply(str).apply(len)
+                df_chunk['junction_length'] = df_chunk['junction_nt'].apply(str).apply(len)
 
 
             # Build the v_call field, as an array if there is more than one gene
