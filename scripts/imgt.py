@@ -46,9 +46,14 @@ class IMGT(Parser):
             print("Could not find IMGT ZIP archive ", self.context.path)
             return False
 
-        with zipfile.ZipFile(self.context.path, "r") as zip:
-            # unzip to library directory
-            zip.extractall(self.context.library)
+        try:
+            with zipfile.ZipFile(self.context.path, "r") as zip:
+                # unzip to library directory
+                zip.extractall(self.context.library)
+        except zipfile.BadZipFile as e:
+            print("ERROR: " + str(e))
+            print("ERROR: Expecting file " + self.context.path + " to be a compressed Zip file")
+            return False
 
 	# Get a list of the files in the data folder. The getDataFolder
         # method adds on the "imgt" suffix to the library path.

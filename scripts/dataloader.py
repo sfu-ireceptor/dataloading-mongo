@@ -262,17 +262,17 @@ def set_path(options):
 def validate_filename(filename_path):
     if filename_path:
         if os.path.isdir(filename_path):
-            print("error: file '{0}' is not a file?".format(filename_path))
+            print("ERROR: file '{0}' is not a file?".format(filename_path))
             raise SystemExit(1)
 
 def validate_library(library_path):
     if library_path:
         if os.path.exists(library_path):
             if not os.path.isdir(library_path):
-                print("error: library '{0}' is not a directory?".format(library_path))
+                print("ERROR: library '{0}' is not a directory?".format(library_path))
                 raise SystemExit(1)
         else:
-            print("error: library '{0}' does not exist?".format(library_path))
+            print("ERROR: library '{0}' does not exist?".format(library_path))
             raise SystemExit(1)
 
 
@@ -406,7 +406,7 @@ def load_file(context):
         if imgt.process():
             print("IMGT data file loaded")
         else:
-            print("ERROR: IMGT data file not found?")
+            print("ERROR: IMGT data file", context.filename, "not loaded correctly")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
@@ -415,7 +415,7 @@ def load_file(context):
         if mixcr.process():
             print("MiXCR data file loaded")
         else:
-            print("ERROR: MiXCR data file not found?")
+            print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
     elif options.type == "airr":
         # process AIRR TSV
         print("Processing AIRR TSV annotation data file: ", context.filename)
@@ -449,7 +449,7 @@ if __name__ == "__main__":
         if os.path.exists(context.path):
                 load_data(context)
         else:
-            print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
+            print("ERROR: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
     # build indexes
     if context.build_index or context.rebuild_index:
