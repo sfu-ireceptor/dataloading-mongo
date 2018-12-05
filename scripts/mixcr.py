@@ -55,19 +55,20 @@ class MiXCR(Parser):
 
         # Query for the sample and create an array of sample IDs
         filename = filename.replace(".gz", "")
-        print("Retrieving associated sample for file", filename)
+        if self.context.verbose:
+            print("Retrieving associated sample for file", filename)
         samples_cursor = self.context.samples.find({"mixcr_file_name":{'$regex': filename}},{'_id':1})
         idarray = [sample['_id'] for sample in samples_cursor]
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
         if num_samples == 0:
-            print("Could not find annotation file", filename)
-            print("No sample could be associated with this annotation file.")
+            print("ERROR: Could not find sample in repository with annotation file", filename)
+            print("ERROR: No sample could be associated with this annotation file.")
             return False
         elif num_samples > 1:
-            print("Annotation file can not be associated with a unique sample, found", num_samples)
-            print("Unique assignment of annotations to a single sample are required.")
+            print("ERROR: Annotation file can not be associated with a unique sample in the repository, found", num_samples)
+            print("ERROR: Unique assignment of annotations to a single sample are required.")
             return False
 
         # Get the sample ID and assign it to sample ID field
@@ -105,7 +106,8 @@ class MiXCR(Parser):
         # missing strings get read as a NaN value, which is interpreted as a string. One can
         # then not tell the difference between a "nan" string and a "NAN" Junction sequence.
         print("Preparing the file reader...", flush=True)
-        df_reader = pd.read_table(file_handle, usecols=mixcrColumns, chunksize=chunk_size, na_filter=False)
+        #df_reader = pd.read_table(file_handle, usecols=mixcrColumns, chunksize=chunk_size, na_filter=False)
+        df_reader = pd.read_table(file_handle, chunksize=chunk_size, na_filter=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
         total_records = 0
@@ -114,8 +116,22 @@ class MiXCR(Parser):
             if self.context.verbose:
                 print("Processing raw data frame...", flush=True)
             # Remap the column names. We need to remap because the columns may be in a differnt
-            # order in the file than in the column mapping.
-            df_chunk.rename(columnMapping, axis='columns', inplace=True)
+            # order in the file than in the column mapping. We leave any non-mapped columns in the
+            # data frame as we don't want to discard data.
+            for mixcr_column in df_chunk.columns:
+                if mixcr_column in columnMapping:
+                    mongo_column = columnMapping[mixcr_column]
+                    print("Mapping MiXCR column " + mixcr_column + " -> " + mongo_column)
+                    df_chunk.rename({mixcr_column:mongo_column}, axis='columns', inplace=True)
+                else:
+                    print("No mapping for MiXCR column " + mixcr_column + ", storing in repository as is")
+            # Check to see which desired MiXCR mappings we don't have...
+            for mixcr_column, mongo_column in columnMapping.items():
+                if not mongo_column in df_chunk.columns:
+                    print("Missing a mapping for " + mixcr_column + " -> " + mongo_column)
+            
+
+            #df_chunk.rename(columnMapping, axis='columns', inplace=True)
 
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings. Also calculate junction AA length
