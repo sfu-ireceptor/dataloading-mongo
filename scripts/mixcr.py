@@ -155,6 +155,10 @@ class MiXCR(Parser):
             Parser.processGene(self.context, df_chunk, "v_call", "v_call", "vgene_gene", "vgene_family")
             Parser.processGene(self.context, df_chunk, "j_call", "j_call", "jgene_gene", "jgene_family")
             Parser.processGene(self.context, df_chunk, "d_call", "d_call", "dgene_gene", "dgene_family")
+            # If we don't already have a locus (that is the data file didn't provide one) then
+            # calculate the locus based on the v_call array.
+            if not 'locus' in df_chunk:
+                df_chunk['locus'] = df_chunk['v_call'].apply(Parser.getLocus)
 
             # Assign each record the constant fields for all records in the chunk
             df_chunk['functional'] = 1
