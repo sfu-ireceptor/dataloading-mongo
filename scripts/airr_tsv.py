@@ -177,6 +177,10 @@ class AIRR_TSV(Parser):
             Parser.processGene(self.context, airr_df, "v_call", "v_call", "vgene_gene", "vgene_family")
             Parser.processGene(self.context, airr_df, "j_call", "j_call", "jgene_gene", "jgene_family")
             Parser.processGene(self.context, airr_df, "d_call", "d_call", "dgene_gene", "dgene_family")
+            # If we don't already have a locus (that is the data file didn't provide one) then
+            # calculate the locus based on the v_call array.
+            if not 'locus' in airr_df:
+                airr_df['locus'] = airr_df['v_call'].apply(Parser.getLocus)
 
             # For now we assume that an AIRR TSV file, when loaded into iReceptor, has
             # been produced by igblast. This in general is not the case, but as a loader
