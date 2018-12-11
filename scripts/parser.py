@@ -152,6 +152,18 @@ class Parser:
             print("Warning: locus with non IG and non TR found in " + str(v_call_array))
         return final_locus
 
+
+    @staticmethod
+    def getSampleIDs(context, file_field, file_name):
+        # Given a context (which knows about the MongoDB), look for the file_name given
+        # in the Samples collection in the file_field field in the repository. Return an
+        # array of integers which are the sample IDs where the file_name was found in the
+        # field field_name.
+        samples_cursor = context.samples.find( {file_field: { '$regex': file_name }}, {'_id': 1})
+        idarray = [sample['_id'] for sample in samples_cursor]
+        return idarray
+
+
     def __init__(self, context):
         self.context = context
 

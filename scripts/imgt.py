@@ -67,11 +67,7 @@ class IMGT(Parser):
         # Get the sample ID of the data we are processing. We use the IMGT file name for
         # this at the moment, but this may not be the most robust method.
         print("Retrieving associated sample for file", fileName)
-        samples_cursor = self.context.samples.find(
-            {"imgt_file_name": { '$regex': fileName }},
-            {'_id': 1}
-        )
-        idarray = [sample['_id'] for sample in samples_cursor]
+        idarray = Parser.getSampleIDs(self.context, "imgt_file_name", fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)

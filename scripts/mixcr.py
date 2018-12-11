@@ -57,8 +57,7 @@ class MiXCR(Parser):
         filename = filename.replace(".gz", "")
         if self.context.verbose:
             print("Retrieving associated sample for file", filename)
-        samples_cursor = self.context.samples.find({"mixcr_file_name":{'$regex': filename}},{'_id':1})
-        idarray = [sample['_id'] for sample in samples_cursor]
+        idarray = Parser.getSampleIDs(self.context, "mixcr_file_name", filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
