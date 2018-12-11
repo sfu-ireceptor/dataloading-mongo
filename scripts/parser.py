@@ -3,6 +3,7 @@
 
 from os.path import join
 import re
+import os
 import pandas as pd
 
 
@@ -155,17 +156,14 @@ class Parser:
         self.context = context
 
     def getDataFolder(self):
-        return self.context.library + "/" + self.context.type + "/"
-
-    def getDataPath(self, fileName):
-        return join(self.getDataFolder(), fileName)
+        return self.context.library 
 
     scratchFolder = ""
 
     # We create a specific temporary 'scratch' folder for each sequence archive
     def setScratchFolder(self, fileName):
         folderName = fileName[:fileName.index('.')]
-        self.scratchFolder = self.getDataFolder() + folderName + "/"
+        self.scratchFolder = self.getDataFolder() + "/tmp_" + str(os.getpid()) + "_" + folderName + "/"
 
     def getScratchFolder(self):
         return self.scratchFolder
@@ -173,8 +171,8 @@ class Parser:
     def getScratchPath(self, fileName):
         return join(self.getScratchFolder(), fileName)
 
-    def readDf(self, fileName):
+    def readScratchDf(self, fileName):
         return pd.read_table(self.getScratchPath(fileName))
 
-    def readDfNoHeader(self, fileName):
+    def readScratchDfNoHeader(self, fileName):
         return pd.read_table(self.getScratchPath(fileName), header=None)
