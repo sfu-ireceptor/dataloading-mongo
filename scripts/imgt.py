@@ -33,58 +33,35 @@ class IMGT(Parser):
 
     def process(self):
 
-        # The IMGT parser assumes that the IMGT data consists of a single
-        # ZIP file and that the ZIP file contains a single directory with
-        # the directory name "imgt". This MUST be the case at this time.
-        # Within the imgt directory, there should be one or more IMGT
-        # annotation archives. Each annotation archive should be a tgz file
-        # (a tar'ed, gzip'ed file) as provided from IMGT vQUEST.
-        #
         # The data is extracted in the "library" folder provided (the same
         # folder in which the original zip file was found.
         if not isfile(self.context.path):
-            print("Could not find IMGT ZIP archive ", self.context.path)
+            print("Could not find IMGT compressed archive ", self.context.path)
             return False
 
-        try:
-            with zipfile.ZipFile(self.context.path, "r") as zip:
-                # unzip to library directory
-                zip.extractall(self.context.library)
-        except zipfile.BadZipFile as e:
-            print("ERROR: " + str(e))
-            print("ERROR: Expecting file " + self.context.path + " to be a compressed Zip file")
-            return False
+        # Process the file...
+        return self.processImgtArchive(self.context.path)
 
-	# Get a list of the files in the data folder. The getDataFolder
-        # method adds on the "imgt" suffix to the library path.
-        onlyfiles = [
-            f for f in os.listdir(self.getDataFolder())
-            if isfile(self.getDataPath(f))
-        ]
-        
-        # Process annotation files
-        for f in onlyfiles:
-            if not self.processImgtArchive(f):
-                return False
+    def processImgtArchive(self, path):
 
-	# Clean up the "imgt" directory tree once the files are processed
-        rmtree(self.getDataFolder())
-
-        return True
-
-    def processImgtArchive(self, fileName):
-
-        path = self.getDataPath(fileName)
-
-        if self.context.verbose:
-            print("Extracting IMGT file: ", path)
-
+        # Get root filename from the path, should be a file if the path
+        # is file, so not checking again 8-)
+        fileName = os.path.basename(path)
+        # Set the scratch folder based on the file name. This computes a
+        # unique termporary folder in which we can uncompress and process
+        # data in a safe way.
         self.setScratchFolder(fileName)
 
+        if self.context.verbose:
+            print("Extracting IMGT file: ", fileName)
+            print("Path: ", path)
+            print("Scratch folder: ", self.getScratchFolder())
+
+        # Open the tar file, extract the data, and close the tarfile. 
+        # This leaves us with a folder with all of the individual vQUest
+        # files extracted in this location.
         tar = tarfile.open(path)
-
         tar.extractall(self.getScratchFolder())
-
         tar.close()
 
         # Get the sample ID of the data we are processing. We use the IMGT file name for
@@ -127,7 +104,7 @@ class IMGT(Parser):
             if self.context.verbose:
                 print("Processing file ", vquest_file)
             # Read in the data frame for the file.
-            vquest_dataframe = self.readDf(vquest_file)
+            vquest_dataframe = self.readScratchDf(vquest_file)
             # Extract the fields that are of interest for this file.
             field_of_interest = self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])
             # We select the rows in the mapping that contain fields of interest for this file.
@@ -182,7 +159,7 @@ class IMGT(Parser):
         # First, we want to keep track of some of the data from the IMGT Parameters file.
         # Create a dictionary with keys the first column of the parameter file and the values
         # the second column in the parameter file.
-        Parameters_11 = self.readDfNoHeader('11_Parameters.txt')
+        Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt')
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
         # Need to grab some data out of the parameters dictionary.
