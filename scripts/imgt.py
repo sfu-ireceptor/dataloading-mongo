@@ -201,8 +201,7 @@ class IMGT(Parser):
         mongo_concat['ir_project_sample_id'] = ir_project_sample_id
 
         # The annotation tool used
-        if not 'ir_rearrangement_tool' in mongo_concat:
-            mongo_concat['ir_rearrangement_tool'] = "V-Quest"
+        mongo_concat['ir_annotation_tool'] = "V-Quest"
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
