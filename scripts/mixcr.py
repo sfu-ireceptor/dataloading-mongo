@@ -50,14 +50,28 @@ class MiXCR(Parser):
 
     def processMiXcrFile( self, file_handle, filename ):
 
+        # Set the tag for the repository that we are using. Note this should
+        # be refactored so that it is a parameter provided so that we can use
+        # multiple repositories.
+        repository_tag = "ir_turnkey"
+
         # Define the number of records to iterate over
         chunk_size = 100000
 
         # Query for the sample and create an array of sample IDs
         filename = filename.replace(".gz", "")
-        if self.context.verbose:
-            print("Retrieving associated sample for file", filename)
-        idarray = Parser.getSampleIDs(self.context, "mixcr_file_name", filename)
+
+        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # this at the moment, but this may not be the most robust method.
+        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        idarray = []
+        if value is None:
+            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            return False
+        else:
+            print("Retrieving associated sample for file " + filename + " from repository field " + value)
+            idarray = Parser.getSampleIDs(self.context, value, filename)
+
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
@@ -88,12 +102,12 @@ class MiXCR(Parser):
         columnMapping = {}
         for index, row in file_fields.iterrows():
             if self.context.verbose:
-                print("    " + str(row['mixcr']) + " -> " + str(row['ir_turnkey']))
+                print("    " + str(row['mixcr']) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the IMGT field, track the field
             # from both the IMGT and repository side.
-            if not pd.isnull(row['ir_turnkey']):
+            if not pd.isnull(row[repository_tag]):
                 mixcrColumns.append(row['mixcr'])
-                columnMapping[row['mixcr']] = row['ir_turnkey']
+                columnMapping[row['mixcr']] = row[repository_tag]
             else:
                 print("Repository does not support " +
                       str(row['mixcr']) + ", not inserting into repository")
