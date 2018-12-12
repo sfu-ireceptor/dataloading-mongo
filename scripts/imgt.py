@@ -43,6 +43,10 @@ class IMGT(Parser):
         return self.processImgtArchive(self.context.path)
 
     def processImgtArchive(self, path):
+        # Set the tag for the repository that we are using. Note this should
+        # be refactored so that it is a parameter provided so that we can use
+        # multiple repositories.
+        repository_tag = "ir_turnkey"
 
         # Get root filename from the path, should be a file if the path
         # is file, so not checking again 8-)
@@ -57,31 +61,37 @@ class IMGT(Parser):
             print("Path: ", path)
             print("Scratch folder: ", self.getScratchFolder())
 
+        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # this at the moment, but this may not be the most robust method.
+        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        idarray = []
+        if value is None:
+            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            return False
+        else:
+            print("Retrieving associated sample for file " + fileName + " from repository field " + value)
+            idarray = Parser.getSampleIDs(self.context, value, fileName)
+
+        # Check to see that we found it and that we only found one. Fail if not.
+        num_samples = len(idarray)
+        if num_samples == 0:
+            print("ERROR: Could not find annotation file " + fileName + " in the repository samples")
+            print("ERROR: No sample could be associated with this annotation file.")
+            return False
+        elif num_samples > 1:
+            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples)
+            print("ERROR: Unique assignment of annotations to a single sample are required.")
+            return False
+
+        # Get the sample ID and assign it to sample ID field
+        ir_project_sample_id = idarray[0]
+
         # Open the tar file, extract the data, and close the tarfile. 
         # This leaves us with a folder with all of the individual vQUest
         # files extracted in this location.
         tar = tarfile.open(path)
         tar.extractall(self.getScratchFolder())
         tar.close()
-
-        # Get the sample ID of the data we are processing. We use the IMGT file name for
-        # this at the moment, but this may not be the most robust method.
-        print("Retrieving associated sample for file", fileName)
-        idarray = Parser.getSampleIDs(self.context, "imgt_file_name", fileName)
-
-        # Check to see that we found it and that we only found one. Fail if not.
-        num_samples = len(idarray)
-        if num_samples == 0:
-            print("Could not find annotation file" + fileName + " in the repository samples")
-            print("No sample could be associated with this annotation file.")
-            return False
-        elif num_samples > 1:
-            print("Annotation file can not be associated with a unique sample, found", num_samples)
-            print("Unique assignment of annotations to a single sample are required.")
-            return False
-
-        # Get the sample ID and assign it to sample ID field
-        ir_project_sample_id = idarray[0]
 
         # Get the list of relevant vQuest files. Choose the vquest_file column,
         # drop the NAs, and grab the unique members that remain. This gives us
@@ -115,12 +125,12 @@ class IMGT(Parser):
             mongo_fields = []
             for index, row in file_fields.iterrows():
                 if self.context.verbose:
-                    print("    " + str(row['vquest']) + " -> " + str(row['ir_turnkey']))
+                    print("    " + str(row['vquest']) + " -> " + str(row[repository_tag]))
                 # If the repository column has a value for the IMGT field, track the field
                 # from both the IMGT and repository side.
-                if not pd.isnull(row['ir_turnkey']):
+                if not pd.isnull(row[repository_tag]):
                     vquest_fields.append(row['vquest'])
-                    mongo_fields.append(row['ir_turnkey'])
+                    mongo_fields.append(row[repository_tag])
                 else:
                     print("Repository does not support " + vquest_file + "/" + 
                           str(row['vquest']) + ", not inserting into repository")
@@ -134,7 +144,7 @@ class IMGT(Parser):
             # We now have a data frame with vquest data in it with AIRR compliant column names.
             # Store all of this in a dictionay based on the file name so we can use it later.
             filedict[vquest_file] = {'vquest': file_fields['vquest'],
-                                     'ir_turnkey': file_fields['ir_turnkey'],
+                                     repository_tag: file_fields[repository_tag],
                                      'vquest_dataframe': vquest_dataframe,
                                      'mongo_dataframe': mongo_dataframe}
             # Manage the data frames that we extract from each file. Essentially we 
@@ -191,7 +201,8 @@ class IMGT(Parser):
         mongo_concat['ir_project_sample_id'] = ir_project_sample_id
 
         # The annotation tool used
-        mongo_concat['ir_annotation_tool'] = "V-Quest"
+        if not 'ir_rearrangement_tool' in mongo_concat:
+            mongo_concat['ir_rearrangement_tool'] = "V-Quest"
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
