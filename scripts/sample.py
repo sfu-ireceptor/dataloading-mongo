@@ -55,6 +55,16 @@ class Sample:
 
 		# Add the sequence count field
 		df['ir_sequence_count'] = 0
+
+		# Ensure that we have a correct file name to link fields. If not return.
+		# This is a fatal error as we can not link any data to this set of samples,
+		# so there is no point adding the samples...
+		if not "ir_rearrangement_file_name" in df.columns:
+			print("ERROR: Could not find a rearrangement file field in the metadata (ir_rearrangement_file_name)")
+			print("ERROR: Will not be able to link repertoire to rearrangement annotations")
+			df["ir_rearrangment_file_name"] = ""
+			return False
+
 		# Conver to JSON
 		records = json.loads(df.T.to_json()).values()
 		record_list = list(records)
