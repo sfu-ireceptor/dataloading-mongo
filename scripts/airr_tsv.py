@@ -49,6 +49,10 @@ class AIRR_TSV(Parser):
         return success
 
     def processAIRRTSVFile( self, path ):
+        # Set the tag for the repository that we are using. Note this should
+        # be refactored so that it is a parameter provided so that we can use
+        # multiple repositories.
+        repository_tag = "ir_turnkey"
 
         # Set the size of each chunk of data that is inserted.
         chunk_size = 100000
@@ -83,12 +87,12 @@ class AIRR_TSV(Parser):
         columnMapping = {}
         for index, row in file_fields.iterrows():
             if self.context.verbose:
-                print("    " + str(row['igblast']) + " -> " + str(row['ir_turnkey']))
+                print("    " + str(row['igblast']) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the igblast field, track the field
             # from both the igblast and repository side.
-            if not pd.isnull(row['ir_turnkey']):
+            if not pd.isnull(row[repository_tag]):
                 igblastColumns.append(row['igblast'])
-                columnMapping[row['igblast']] = row['ir_turnkey']
+                columnMapping[row['igblast']] = row[repository_tag]
             else:
                 print("Repository does not support " +
                       str(row['igblast']) + ", not inserting into repository")
@@ -114,17 +118,21 @@ class AIRR_TSV(Parser):
             if not igblast_column in airr_reader.fields:
                 print("Missing a repository mapping for " + igblast_column + " -> " + mongo_column)
 
-
-
         # Get root filename: may need to strip off any gzip 'archive' file extension
         filename = self.context.filename.replace(".gz","")
         if self.context.verbose:
             print("For igblast filename: "+filename)
 
-        # Query for the sample and create an array of sample IDs
-        if self.context.verbose:
-            print("Retrieving associated sample...")
-        idarray = Parser.getSampleIDs(self.context, "igblast_file_name", filename)
+        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # this at the moment, but this may not be the most robust method.
+        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        idarray = []
+        if value is None:
+            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            return False
+        else:
+            print("Retrieving associated sample for file " + filename + " from repository field " + value)
+            idarray = Parser.getSampleIDs(self.context, value, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
