@@ -1,14 +1,8 @@
-# Base Jupyter Image
-# See https://hub.docker.com/r/jupyter/scipy-notebook/
-FROM jupyter/scipy-notebook
+FROM python:3.6
 
-LABEL maintainer="iReceptor <ireceptor@sfu.ca>"
+# add required python modules
+COPY requirements.txt /
+RUN pip install -r /requirements.txt
 
-# PROXY: uncomment these and define if building behind a proxy
-# These are UTSW proxy settings
-#ENV http_proxy 'http://proxy.swmed.edu:3128/'
-#ENV https_proxy 'https://proxy.swmed.edu:3128/'
-#ENV HTTP_PROXY 'http://proxy.swmed.edu:3128/'
-#ENV HTTPS_PROXY 'https://proxy.swmed.edu:3128/'
-
-COPY ./README.md  /home/jovyan/README.md
+# add this folder to the Docker image
+COPY . /app
