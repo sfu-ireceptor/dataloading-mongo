@@ -6,3 +6,4 @@ RUN pip install -r /requirements.txt
 
 # add this folder to the Docker image
 COPY . /app
+WORKDIR /root
