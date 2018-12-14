@@ -416,7 +416,7 @@ def load_file(context):
         if sample.process():
             print("Repertoire metadata file loaded")
         else:
-            print("ERROR: Repertoire input file not found?")
+            print("ERROR: Repertoire metadata file", context.filename, "not loaded correctly")
     elif context.type == "imgt":
         # process imgt
         print("Processing IMGT data file: {}".format(context.filename))
