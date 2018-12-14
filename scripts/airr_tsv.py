@@ -52,10 +52,10 @@ class AIRR_TSV(Parser):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
-        repository_tag = "ir_turnkey"
+        repository_tag = self.context.repository_tag
 
         # Set the size of each chunk of data that is inserted.
-        chunk_size = 100000
+        chunk_size = self.context.repository_chunk
 
         # Validate the AIRR TSV file and confirm if loading is desired if 
         # the file is not valid. Note that this function processes the entire

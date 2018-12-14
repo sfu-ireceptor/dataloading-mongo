@@ -46,7 +46,7 @@ class IMGT(Parser):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
-        repository_tag = "ir_turnkey"
+        repository_tag = self.context.repository_tag 
 
         # Get root filename from the path, should be a file if the path
         # is file, so not checking again 8-)
