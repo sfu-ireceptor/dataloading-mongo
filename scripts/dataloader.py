@@ -141,14 +141,14 @@ def getArguments():
         "-u",
         "--user",
         dest="user",
-        default=os.environ.get("MONGODB_SERVICE_USER", "admin"),
+        default=os.environ.get("MONGODB_SERVICE_USER", ""),
         help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
     )
     db_group.add_argument(
         "-p",
         "--password",
         dest="password",
-        default=os.environ.get('MONGODB_SERVICE_SECRET', ''),
+        default=os.environ.get("MONGODB_SERVICE_SECRET", ""),
         help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
     )
     db_group.add_argument(
@@ -157,6 +157,19 @@ def getArguments():
         dest="database",
         default=os.environ.get("MONGODB_DB", "ireceptor"),
         help="Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise."
+    )
+    db_group.add_argument(
+        "--database_map",
+        dest="database_map",
+        default="ir_turnkey",
+        help="Mapping to use to map data terms into repository terms. Defaults to ir_turnkey, which is the mapping for the iReceptor Turnkey repository. This mapping keyword MUST be in the term mapping file as specified by --mapfile"
+    )
+    db_group.add_argument(
+        "--database_chunk",
+        dest="database_chunk",
+        default=100000,
+        type=int,
+        help="Number of records to process in a single step when loading rearrangment data into the repository. This is used to reduce the memory footpring of the loading process when very large files are being loaded. Defaults to 100,000"
     )
 
     path_group = parser.add_argument_group("file path options")
@@ -225,6 +238,7 @@ def getArguments():
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
+        print('DATABASE_MAP :', options.database_map)
         print('MAPFILE      :', options.mapfile)
         print('DATA_TYPE    :', options.type)
         print('LIBRARY_PATH :', options.library)
@@ -277,7 +291,7 @@ def validate_library(library_path):
 
 
 class Context:
-    def __init__(self, mapfile, type, library, filename, path, samples, sequences, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
+    def __init__(self, mapfile, type, library, filename, path, samples, sequences, database_map, database_chunk, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
         """Create an execution context with various info.
 
 
@@ -316,6 +330,10 @@ class Context:
         # Create the AIRR Mapping object from the mapfile.
         self.airr_map = AIRRMap(self.verbose)
         self.airr_map.readMapFile(self.mapfile)
+        # Keep track of the repository map key from the mapping file.
+        self.repository_tag = database_map
+        # Keep track of the repository chunk size for loading datasets.
+        self.repository_chunk = database_chunk
 
     @classmethod
     def getContext(cls, options):
@@ -348,9 +366,10 @@ class Context:
         mng_db = mng_client[options.database]
 
         return cls(options.mapfile, options.type, options.library, options.filename, options.path,
-                    mng_db['sample'], mng_db['sequence'], options.counter,
-                    options.verbose, options.drop_index, 
-                    options.build_index, options.rebuild_index)
+                    mng_db['sample'], mng_db['sequence'], 
+                    options.database_map, options.database_chunk,
+                    options.counter, options.verbose,
+                    options.drop_index, options.build_index, options.rebuild_index)
 
 # load a directory of files or a single file depending on 'context.path'
 def load_data(context):

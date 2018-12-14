@@ -53,10 +53,10 @@ class MiXCR(Parser):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
-        repository_tag = "ir_turnkey"
+        repository_tag = self.context.repository_tag
 
         # Define the number of records to iterate over
-        chunk_size = 100000
+        chunk_size = self.context.repository_chunk
 
         # Query for the sample and create an array of sample IDs
         filename = filename.replace(".gz", "")
@@ -119,7 +119,6 @@ class MiXCR(Parser):
         # missing strings get read as a NaN value, which is interpreted as a string. One can
         # then not tell the difference between a "nan" string and a "NAN" Junction sequence.
         print("Preparing the file reader...", flush=True)
-        #df_reader = pd.read_table(file_handle, usecols=mixcrColumns, chunksize=chunk_size, na_filter=False)
         df_reader = pd.read_table(file_handle, chunksize=chunk_size, na_filter=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
