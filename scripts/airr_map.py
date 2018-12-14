@@ -86,7 +86,10 @@ class AIRRMap:
         # This could be an array. If it is, we only return a mapping for unique objects,
         # so if there is more than one value return None. If there is one, return it
         if len(value.values) == 1:
-            return value.values[0]
+            if pd.notnull(value.values[0]):
+                return value.values[0]
+            else:
+                return None
         else:
             return None
 
