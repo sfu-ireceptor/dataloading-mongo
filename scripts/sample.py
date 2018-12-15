@@ -24,7 +24,13 @@ class Sample:
 	    if empty:
 	        seq = 1
 	    else:
-	        seq = record["_id"]+1
+	        seq = record["_id"]
+	        if not type(seq) is int:
+	            print("ERROR: Invalid ID for samples found, expecting an integer, got " + str(seq))
+	            print("ERROR: DB may be corrupt")
+	            return False
+	        else:
+	            seq = seq+1
 	        
 	    doc["_id"] = seq
 	    
@@ -104,13 +110,21 @@ class Sample:
 		# field then we can't do anything. 
 		count_field = self.context.airr_map.getMapping("ir_sequence_count", "ir_id", repository_tag)
 		if count_field is None:
-			print("Warning: Could not find ir_sequence_count tag in repository " + repository_tag)
+			print("Warning: Could not find ir_sequence_count tag in repository " + repository_tag + ", field not initialized")
+		else:
 			df[count_field] = 0
 
 		# Ensure that we have a correct file name to link fields. If not return.
 		# This is a fatal error as we can not link any data to this set of samples,
 		# so there is no point adding the samples...
 		repository_file_field = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+		# If we can't find a mapping for this field in the repository mapping, then
+		# we might still be OK if the metadata spreadsheet has the field. If the fails, 
+		# then we should exit.
+		if repository_file_field is None or len(repository_file_field) == 0:
+			print("Warning: Could not find a valid repository mapping for the rearrangement file name (ir_rearrangement_file_name)")
+			repository_file_field = "ir_rearrangement_file_name"
+
 		# If we can't find the file field for the rearrangement field in the repository, then
 		# abort, as we won't be able to link the repertoire to the rearrangement.
 		if not repository_file_field in df.columns:

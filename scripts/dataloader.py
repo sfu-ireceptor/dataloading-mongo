@@ -371,6 +371,18 @@ class Context:
                     options.counter, options.verbose,
                     options.drop_index, options.build_index, options.rebuild_index)
 
+    @staticmethod
+    def checkValidity(context):
+        # Check any runtime consistency issues for the context, and return False if
+        # something is not valid.
+
+        # Check to see if the AIRR mappings are valid.
+        if not context.repository_tag in context.airr_map.airr_mappings:
+            print("ERROR: Could not find repository mapping " + context.repository_tag + " in AIRR Mappings")
+            return False
+        return True
+
+
 # load a directory of files or a single file depending on 'context.path'
 def load_data(context):
     if os.path.isdir(context.path):
@@ -455,8 +467,11 @@ if __name__ == "__main__":
     options = getArguments()
     context = Context.getContext(options)
 
+    # Check on the successful creation of the context.
     if not context:
         raise SystemExit(1)
+    if not Context.checkValidity(context):
+        exit(1)
 
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
