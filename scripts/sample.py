@@ -22,7 +22,7 @@ class Sample(Parser):
 	        record = cursor.next()
 	        
 	    except StopIteration:
-	        print("Warning! NO PREVIOUS RECORD, THIS IS THE FIRST INSERTION")
+	        print("Info: No previous record, this is the first insertion")
 	        empty = True
 	        
 	    if empty:
@@ -37,6 +37,16 @@ class Sample(Parser):
 	            seq = seq+1
 	        
 	    doc["_id"] = seq
+	    if self.context.verbose:
+	        # If we are in verbose mode, print out a summary of the record we are inserting.
+	        study_tag = self.context.airr_map.getMapping("study_id", "ir_id", self.context.repository_tag)
+	        study = "NULL" if not study_tag in doc else doc[study_tag]
+	        sample_tag = self.context.airr_map.getMapping("sample_id", "ir_id", self.context.repository_tag)
+	        sample = "NULL" if not sample_tag in doc else doc[sample_tag]
+	        file_tag = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", self.context.repository_tag)
+	        filestr = "NULL" if not file_tag in doc else doc[file_tag]
+	        print("Info: Writing repertoire record <%s, %s, %s (ID: %d)>" % (study, sample, filestr, seq))
+
 	    
 	    results = self.context.samples.insert(doc)
 	
@@ -66,7 +76,7 @@ class Sample(Parser):
 		columnMapping = {}
 
 		if self.context.verbose:
-			print("Checking AIRR repertoire mapping")
+			print("Info: Dumping AIRR repertoire mapping")
 		for index, row in airr_fields.iterrows():
 			if self.context.verbose:
 				print("    " + str(row[curation_tag]) + " -> " + str(row[repository_tag]))
@@ -96,18 +106,20 @@ class Sample(Parser):
 				# to be the column name for the repository.
 				mongo_column = columnMapping[curation_file_column]
 				if self.context.verbose:
-					print("Mapping input file column " + curation_file_column + " -> " + mongo_column)
+					print("Info: Mapping input file column " + curation_file_column + " -> " + mongo_column)
 				df.rename({curation_file_column:mongo_column}, axis='columns', inplace=True)
 			else:
 				# If we don't have a mapping, keep the name the same, as we want to
 				# still save the data even though we don't have a mapping.
-				print("No mapping for input file column " + curation_file_column + ", storing in repository as is")
+				if self.context.verbose:
+					print("Info: No mapping for input file column " + curation_file_column + ", storing in repository as is")
 		# Check to see which desired Curation mappings we don't have... We check this
 		# against the "mongo_column" from the repository in the data frame, because
 		# we have already mapped the columns from the file columns to the repository columns.
 		for curation_column, mongo_column in columnMapping.items():
 			if not mongo_column in df.columns:
-				print("Missing a mapping in input file for " + curation_column + " -> " + mongo_column)
+				if self.context.verbose:
+					print("Warning: Missing data in input file for " + curation_column)
 
 		# Get the mapping for the sequence count field for the repository and 
 		# initialize the sequeunce count to 0. If we can't find a mapping for this
