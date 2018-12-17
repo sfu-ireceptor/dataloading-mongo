@@ -341,8 +341,13 @@ class Context:
         # Connect with Mongo db
         username = urllib.parse.quote_plus(options.user)
         password = urllib.parse.quote_plus(options.password)
-        uri = 'mongodb://%s:%s@%s:%s' % (username, password, options.host, options.port)
-        print("Connecting to Mongo as user '%s' on '%s:%s'" %
+        if len(username) == 0 and len(password) == 0:
+            uri = 'mongodb://%s:%s' % (options.host, options.port)
+            print("Connecting to Mongo with no username/password on '%s:%s'" %
+                (options.host, options.port))
+        else:
+            uri = 'mongodb://%s:%s@%s:%s' % (username, password, options.host, options.port)
+            print("Connecting to Mongo as user '%s' on '%s:%s'" %
                 (username, options.host, options.port))
 
         # Connect to the Mongo server and return if not able to connect.
@@ -355,12 +360,30 @@ class Context:
 
         # Constructor doesn't block - need to check to see if the connection works.
         try:
-            # The ismaster command is cheap and does not require auth.
-            mng_client.admin.command('ismaster')
+            # We need to check that we can perform a real operation on the collection
+            # at this time. We want to check for connection errors, authentication
+            # errors. We want to let through the case that there is an empty repository
+            # and the cursor comes back empty.
+            mng_db = mng_client[options.database]
+            mng_sample = mng_db['sample']
+
+            cursor = mng_sample.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
+            record = cursor.next()
         except pymongo.errors.ConnectionFailure:
             print("Unable to connect to %s:%s, Mongo server not available"
                     % (options.host, options.port))
             return None
+        except pymongo.errors.OperationFailure as err:
+            print("Operation failed on %s:%s, %s"
+                    % (options.host, options.port, str(err)))
+            return None
+        except StopIteration:
+            # This exception is not an error. The cursor.next() raises this exception when it has no more
+            # data in the cursor. In this case, this would mean that the database is empty,
+            # but the database was opened and the query worked. So this is not an error case as it
+            # OK to have an empty database.
+            pass
+
 
         # Set Mongo db name
         mng_db = mng_client[options.database]
