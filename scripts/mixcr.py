@@ -177,6 +177,11 @@ class MiXCR(Parser):
             # Assign any iReceptor specific custom fields for the records in the chunk
             df_chunk['ir_annotation_tool'] = 'MiXCR'
             df_chunk['ir_project_sample_id'] = ir_project_sample_id
+            # Create the created and update values for this block of records. Note that this
+            # means that each block of inserts will have the same date.
+            now_str = Parser.getDateTimeNowUTC()
+            df_chunk["ir_created_at"] = now_str
+            df_chunk["ir_updated_at"] = now_str
 
             # Insert the chunk of records into Mongo.
             num_records = len(df_chunk)

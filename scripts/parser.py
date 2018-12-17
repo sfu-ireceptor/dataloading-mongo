@@ -2,6 +2,8 @@
 # Extracted common code patterns shared across various parsers.
 
 from os.path import join
+from datetime import datetime
+from datetime import timezone
 import re
 import os
 import pandas as pd
@@ -163,6 +165,9 @@ class Parser:
         idarray = [sample['_id'] for sample in samples_cursor]
         return idarray
 
+    @staticmethod
+    def getDateTimeNowUTC():
+        return datetime.now(timezone.utc).strftime("%a %b %d %Y %H:%M:%S %Z")
 
     def __init__(self, context):
         self.context = context

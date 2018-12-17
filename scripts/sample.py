@@ -2,11 +2,15 @@
 
 import pandas as pd
 import json
+from datetime import datetime
+from datetime import timezone
+from parser import Parser
 
-class Sample:
+class Sample(Parser):
 	
 	def __init__(self,context):
 		self.context = context
+		Parser.__init__(self, context)
 		
 	def insertDocument( self, doc ):
 	
@@ -132,6 +136,11 @@ class Sample:
 			print("ERROR: Will not be able to link repertoire to rearrangement annotations")
 			df["ir_rearrangment_file_name"] = ""
 			return False
+
+		# Add a created_at and updated_at field in the repository.
+		now_str = Parser.getDateTimeNowUTC()
+		df["ir_created_at"] = now_str
+		df["ir_updated_at"] = now_str
 
 		# Conver to JSON
 		records = json.loads(df.T.to_json()).values()

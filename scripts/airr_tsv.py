@@ -199,6 +199,12 @@ class AIRR_TSV(Parser):
             # Keep track of the sample id so can link each rearrangement to a repertoire
             airr_df['ir_project_sample_id']=ir_project_sample_id
 
+            # Create the created and update values for this block of records. Note that this
+            # means that each block of inserts will have the same date.
+            now_str = Parser.getDateTimeNowUTC()
+            airr_df["ir_created_at"] = now_str
+            airr_df["ir_updated_at"] = now_str
+
             # Insert the chunk of records into Mongo.
             num_records = len(airr_df)
             print("Inserting", num_records, "records into Mongo...", flush=True)
