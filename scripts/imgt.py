@@ -229,6 +229,12 @@ class IMGT(Parser):
         mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
         mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
 
+        # Create the created and update values for this block of records. Note that this
+        # means that each block of inserts will have the same date.
+        now_str = Parser.getDateTimeNowUTC()
+        mongo_concat["ir_created_at"] = now_str
+        mongo_concat["ir_updated_at"] = now_str
+
         # Convert the mongo data frame dats int JSON.
         records = json.loads(mongo_concat.T.to_json()).values()
 
