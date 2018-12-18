@@ -343,18 +343,18 @@ class Context:
         password = urllib.parse.quote_plus(options.password)
         if len(username) == 0 and len(password) == 0:
             uri = 'mongodb://%s:%s' % (options.host, options.port)
-            print("Connecting to Mongo with no username/password on '%s:%s'" %
+            print("Info: Connecting to Mongo with no username/password on '%s:%s'" %
                 (options.host, options.port))
         else:
             uri = 'mongodb://%s:%s@%s:%s' % (username, password, options.host, options.port)
-            print("Connecting to Mongo as user '%s' on '%s:%s'" %
+            print("Info: Connecting to Mongo as user '%s' on '%s:%s'" %
                 (username, options.host, options.port))
 
         # Connect to the Mongo server and return if not able to connect.
         try:
             mng_client = pymongo.MongoClient(uri)
         except pymongo.errors.ConfigurationError as err:
-            print("Unable to connect to %s:%s - %s"
+            print("ERROR: Unable to connect to %s:%s - %s"
                     % (options.host, options.port, err))
             return None
 
@@ -370,11 +370,11 @@ class Context:
             cursor = mng_sample.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
             record = cursor.next()
         except pymongo.errors.ConnectionFailure:
-            print("Unable to connect to %s:%s, Mongo server not available"
+            print("ERROR: Unable to connect to %s:%s, Mongo server not available"
                     % (options.host, options.port))
             return None
         except pymongo.errors.OperationFailure as err:
-            print("Operation failed on %s:%s, %s"
+            print("ERROR: Operation failed on %s:%s, %s"
                     % (options.host, options.port, str(err)))
             return None
         except StopIteration:
@@ -446,37 +446,37 @@ def load_file(context):
 
     if context.type == "sample":
         # process samples
-        print("Processing repertoire metadata file: {}".format(context.filename))
+        print("Info: Processing repertoire metadata file: {}".format(context.filename))
         sample = Sample(context)
         if sample.process():
-            print("Repertoire metadata file loaded")
+            print("Info: Repertoire metadata file loaded")
         else:
             print("ERROR: Repertoire metadata file", context.filename, "not loaded correctly")
     elif context.type == "imgt":
         # process imgt
-        print("Processing IMGT data file: {}".format(context.filename))
+        print("Info: Processing IMGT data file: {}".format(context.filename))
         #prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
-            print("IMGT data file loaded")
+            print("Info: IMGT data file loaded")
         else:
             print("ERROR: IMGT data file", context.filename, "not loaded correctly")
     elif context.type == "mixcr":
         # process mixcr
-        print("Processing MiXCR data file: {}".format(context.filename))
+        print("Info: Processing MiXCR data file: {}".format(context.filename))
         #prompt_counter(context)
         mixcr = MiXCR(context)
         if mixcr.process():
-            print("MiXCR data file loaded")
+            print("Info: MiXCR data file loaded")
         else:
             print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
     elif options.type == "airr":
         # process AIRR TSV
-        print("Processing AIRR TSV annotation data file: ", context.filename)
+        print("Info: Processing AIRR TSV annotation data file: ", context.filename)
         #prompt_counter(context)
         airr = AIRR_TSV(context)
         if airr.process():
-            print("AIRR TSV data file loaded")
+            print("Info: AIRR TSV data file loaded")
         else:
             print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
     else:
@@ -484,7 +484,7 @@ def load_file(context):
 
     # time end
     t_end = time.perf_counter()
-    print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+    print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
 
 if __name__ == "__main__":
     options = getArguments()
@@ -498,7 +498,7 @@ if __name__ == "__main__":
 
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
-        print("Dropping indexes on sequence level...")
+        print("Info: Dropping indexes on sequence level...")
         context.sequences.drop_indexes()
 
     # load data files if path is provided by user
@@ -510,10 +510,10 @@ if __name__ == "__main__":
 
     # build indexes
     if context.build_index or context.rebuild_index:
-        print("Building indexes on sequence level...")
+        print("Info: Building indexes on sequence level...")
         for index in indexes:
-            print("Now building index: {0}".format(index))
+            print("Info: Now building index: {0}".format(index))
             t_start = time.perf_counter()
             context.sequences.create_index(index)
             t_end = time.perf_counter()
-            print("Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
+            print("Info: Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
