@@ -141,14 +141,14 @@ def getArguments():
         "-u",
         "--user",
         dest="user",
-        default=os.environ.get("MONGODB_SERVICE_USER", "admin"),
+        default=os.environ.get("MONGODB_SERVICE_USER", ""),
         help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
     )
     db_group.add_argument(
         "-p",
         "--password",
         dest="password",
-        default=os.environ.get('MONGODB_SERVICE_SECRET', ''),
+        default=os.environ.get("MONGODB_SERVICE_SECRET", ""),
         help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
     )
     db_group.add_argument(
@@ -157,6 +157,19 @@ def getArguments():
         dest="database",
         default=os.environ.get("MONGODB_DB", "ireceptor"),
         help="Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise."
+    )
+    db_group.add_argument(
+        "--database_map",
+        dest="database_map",
+        default="ir_turnkey",
+        help="Mapping to use to map data terms into repository terms. Defaults to ir_turnkey, which is the mapping for the iReceptor Turnkey repository. This mapping keyword MUST be in the term mapping file as specified by --mapfile"
+    )
+    db_group.add_argument(
+        "--database_chunk",
+        dest="database_chunk",
+        default=100000,
+        type=int,
+        help="Number of records to process in a single step when loading rearrangment data into the repository. This is used to reduce the memory footpring of the loading process when very large files are being loaded. Defaults to 100,000"
     )
 
     path_group = parser.add_argument_group("file path options")
@@ -225,6 +238,7 @@ def getArguments():
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
+        print('DATABASE_MAP :', options.database_map)
         print('MAPFILE      :', options.mapfile)
         print('DATA_TYPE    :', options.type)
         print('LIBRARY_PATH :', options.library)
@@ -277,7 +291,7 @@ def validate_library(library_path):
 
 
 class Context:
-    def __init__(self, mapfile, type, library, filename, path, samples, sequences, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
+    def __init__(self, mapfile, type, library, filename, path, samples, sequences, database_map, database_chunk, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
         """Create an execution context with various info.
 
 
@@ -316,6 +330,10 @@ class Context:
         # Create the AIRR Mapping object from the mapfile.
         self.airr_map = AIRRMap(self.verbose)
         self.airr_map.readMapFile(self.mapfile)
+        # Keep track of the repository map key from the mapping file.
+        self.repository_tag = database_map
+        # Keep track of the repository chunk size for loading datasets.
+        self.repository_chunk = database_chunk
 
     @classmethod
     def getContext(cls, options):
@@ -323,34 +341,70 @@ class Context:
         # Connect with Mongo db
         username = urllib.parse.quote_plus(options.user)
         password = urllib.parse.quote_plus(options.password)
-        uri = 'mongodb://%s:%s@%s:%s' % (username, password, options.host, options.port)
-        print("Connecting to Mongo as user '%s' on '%s:%s'" %
+        if len(username) == 0 and len(password) == 0:
+            uri = 'mongodb://%s:%s' % (options.host, options.port)
+            print("Info: Connecting to Mongo with no username/password on '%s:%s'" %
+                (options.host, options.port))
+        else:
+            uri = 'mongodb://%s:%s@%s:%s' % (username, password, options.host, options.port)
+            print("Info: Connecting to Mongo as user '%s' on '%s:%s'" %
                 (username, options.host, options.port))
 
         # Connect to the Mongo server and return if not able to connect.
         try:
             mng_client = pymongo.MongoClient(uri)
         except pymongo.errors.ConfigurationError as err:
-            print("Unable to connect to %s:%s - %s"
+            print("ERROR: Unable to connect to %s:%s - %s"
                     % (options.host, options.port, err))
             return None
 
         # Constructor doesn't block - need to check to see if the connection works.
         try:
-            # The ismaster command is cheap and does not require auth.
-            mng_client.admin.command('ismaster')
+            # We need to check that we can perform a real operation on the collection
+            # at this time. We want to check for connection errors, authentication
+            # errors. We want to let through the case that there is an empty repository
+            # and the cursor comes back empty.
+            mng_db = mng_client[options.database]
+            mng_sample = mng_db['sample']
+
+            cursor = mng_sample.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
+            record = cursor.next()
         except pymongo.errors.ConnectionFailure:
-            print("Unable to connect to %s:%s, Mongo server not available"
+            print("ERROR: Unable to connect to %s:%s, Mongo server not available"
                     % (options.host, options.port))
             return None
+        except pymongo.errors.OperationFailure as err:
+            print("ERROR: Operation failed on %s:%s, %s"
+                    % (options.host, options.port, str(err)))
+            return None
+        except StopIteration:
+            # This exception is not an error. The cursor.next() raises this exception when it has no more
+            # data in the cursor. In this case, this would mean that the database is empty,
+            # but the database was opened and the query worked. So this is not an error case as it
+            # OK to have an empty database.
+            pass
+
 
         # Set Mongo db name
         mng_db = mng_client[options.database]
 
         return cls(options.mapfile, options.type, options.library, options.filename, options.path,
-                    mng_db['sample'], mng_db['sequence'], options.counter,
-                    options.verbose, options.drop_index, 
-                    options.build_index, options.rebuild_index)
+                    mng_db['sample'], mng_db['sequence'], 
+                    options.database_map, options.database_chunk,
+                    options.counter, options.verbose,
+                    options.drop_index, options.build_index, options.rebuild_index)
+
+    @staticmethod
+    def checkValidity(context):
+        # Check any runtime consistency issues for the context, and return False if
+        # something is not valid.
+
+        # Check to see if the AIRR mappings are valid.
+        if not context.repository_tag in context.airr_map.airr_mappings:
+            print("ERROR: Could not find repository mapping " + context.repository_tag + " in AIRR Mappings")
+            return False
+        return True
+
 
 # load a directory of files or a single file depending on 'context.path'
 def load_data(context):
@@ -392,37 +446,37 @@ def load_file(context):
 
     if context.type == "sample":
         # process samples
-        print("Processing repertoire metadata file: {}".format(context.filename))
+        print("Info: Processing repertoire metadata file: {}".format(context.filename))
         sample = Sample(context)
         if sample.process():
-            print("Repertoire metadata file loaded")
+            print("Info: Repertoire metadata file loaded")
         else:
-            print("ERROR: Repertoire input file not found?")
+            print("ERROR: Repertoire metadata file", context.filename, "not loaded correctly")
     elif context.type == "imgt":
         # process imgt
-        print("Processing IMGT data file: {}".format(context.filename))
+        print("Info: Processing IMGT data file: {}".format(context.filename))
         #prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
-            print("IMGT data file loaded")
+            print("Info: IMGT data file loaded")
         else:
             print("ERROR: IMGT data file", context.filename, "not loaded correctly")
     elif context.type == "mixcr":
         # process mixcr
-        print("Processing MiXCR data file: {}".format(context.filename))
+        print("Info: Processing MiXCR data file: {}".format(context.filename))
         #prompt_counter(context)
         mixcr = MiXCR(context)
         if mixcr.process():
-            print("MiXCR data file loaded")
+            print("Info: MiXCR data file loaded")
         else:
             print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
     elif options.type == "airr":
         # process AIRR TSV
-        print("Processing AIRR TSV annotation data file: ", context.filename)
+        print("Info: Processing AIRR TSV annotation data file: ", context.filename)
         #prompt_counter(context)
         airr = AIRR_TSV(context)
         if airr.process():
-            print("AIRR TSV data file loaded")
+            print("Info: AIRR TSV data file loaded")
         else:
             print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
     else:
@@ -430,18 +484,21 @@ def load_file(context):
 
     # time end
     t_end = time.perf_counter()
-    print("finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+    print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
 
 if __name__ == "__main__":
     options = getArguments()
     context = Context.getContext(options)
 
+    # Check on the successful creation of the context.
     if not context:
         raise SystemExit(1)
+    if not Context.checkValidity(context):
+        exit(1)
 
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
-        print("Dropping indexes on sequence level...")
+        print("Info: Dropping indexes on sequence level...")
         context.sequences.drop_indexes()
 
     # load data files if path is provided by user
@@ -453,10 +510,10 @@ if __name__ == "__main__":
 
     # build indexes
     if context.build_index or context.rebuild_index:
-        print("Building indexes on sequence level...")
+        print("Info: Building indexes on sequence level...")
         for index in indexes:
-            print("Now building index: {0}".format(index))
+            print("Info: Now building index: {0}".format(index))
             t_start = time.perf_counter()
             context.sequences.create_index(index)
             t_end = time.perf_counter()
-            print("Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
+            print("Info: Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))

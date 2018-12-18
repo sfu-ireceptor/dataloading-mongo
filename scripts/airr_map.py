@@ -49,7 +49,8 @@ class AIRRMap:
 
         # Write some diagnostics about the file read in
         if self.verbose:
-            print("Successfully read in %d mapping columns" % (len(self.airr_mappings.columns)))
+            print("Info: Successfully read in %d mapping columns from %s" %
+                  (len(self.airr_mappings.columns), mapfile))
 
         # Get the labels for all of the fields that are in the airr rearrangements class.
         labels = self.airr_mappings['ir_subclass'].isin(self.airr_rearrangement_classes)
@@ -86,7 +87,10 @@ class AIRRMap:
         # This could be an array. If it is, we only return a mapping for unique objects,
         # so if there is more than one value return None. If there is one, return it
         if len(value.values) == 1:
-            return value.values[0]
+            if pd.notnull(value.values[0]):
+                return value.values[0]
+            else:
+                return None
         else:
             return None
 

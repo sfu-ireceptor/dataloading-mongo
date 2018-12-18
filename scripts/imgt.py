@@ -9,6 +9,7 @@
 import os
 from os.path import isfile
 from shutil import rmtree
+import time
 import re
 import zipfile
 import tarfile
@@ -36,7 +37,7 @@ class IMGT(Parser):
         # The data is extracted in the "library" folder provided (the same
         # folder in which the original zip file was found.
         if not isfile(self.context.path):
-            print("Could not find IMGT compressed archive ", self.context.path)
+            print("ERROR: Could not find IMGT compressed archive ", self.context.path)
             return False
 
         # Process the file...
@@ -46,7 +47,7 @@ class IMGT(Parser):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
-        repository_tag = "ir_turnkey"
+        repository_tag = self.context.repository_tag 
 
         # Get root filename from the path, should be a file if the path
         # is file, so not checking again 8-)
@@ -57,9 +58,9 @@ class IMGT(Parser):
         self.setScratchFolder(fileName)
 
         if self.context.verbose:
-            print("Extracting IMGT file: ", fileName)
-            print("Path: ", path)
-            print("Scratch folder: ", self.getScratchFolder())
+            print("Info: Extracting IMGT file: ", fileName)
+            print("Info: Path: ", path)
+            print("Info: Scratch folder: ", self.getScratchFolder())
 
         # Get the sample ID of the data we are processing. We use the IMGT file name for
         # this at the moment, but this may not be the most robust method.
@@ -69,7 +70,8 @@ class IMGT(Parser):
             print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
             return False
         else:
-            print("Retrieving associated sample for file " + fileName + " from repository field " + value)
+            if self.context.verbose:
+                print("Info: Retrieving associated sample for file " + fileName + " from repository field " + value)
             idarray = Parser.getSampleIDs(self.context, value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
@@ -99,16 +101,14 @@ class IMGT(Parser):
         # that we should be considering.
         vquest_file_map = self.context.airr_map.airr_rearrangement_map['vquest_file']
         vquest_files = vquest_file_map.dropna().unique()
-        if self.context.verbose:
-            print("VQuest Files")
-            print(vquest_files)
+
         # Create a dictionary that stores an array of fields to process
         # for each IMGT file that we need to process.
         filedict = {}
         first_dataframe = True
         for vquest_file in vquest_files:
             if self.context.verbose:
-                print("Processing file ", vquest_file)
+                print("Info: Processing file ", vquest_file)
             # Read in the data frame for the file.
             vquest_dataframe = self.readScratchDf(vquest_file)
             # Extract the fields that are of interest for this file.
@@ -124,16 +124,17 @@ class IMGT(Parser):
             vquest_fields = []
             mongo_fields = []
             for index, row in file_fields.iterrows():
-                if self.context.verbose:
-                    print("    " + str(row['vquest']) + " -> " + str(row[repository_tag]))
                 # If the repository column has a value for the IMGT field, track the field
                 # from both the IMGT and repository side.
                 if not pd.isnull(row[repository_tag]):
+                    if self.context.verbose:
+                        print("Info:    " + str(row['vquest']) + " -> " + str(row[repository_tag]))
                     vquest_fields.append(row['vquest'])
                     mongo_fields.append(row[repository_tag])
                 else:
-                    print("Repository does not support " + vquest_file + "/" + 
-                          str(row['vquest']) + ", not inserting into repository")
+                    if self.context.verbose:
+                        print("Info:    Repository does not support " + vquest_file + "/" + 
+                              str(row['vquest']) + ", not inserting into repository")
             # Use the vquest column in our mapping to select the columns we want from the 
             # possibly quite large vquest data frame.
             mongo_dataframe = vquest_dataframe[vquest_fields]
@@ -229,31 +230,44 @@ class IMGT(Parser):
         mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
         mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
 
+        # Create the created and update values for this block of records. Note that this
+        # means that each block of inserts will have the same date.
+        now_str = Parser.getDateTimeNowUTC()
+        mongo_concat["ir_created_at"] = now_str
+        mongo_concat["ir_updated_at"] = now_str
+
         # Convert the mongo data frame dats int JSON.
         records = json.loads(mongo_concat.T.to_json()).values()
 
         # The climax: insert the records into the MongoDb collection!
         if self.context.verbose:
-            print("Inserting %d records into the repository"%(len(records)))
+            print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
+        t_start = time.perf_counter()
         self.context.sequences.insert(records)
+        t_end = time.perf_counter()
+        if self.context.verbose:
+            print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
+
 
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
-            print("Getting the number of annotations for this repertoire")
+            print("Info: Getting the number of annotations for this repertoire")
         annotation_count = self.context.sequences.find(
                 {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
             ).count()
         if self.context.verbose:
-            print("Annotation count = %d" % (annotation_count))
+            print("Info: Annotation count = %d" % (annotation_count))
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
             {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
         )
 
+        # Inform on what we added and the total count for the this record.
+        print("Info: Inserted %d records, total annotation count = %d" % (len(records), annotation_count))
         # Clean up annotation files and scratch folder
         if self.context.verbose:
-            print("Cleaning up scratch folder: ", self.getScratchFolder())
+            print("Info: Cleaning up scratch folder: ", self.getScratchFolder())
         rmtree(self.getScratchFolder())
 
         return True
