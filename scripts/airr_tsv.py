@@ -35,7 +35,7 @@ class AIRR_TSV(Parser):
         # Open, decompress then read(), if it is a gz archive
         if self.context.path.endswith(".gz"):
             if self.context.verbose:
-                print("Reading data gzip archive: "+self.context.path)
+                print("Info: Reading data gzip archive: "+self.context.path)
             with gzip.open(self.context.path, 'rb') as f:
                 # read file directly from the file handle 
                 # (Panda read_table call handles this...)
@@ -43,7 +43,7 @@ class AIRR_TSV(Parser):
 
         else: # read directly as a regular text file
             if self.context.verbose:
-                print("Reading text file: "+self.context.path)
+                print("Info: Reading text file: "+self.context.path)
             success = self.processAIRRTSVFile(self.context.path)
 
         return success
@@ -62,15 +62,9 @@ class AIRR_TSV(Parser):
         # file and validates all of the data. For a large file this could be
         # expensive. 
         if airr.validate_rearrangement(path):
-                print("File", path, "is a valid AIRR TSV file")
+                print("Info: File", path, "is a valid AIRR TSV file")
         else:
-                print("### WARNING: File", path, "is NOT a valid AIRR TSV file")
-                while True:
-                        decision = input("### Are you sure you want to load this data into the repository? (Yes/No):")
-                        if decision.upper().startswith('N'):
-                                return False
-                        elif decision.upper().startswith('Y'):
-                                break
+                print("Warning: File", path, "is NOT a valid AIRR TSV file")
 
         # Extract the fields that are of interest for this file. Essentiall all non null mixcr fields
         field_of_interest = self.context.airr_map.airr_rearrangement_map['igblast'].notnull()
@@ -85,21 +79,23 @@ class AIRR_TSV(Parser):
         # want to extract fields that the repository doesn't want.
         igblastColumns = []
         columnMapping = {}
+        if self.context.verbose:
+            print("Info: Dumping AIRR mapping")
         for index, row in file_fields.iterrows():
             if self.context.verbose:
-                print("    " + str(row['igblast']) + " -> " + str(row[repository_tag]))
+                print("Info:    " + str(row['igblast']) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the igblast field, track the field
             # from both the igblast and repository side.
             if not pd.isnull(row[repository_tag]):
                 igblastColumns.append(row['igblast'])
                 columnMapping[row['igblast']] = row[repository_tag]
             else:
-                print("Repository does not support " +
+                print("Info:     Repository does not support " +
                       str(row['igblast']) + ", not inserting into repository")
 
         # Get a new rearrangement reader so we can get the field names in the file.
         if self.context.verbose:
-            print("Processing raw data frame...")
+            print("Info: Processing raw data frame...")
         airr_reader = airr.read_rearrangement(path)
 
         # Determing the mapping from the file input to the repository.
@@ -107,21 +103,21 @@ class AIRR_TSV(Parser):
         for airr_field in airr_reader.fields:
             if airr_field in columnMapping:
                 if self.context.verbose:
-                    print("AIRR field in file: " + airr_field + " -> " + columnMapping[airr_field])
+                    print("Info: AIRR field in file: " + airr_field + " -> " + columnMapping[airr_field])
                 finalMapping[airr_field] = columnMapping[airr_field]
             else:
-                print("No mapping for input AIRR TSV field " + airr_field +
-                      ", adding to repository without mapping.")
+                if self.context.verbose:
+                    print("Info: No mapping for input AIRR TSV field " + airr_field +
+                          ", adding to repository without mapping.")
 
         # Determine if we are missing any repository columns from the input data.
         for igblast_column, mongo_column in columnMapping.items():
             if not igblast_column in airr_reader.fields:
-                print("Missing a repository mapping for " + igblast_column + " -> " + mongo_column)
+                if self.context.verbose:
+                    print("Info: Missing data in input AIRR file for " + igblast_column)
 
         # Get root filename: may need to strip off any gzip 'archive' file extension
         filename = self.context.filename.replace(".gz","")
-        if self.context.verbose:
-            print("For igblast filename: "+filename)
 
         # Get the sample ID of the data we are processing. We use the IMGT file name for
         # this at the moment, but this may not be the most robust method.
@@ -131,18 +127,19 @@ class AIRR_TSV(Parser):
             print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
             return False
         else:
-            print("Retrieving associated sample for file " + filename + " from repository field " + value)
+            if self.context.verbose:
+                print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
             idarray = Parser.getSampleIDs(self.context, value, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
         if num_samples == 0:
-            print("Could not find annotation file", filename)
-            print("No sample could be associated with this annotation file.")
+            print("ERROR: Could not find annotation file", filename)
+            print("ERROR: No sample could be associated with this annotation file.")
             return False
         elif num_samples > 1:
-            print("Annotation file can not be associated with a unique sample, found", num_samples)
-            print("Unique assignment of annotations to a single sample are required.")
+            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples)
+            print("ERROR: Unique assignment of annotations to a single sample are required.")
             return False
             
         # We found a unique sample, keep track of it for later. 
@@ -162,13 +159,13 @@ class AIRR_TSV(Parser):
             # Junction AA substrings.
             if 'junction_aa' in airr_df:
                 if self.context.verbose:
-                    print("Retrieving junction amino acids and building substrings...", flush=True)
+                    print("Info: Retrieving junction amino acids and building substrings...", flush=True)
                 airr_df['substring'] = airr_df['junction_aa'].apply(Parser.get_substring)
 
                 # The AIRR TSV format doesn't have AA length, we want it in our repository.
                 if not ('junction_aa_length' in airr_df):
                     if self.context.verbose:
-                        print("Computing junction amino acids length...", flush=True)
+                        print("Info: Computing junction amino acids length...", flush=True)
                     airr_df['junction_aa_length'] = airr_df['junction_aa'].apply(str).apply(len)
 
             # Check to see if we have a productive field (later versions of AIRR TSV). If
@@ -193,7 +190,7 @@ class AIRR_TSV(Parser):
             # been produced by igblast. This in general is not the case, but as a loader
             # script we assume this to be the case.
             if self.context.verbose:
-                print("Setting annotation tool to be igblast...", flush=True)
+                print("Info: Setting annotation tool to be igblast...", flush=True)
             airr_df['ir_annotation_tool'] = 'igblast'
 
             # Keep track of the sample id so can link each rearrangement to a repertoire
@@ -207,22 +204,20 @@ class AIRR_TSV(Parser):
 
             # Insert the chunk of records into Mongo.
             num_records = len(airr_df)
-            print("Inserting", num_records, "records into Mongo...", flush=True)
+            print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
             records = json.loads(airr_df.T.to_json()).values()
             self.context.sequences.insert_many(records)
             t_end = time.perf_counter()
-            print("Inserted records, time =", (t_end - t_start), "seconds", flush=True)
+            print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
 
             # Keep track of the total number of records processed.
             total_records = total_records + num_records
 
  
-        print("Total records loaded =", total_records, flush=True)
-
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
-            print("Getting the number of annotations for this repertoire")
+            print("Info: Getting the number of annotations for this repertoire")
         annotation_count = self.context.sequences.find(
                 {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
             ).count()
@@ -234,5 +229,7 @@ class AIRR_TSV(Parser):
             {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
         )
 
-        print("igblast data loading complete for file: "+filename, flush=True)
+        # Inform on what we added and the total count for the this record.
+        print("Info: Inserted %d records, total annotation count = %d" % (total_records, annotation_count))
+
         return True;

@@ -28,21 +28,23 @@ class MiXCR(Parser):
 
         # Check to see if the file exists and return if not.
         if not os.path.isfile(self.context.path):
-            print("Could not open MiXCR file ", self.context.path)
+            print("ERROR: Could not open MiXCR file ", self.context.path)
             return False
 
         # Get root filename from the path, should be a file if the path is file, so not checking again 8-)
         filename = os.path.basename(self.context.path)
 
         if self.context.path.endswith(".gz"):
-            print("Reading data gzip archive: "+self.context.path)
+            if self.context.verbose:
+                print("Info: Reading data gzip archive: "+self.context.path)
             with gzip.open(self.context.path, 'rb') as file_handle:
                 # read file directly from the file handle 
                 # (Panda read_table call handles this...)
                 success = self.processMiXcrFile(file_handle, filename)
 
         else: # read directly as a regular text file
-            print("Reading text file: "+self.context.path)
+            if self.context.verbose:
+                print("Info: Reading text file: "+self.context.path)
             file_handle = open(self.context.path, "r")
             success = self.processMiXcrFile(file_handle, filename)
 
@@ -69,7 +71,8 @@ class MiXCR(Parser):
             print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
             return False
         else:
-            print("Retrieving associated sample for file " + filename + " from repository field " + value)
+            if self.context.verbose:
+                print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
             idarray = Parser.getSampleIDs(self.context, value, filename)
 
 
@@ -100,17 +103,20 @@ class MiXCR(Parser):
         # want to extract fields that the repository doesn't want.
         mixcrColumns = []
         columnMapping = {}
+        if self.context.verbose:
+            print("Info: Dumping AIRR mapping")
         for index, row in file_fields.iterrows():
             if self.context.verbose:
-                print("    " + str(row['mixcr']) + " -> " + str(row[repository_tag]))
+                print("Info:    " + str(row['mixcr']) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the IMGT field, track the field
             # from both the IMGT and repository side.
             if not pd.isnull(row[repository_tag]):
                 mixcrColumns.append(row['mixcr'])
                 columnMapping[row['mixcr']] = row[repository_tag]
             else:
-                print("Repository does not support " +
-                      str(row['mixcr']) + ", not inserting into repository")
+                if self.context.verbose:
+                    print("Info:    Repository does not support " +
+                          str(row['mixcr']) + ", not inserting into repository")
 
 	# Get a Pandas reader iterator for the file. When reading the file we only want to
         # read in the mixcrColumns we care about. We want to read in only a fixed number of 
@@ -118,7 +124,8 @@ class MiXCR(Parser):
         # we don't want to map empty strings to Pandas NaN values. This causes an issue as
         # missing strings get read as a NaN value, which is interpreted as a string. One can
         # then not tell the difference between a "nan" string and a "NAN" Junction sequence.
-        print("Preparing the file reader...", flush=True)
+        if self.context.verbose:
+            print("Info: Preparing the file reader...", flush=True)
         df_reader = pd.read_table(file_handle, chunksize=chunk_size, na_filter=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
@@ -126,39 +133,39 @@ class MiXCR(Parser):
         for df_chunk in df_reader:
 
             if self.context.verbose:
-                print("Processing raw data frame...", flush=True)
+                print("Info: Processing raw data frame...", flush=True)
             # Remap the column names. We need to remap because the columns may be in a differnt
             # order in the file than in the column mapping. We leave any non-mapped columns in the
             # data frame as we don't want to discard data.
             for mixcr_column in df_chunk.columns:
                 if mixcr_column in columnMapping:
                     mongo_column = columnMapping[mixcr_column]
-                    print("Mapping MiXCR column " + mixcr_column + " -> " + mongo_column)
+                    if self.context.verbose:
+                        print("Info: Mapping MiXCR column " + mixcr_column + " -> " + mongo_column)
                     df_chunk.rename({mixcr_column:mongo_column}, axis='columns', inplace=True)
                 else:
-                    print("No mapping for MiXCR column " + mixcr_column + ", storing in repository as is")
+                    if self.context.verbose:
+                        print("Info: No mapping for MiXCR input file column " + mixcr_column + ", storing in repository as is")
             # Check to see which desired MiXCR mappings we don't have...
             for mixcr_column, mongo_column in columnMapping.items():
                 if not mongo_column in df_chunk.columns:
-                    print("Missing a mapping for " + mixcr_column + " -> " + mongo_column)
+                    if self.context.verbose:
+                        print("Info: Missing data in input MiXCR file for " + mixcr_column)
             
-
-            #df_chunk.rename(columnMapping, axis='columns', inplace=True)
-
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings. Also calculate junction AA length
             if 'junction_aa' in df_chunk:
                 if self.context.verbose:
-                    print("Computing junction amino acids substrings...", flush=True)
+                    print("Info: Computing junction amino acids substrings...", flush=True)
                 df_chunk['substring'] = df_chunk['junction_aa'].apply(Parser.get_substring)
                 if self.context.verbose:
-                    print("Computing junction amino acids length...", flush=True)
+                    print("Info: Computing junction amino acids length...", flush=True)
                 df_chunk['junction_aa_length'] = df_chunk['junction_aa'].apply(str).apply(len)
 
             # MiXCR doesn't have junction nucleotide length, we want it in our repository.
             if 'junction_nt' in df_chunk:
                 if self.context.verbose:
-                    print("Computing junction length...", flush=True)
+                    print("Info: Computing junction length...", flush=True)
                 df_chunk['junction_length'] = df_chunk['junction_nt'].apply(str).apply(len)
 
 
@@ -185,32 +192,30 @@ class MiXCR(Parser):
 
             # Insert the chunk of records into Mongo.
             num_records = len(df_chunk)
-            print("Inserting", num_records, "records into Mongo...", flush=True)
+            print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
             records = json.loads(df_chunk.T.to_json()).values()
             self.context.sequences.insert_many(records)
             t_end = time.perf_counter()
-            print("Inserted records, time =", (t_end - t_start), "seconds", flush=True)
+            print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
 
             # Keep track of the total number of records processed.
             total_records = total_records + num_records
 
-        print("Total records loaded =", total_records, flush=True)
-
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
-            print("Getting the number of annotations for this repertoire")
+            print("Info: Getting the number of annotations for this repertoire")
         annotation_count = self.context.sequences.find(
                 {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
             ).count()
-        if self.context.verbose:
-            print("Annotation count = %d" % (annotation_count))
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
             {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
         )
 
-        print("MiXCR data loading complete for file: "+filename, flush=True)
+        # Inform on what we added and the total count for the this record.
+        print("Info: Inserted %d records, total annotation count = %d" % (total_records, annotation_count))
+ 
         return True
         
