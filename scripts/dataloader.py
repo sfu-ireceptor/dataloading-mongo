@@ -171,6 +171,18 @@ def getArguments():
         type=int,
         help="Number of records to process in a single step when loading rearrangment data into the repository. This is used to reduce the memory footpring of the loading process when very large files are being loaded. Defaults to 100,000"
     )
+    db_group.add_argument(
+        "--repertoire_collection",
+        dest="repertoire_collection",
+        default="sample",
+        help="The collection to use for storing and searching repertoires (sample metadata). Defaults to 'sample', which is the collection in the iReceptor Turnkey repository."
+    )
+    db_group.add_argument(
+        "--rearrangement_collection",
+        dest="rearrangement_collection",
+        default="sequence",
+        help="The collection to use for storing and searching rearrangments (sequence annotations). Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository."
+    )
 
     path_group = parser.add_argument_group("file path options")
     # making the default value to "" instead of "." creates the possiblity of the path being empty, therefore skip display error message to the user
@@ -365,7 +377,7 @@ class Context:
             # errors. We want to let through the case that there is an empty repository
             # and the cursor comes back empty.
             mng_db = mng_client[options.database]
-            mng_sample = mng_db['sample']
+            mng_sample = mng_db[options.repertoire_collection]
 
             cursor = mng_sample.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
             record = cursor.next()
@@ -389,7 +401,7 @@ class Context:
         mng_db = mng_client[options.database]
 
         return cls(options.mapfile, options.type, options.library, options.filename, options.path,
-                    mng_db['sample'], mng_db['sequence'], 
+                    mng_db[options.repertoire_collection], mng_db[options.rearrangement_collection], 
                     options.database_map, options.database_chunk,
                     options.counter, options.verbose,
                     options.drop_index, options.build_index, options.rebuild_index)
