@@ -2,6 +2,7 @@
 
 import pandas as pd
 import json
+import os
 from datetime import datetime
 from datetime import timezone
 from parser import Parser
@@ -51,7 +52,11 @@ class Sample(Parser):
 	    results = self.context.samples.insert(doc)
 	
 	def process(self):
-	
+		# Check to see if we have a file	
+		if not os.path.isfile(self.context.path):
+			print("ERROR: input file " + self.context.path + " is not a file")
+			return False
+
 		# Set the tag for the repository that we are using.
 		repository_tag = self.context.repository_tag
 
