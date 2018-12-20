@@ -148,9 +148,9 @@ class Parser:
                 print("Warning: Inconsistent loci across " + str(v_call_array))
         # Sanity check, check to see that we found a locus of length three and that it
         # is either a valid IG or TR value.
-        if len(final_locus) != 3:
-            print("Warning: unable to compute locus from v_call " + str(v_call_array))
-        elif final_locus[:2] != "IG" and final_locus[:2] != "TR":
+        #if len(final_locus) != 3:
+        #    print("Warning: unable to compute locus from v_call " + str(v_call_array))
+        if len(final_locus) == 3 and final_locus[:2] != "IG" and final_locus[:2] != "TR":
             print("Warning: locus with non IG and non TR found in " + str(v_call_array))
         return final_locus
 
