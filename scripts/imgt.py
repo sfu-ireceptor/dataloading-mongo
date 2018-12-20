@@ -77,12 +77,12 @@ class IMGT(Parser):
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
         if num_samples == 0:
-            print("ERROR: Could not find annotation file " + fileName + " in the repository samples")
-            print("ERROR: No sample could be associated with this annotation file.")
+            print("ERROR: Could not find annotation file " + fileName + " in the repository samples", flush=True)
+            print("ERROR: No sample could be associated with this annotation file.", flush=True)
             return False
         elif num_samples > 1:
-            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples)
-            print("ERROR: Unique assignment of annotations to a single sample are required.")
+            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples, flush=True)
+            print("ERROR: Unique assignment of annotations to a single sample are required.", flush=True)
             return False
 
         # Get the sample ID and assign it to sample ID field
@@ -108,7 +108,7 @@ class IMGT(Parser):
         first_dataframe = True
         for vquest_file in vquest_files:
             if self.context.verbose:
-                print("Info: Processing file ", vquest_file)
+                print("Info: Processing file ", vquest_file, flush=True)
             # Read in the data frame for the file.
             vquest_dataframe = self.readScratchDf(vquest_file)
             # Extract the fields that are of interest for this file.
@@ -128,13 +128,13 @@ class IMGT(Parser):
                 # from both the IMGT and repository side.
                 if not pd.isnull(row[repository_tag]):
                     if self.context.verbose:
-                        print("Info:    " + str(row['vquest']) + " -> " + str(row[repository_tag]))
+                        print("Info:    " + str(row['vquest']) + " -> " + str(row[repository_tag]), flush=True)
                     vquest_fields.append(row['vquest'])
                     mongo_fields.append(row[repository_tag])
                 else:
                     if self.context.verbose:
                         print("Info:    Repository does not support " + vquest_file + "/" + 
-                              str(row['vquest']) + ", not inserting into repository")
+                              str(row['vquest']) + ", not inserting into repository", flush=True)
             # Use the vquest column in our mapping to select the columns we want from the 
             # possibly quite large vquest data frame.
             mongo_dataframe = vquest_dataframe[vquest_fields]
@@ -162,6 +162,8 @@ class IMGT(Parser):
         # We now have the data in a data frame with the correct headers mapped from the
         # IMGT data fields to the correct repository field names. Now we have to perform
         # any specific mappings that are specific to IMGT.
+        if self.context.verbose:
+            print("Info: Done building the initial data frame", flush=True) 
 
         # First, we want to keep track of some of the data from the IMGT Parameters file.
         # Create a dictionary with keys the first column of the parameter file and the values
@@ -184,12 +186,18 @@ class IMGT(Parser):
             "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
         mongo_concat['no_nucleotide_to_exclude'] = parameter_dictionary[
             "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
+        if self.context.verbose:
+            print("Info: Done processing IMGT Parameter file", flush=True) 
 
         # Get rid of columns where the column is null.
+        if self.context.verbose:
+            print("Info: Cleaning up NULL columns", flush=True) 
         mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
 
         # Critical iReceptor specific fields that need to be built from existing IMGT
         # generated fields.
+        if self.context.verbose:
+            print("Info: Setting up iReceptor specific fields", flush=True) 
 
         # IMGT annotates a rearrangement's functionality  with a string. We have a function
         # that takes the string and changes it to an integer 1/0 which the repository
@@ -208,6 +216,8 @@ class IMGT(Parser):
         # searches. Technically, this should probably be an ir_ field, but because
         # it is fundamental to the indexes that already exist, we won't change it for
         # now.
+        if self.context.verbose:
+            print("Info: Computing substring from junction", flush=True) 
         mongo_concat['substring'] = mongo_concat['junction_aa'].apply(Parser.get_substring)
 
         # We want to keep the original vQuest vdj_string data, so we capture that in the
@@ -222,11 +232,14 @@ class IMGT(Parser):
         Parser.processGene(self.context, mongo_concat, "ir_d_string", "d_call", "dgene_gene", "dgene_family")
         # If we don't already have a locus (that is the data file didn't provide one) then
         # calculate the locus based on the v_call array.
+        if self.context.verbose:
+            print("Info: Computing locus from v_call", flush=True) 
         if not 'locus' in mongo_concat:
             mongo_concat['locus'] = mongo_concat['v_call'].apply(Parser.getLocus)
 
-
         # Generate the junction length values as required.
+        if self.context.verbose:
+            print("Info: Computing junction lengths", flush=True) 
         mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
         mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
 
@@ -237,6 +250,8 @@ class IMGT(Parser):
         mongo_concat["ir_updated_at"] = now_str
 
         # Convert the mongo data frame dats int JSON.
+        if self.context.verbose:
+            print("Info: Creating JSON from Dataframe", flush=True) 
         records = json.loads(mongo_concat.T.to_json()).values()
 
         # The climax: insert the records into the MongoDb collection!
@@ -246,17 +261,17 @@ class IMGT(Parser):
         self.context.sequences.insert(records)
         t_end = time.perf_counter()
         if self.context.verbose:
-            print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
+            print("Info: Inserted records, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
 
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
-            print("Info: Getting the number of annotations for this repertoire")
+            print("Info: Getting the number of annotations for this repertoire", flush=True)
         annotation_count = self.context.sequences.find(
                 {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
             ).count()
         if self.context.verbose:
-            print("Info: Annotation count = %d" % (annotation_count))
+            print("Info: Annotation count = %d" % (annotation_count), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
@@ -264,7 +279,7 @@ class IMGT(Parser):
         )
 
         # Inform on what we added and the total count for the this record.
-        print("Info: Inserted %d records, total annotation count = %d" % (len(records), annotation_count))
+        print("Info: Inserted %d records, total annotation count = %d" % (len(records), annotation_count), flush=True)
         # Clean up annotation files and scratch folder
         if self.context.verbose:
             print("Info: Cleaning up scratch folder: ", self.getScratchFolder())
