@@ -22,6 +22,7 @@ import pymongo
 import json
 import argparse
 import time
+import sys
 
 from sample import Sample
 from imgt import IMGT
@@ -419,38 +420,38 @@ class Context:
 
 
 # load a directory of files or a single file depending on 'context.path'
-def load_data(context):
-    if os.path.isdir(context.path):
-        # skip directories
-        filenames = [f for f in os.listdir(context.path) if not os.path.isdir(f)]
-        filenames.sort()
-        prog_name = os.path.basename(__file__)
-        for filename in filenames:
-            # skip loading this program itself
-            if not prog_name in filename:
-                context.filename = filename
-                context.path = os.path.join(context.library, filename)
-                prompt_and_load(filename, context)
-    else:
-        load_file(context)
-
-# prompts the user whether to load the data file
-def prompt_and_load(filename, context):
-    while True:
-        load = input("load '{0}' into database? (Yes/No): ".format(filename))
-        if load.upper().startswith('Y'):
-            load_file(context)
-            break
-        elif load.upper().startswith('N'):
-            while True:
-                cancel = input("**Are you sure to skip loading '{0}'? (Yes/No): ".format(filename))
-                if cancel.upper().startswith('Y'):
-                    print("skipped '{0}'!".format(filename))
-                    break
-                elif cancel.upper().startswith('N'):
-                    prompt_and_load(filename, context)
-                    break
-            break
+#def load_data(context):
+#    if os.path.isdir(context.path):
+#        # skip directories
+#        filenames = [f for f in os.listdir(context.path) if not os.path.isdir(f)]
+#        filenames.sort()
+#        prog_name = os.path.basename(__file__)
+#        for filename in filenames:
+#            # skip loading this program itself
+#            if not prog_name in filename:
+#                context.filename = filename
+#                context.path = os.path.join(context.library, filename)
+#                prompt_and_load(filename, context)
+#    else:
+#        return load_file(context)
+#
+## prompts the user whether to load the data file
+#def prompt_and_load(filename, context):
+#    while True:
+#        load = input("load '{0}' into database? (Yes/No): ".format(filename))
+#        if load.upper().startswith('Y'):
+#            load_file(context)
+#            break
+#        elif load.upper().startswith('N'):
+#            while True:
+#                cancel = input("**Are you sure to skip loading '{0}'? (Yes/No): ".format(filename))
+#                if cancel.upper().startswith('Y'):
+#                    print("skipped '{0}'!".format(filename))
+#                    break
+#                elif cancel.upper().startswith('N'):
+#                    prompt_and_load(filename, context)
+#                    break
+#            break
 
 def load_file(context):
     # time start
@@ -459,44 +460,56 @@ def load_file(context):
     if context.type == "sample":
         # process samples
         print("Info: Processing repertoire metadata file: {}".format(context.filename))
-        sample = Sample(context)
-        if sample.process():
-            print("Info: Repertoire metadata file loaded")
-        else:
-            print("ERROR: Repertoire metadata file", context.filename, "not loaded correctly")
+        parser = Sample(context)
+        #sample = Sample(context)
+        #if sample.process():
+        #    print("Info: Repertoire metadata file loaded")
+        #else:
+        #    print("ERROR: Repertoire metadata file", context.filename, "not loaded correctly")
     elif context.type == "imgt":
         # process imgt
         print("Info: Processing IMGT data file: {}".format(context.filename))
         #prompt_counter(context)
-        imgt = IMGT(context)
-        if imgt.process():
-            print("Info: IMGT data file loaded")
-        else:
-            print("ERROR: IMGT data file", context.filename, "not loaded correctly")
+        parser = IMGT(context)
+        #imgt = IMGT(context)
+        #if imgt.process():
+        #    print("Info: IMGT data file loaded")
+        #else:
+        #    print("ERROR: IMGT data file", context.filename, "not loaded correctly")
     elif context.type == "mixcr":
         # process mixcr
         print("Info: Processing MiXCR data file: {}".format(context.filename))
         #prompt_counter(context)
-        mixcr = MiXCR(context)
-        if mixcr.process():
-            print("Info: MiXCR data file loaded")
-        else:
-            print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
+        parser = MiXCR(context)
+        #mixcr = MiXCR(context)
+        #if mixcr.process():
+        #    print("Info: MiXCR data file loaded")
+        #else:
+        #    print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
     elif options.type == "airr":
         # process AIRR TSV
         print("Info: Processing AIRR TSV annotation data file: ", context.filename)
         #prompt_counter(context)
-        airr = AIRR_TSV(context)
-        if airr.process():
-            print("Info: AIRR TSV data file loaded")
-        else:
-            print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
+        parser = AIRR_TSV(context)
+        #airr = AIRR_TSV(context)
+        #if airr.process():
+        #    print("Info: AIRR TSV data file loaded")
+        #else:
+        #    print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
     else:
-        print("Error: unknown data type '{}'".format(context.type))
+        print("ERROR: unknown data type '{}'".format(context.type))
+        return False
+
+    parse_ok = parser.process()
+    if parse_ok:
+        print("Info: " + options.type + " file " + context.filename + " loaded successfully")
+    else:
+        print("ERROR: " + options.type + " file " + context.filename + " not loaded correctly")
 
     # time end
     t_end = time.perf_counter()
     print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+    return parse_ok
 
 if __name__ == "__main__":
     options = getArguments()
@@ -504,9 +517,9 @@ if __name__ == "__main__":
 
     # Check on the successful creation of the context.
     if not context:
-        raise SystemExit(1)
+        sys.exit(1)
     if not Context.checkValidity(context):
-        exit(1)
+        sys.exit(1)
 
     # drop any indexes first, then load data and build indexes
     if context.drop_index or context.rebuild_index:
@@ -514,11 +527,15 @@ if __name__ == "__main__":
         context.sequences.drop_indexes()
 
     # load data files if path is provided by user
-    if context.path:
-        if os.path.exists(context.path):
-                load_data(context)
-        else:
-            print("ERROR: {1} data file '{0}' does not exist?".format(context.path, context.type))
+    #if context.path:
+    #    if os.path.exists(context.path):
+    #            if not load_data(context):
+    #                sys.exit(4)
+    #    else:
+    #        print("ERROR: {1} data file '{0}' does not exist?".format(context.path, context.type))
+
+    if not load_file(context):
+        sys.exit(4)
 
     # build indexes
     if context.build_index or context.rebuild_index:
@@ -529,3 +546,5 @@ if __name__ == "__main__":
             context.sequences.create_index(index)
             t_end = time.perf_counter()
             print("Info: Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
+
+    sys.exit(0)
