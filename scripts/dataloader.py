@@ -262,17 +262,17 @@ def set_path(options):
 def validate_filename(filename_path):
     if filename_path:
         if os.path.isdir(filename_path):
-            print("error: file '{0}' is not a file?".format(filename_path))
+            print("ERROR: file '{0}' is not a file?".format(filename_path))
             raise SystemExit(1)
 
 def validate_library(library_path):
     if library_path:
         if os.path.exists(library_path):
             if not os.path.isdir(library_path):
-                print("error: library '{0}' is not a directory?".format(library_path))
+                print("ERROR: library '{0}' is not a directory?".format(library_path))
                 raise SystemExit(1)
         else:
-            print("error: library '{0}' does not exist?".format(library_path))
+            print("ERROR: library '{0}' does not exist?".format(library_path))
             raise SystemExit(1)
 
 
@@ -314,7 +314,8 @@ class Context:
         self.build_index = build_index
         self.rebuild_index = rebuild_index
         # Create the AIRR Mapping object from the mapfile.
-        self.airr_map = AIRRMap(mapfile)
+        self.airr_map = AIRRMap(self.verbose)
+        self.airr_map.readMapFile(self.mapfile)
 
     @classmethod
     def getContext(cls, options):
@@ -391,19 +392,21 @@ def load_file(context):
 
     if context.type == "sample":
         # process samples
-        print("processing Sample metadata file: {}".format(context.filename))
+        print("Processing repertoire metadata file: {}".format(context.filename))
         sample = Sample(context)
         if sample.process():
-            print("Sample metadata file loaded")
+            print("Repertoire metadata file loaded")
         else:
-            print("ERROR: Sample input file not found?")
+            print("ERROR: Repertoire input file not found?")
     elif context.type == "imgt":
         # process imgt
-        print("processing IMGT data file: {}".format(context.filename))
+        print("Processing IMGT data file: {}".format(context.filename))
         #prompt_counter(context)
         imgt = IMGT(context)
         if imgt.process():
             print("IMGT data file loaded")
+        else:
+            print("ERROR: IMGT data file", context.filename, "not loaded correctly")
     elif context.type == "mixcr":
         # process mixcr
         print("Processing MiXCR data file: {}".format(context.filename))
@@ -412,7 +415,7 @@ def load_file(context):
         if mixcr.process():
             print("MiXCR data file loaded")
         else:
-            print("ERROR: MiXCR data file not found?")
+            print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
     elif options.type == "airr":
         # process AIRR TSV
         print("Processing AIRR TSV annotation data file: ", context.filename)
@@ -446,7 +449,7 @@ if __name__ == "__main__":
         if os.path.exists(context.path):
                 load_data(context)
         else:
-            print("error: {1} data file '{0}' does not exist?".format(context.path, context.type))
+            print("ERROR: {1} data file '{0}' does not exist?".format(context.path, context.type))
 
     # build indexes
     if context.build_index or context.rebuild_index:

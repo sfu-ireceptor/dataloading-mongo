@@ -3,6 +3,7 @@
 
 from os.path import join
 import re
+import os
 import pandas as pd
 
 
@@ -120,21 +121,61 @@ class Parser:
                     gene_family.append(pattern.group(1))
         return gene_family
 
+    # Function to extract the locus from an array of v_call rearrangements. 
+    # Returns a string that is the first three characters of the
+    # above fields, as specified in the MiAIRR standard (as of v1.2.1, it should
+    # be one of "IGH, IGK, IGL, TRA, TRB, TRD, or TRG". We perform a sanity check
+    # to make sure that if there is a v_call that the locus for all valid
+    # v_calls is the same.
+    @staticmethod
+    def getLocus(v_call_array):
+        final_locus = ''
+        # Iterate over the v_calls in the v_call_array.
+        for v_call in v_call_array:
+            # If the length isn't 3, then we don't have a locus yet.
+            if len(final_locus) != 3:
+                # If the len of the v_call is more than three, take the first three characters.
+                # Otherwise print a warning, as all v_calls should be > 3 in length.
+                if len(v_call) > 3:
+                    final_locus = v_call[:3]
+                else:
+                    print("Warning: Attempting to set locus fron invalid v_call " + v_call)
+            # If we have a locus, check to see if it is the same in the current v_call. If not
+            # also print a warning.
+            elif v_call[:3] != final_locus:
+                print("Warning: Inconsistent loci across " + str(v_call_array))
+        # Sanity check, check to see that we found a locus of length three and that it
+        # is either a valid IG or TR value.
+        if len(final_locus) != 3:
+            print("Warning: unable to compute locus from v_call " + str(v_call_array))
+        if final_locus[:2] != "IG" and final_locus[:2] != "TR":
+            print("Warning: locus with non IG and non TR found in " + str(v_call_array))
+        return final_locus
+
+
+    @staticmethod
+    def getSampleIDs(context, file_field, file_name):
+        # Given a context (which knows about the MongoDB), look for the file_name given
+        # in the Samples collection in the file_field field in the repository. Return an
+        # array of integers which are the sample IDs where the file_name was found in the
+        # field field_name.
+        samples_cursor = context.samples.find( {file_field: { '$regex': file_name }}, {'_id': 1})
+        idarray = [sample['_id'] for sample in samples_cursor]
+        return idarray
+
+
     def __init__(self, context):
         self.context = context
 
     def getDataFolder(self):
-        return self.context.library + "/" + self.context.type + "/"
-
-    def getDataPath(self, fileName):
-        return join(self.getDataFolder(), fileName)
+        return self.context.library 
 
     scratchFolder = ""
 
     # We create a specific temporary 'scratch' folder for each sequence archive
     def setScratchFolder(self, fileName):
         folderName = fileName[:fileName.index('.')]
-        self.scratchFolder = self.getDataFolder() + folderName + "/"
+        self.scratchFolder = self.getDataFolder() + "/tmp_" + str(os.getpid()) + "_" + folderName + "/"
 
     def getScratchFolder(self):
         return self.scratchFolder
@@ -142,8 +183,8 @@ class Parser:
     def getScratchPath(self, fileName):
         return join(self.getScratchFolder(), fileName)
 
-    def readDf(self, fileName):
+    def readScratchDf(self, fileName):
         return pd.read_table(self.getScratchPath(fileName))
 
-    def readDfNoHeader(self, fileName):
+    def readScratchDfNoHeader(self, fileName):
         return pd.read_table(self.getScratchPath(fileName), header=None)

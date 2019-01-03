@@ -33,300 +33,227 @@ class IMGT(Parser):
 
     def process(self):
 
-        # The IMGT parser assumes that the IMGT data consists of a single
-        # ZIP file and that the ZIP file contains a single directory with
-        # the directory name "imgt". This MUST be the case at this time.
-        # Within the imgt directory, there should be one or more IMGT
-        # annotation archives. Each annotation archive should be a tgz file
-        # (a tar'ed, gzip'ed file) as provided from IMGT vQUEST.
-        #
         # The data is extracted in the "library" folder provided (the same
         # folder in which the original zip file was found.
         if not isfile(self.context.path):
-            print("Could not find IMGT ZIP archive ", self.context.path)
+            print("Could not find IMGT compressed archive ", self.context.path)
             return False
 
-        with zipfile.ZipFile(self.context.path, "r") as zip:
-            # unzip to library directory
-            zip.extractall(self.context.library)
+        # Process the file...
+        return self.processImgtArchive(self.context.path)
 
-	# Get a list of the files in the data folder. The getDataFolder
-        # method adds on the "imgt" suffix to the library path.
-        onlyfiles = [
-            f for f in os.listdir(self.getDataFolder())
-            if isfile(self.getDataPath(f))
-        ]
-        
-        # Process annotation files
-        for f in onlyfiles:
-            self.processImgtArchive(f)
+    def processImgtArchive(self, path):
+        # Set the tag for the repository that we are using. Note this should
+        # be refactored so that it is a parameter provided so that we can use
+        # multiple repositories.
+        repository_tag = "ir_turnkey"
 
-	# Clean up the "imgt" directory tree once the files are processed
-        rmtree(self.getDataFolder())
-
-        # print("v_call...")
-        # self.context.sequences.create_index("v_call")
-        # print("d_call...")
-        # self.context.sequences.create_index("d_call")
-        # print("j_call...")
-        # self.context.sequences.create_index("j_call")
-        # print("junction_aa_length...")
-        # self.context.sequences.create_index("junction_aa_length")
-        # print("functional...")
-        # self.context.sequences.create_index("functional")
-        # print("ir_project_sample_id...")
-        # self.context.sequences.create_index("ir_project_sample_id")
-
-        return True
-
-    def processImgtArchive(self, fileName):
-
-        path = self.getDataPath(fileName)
-
-        if self.context.verbose:
-            print("Extracting IMGT file: ", path)
-
+        # Get root filename from the path, should be a file if the path
+        # is file, so not checking again 8-)
+        fileName = os.path.basename(path)
+        # Set the scratch folder based on the file name. This computes a
+        # unique termporary folder in which we can uncompress and process
+        # data in a safe way.
         self.setScratchFolder(fileName)
 
+        if self.context.verbose:
+            print("Extracting IMGT file: ", fileName)
+            print("Path: ", path)
+            print("Scratch folder: ", self.getScratchFolder())
+
+        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # this at the moment, but this may not be the most robust method.
+        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        idarray = []
+        if value is None:
+            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            return False
+        else:
+            print("Retrieving associated sample for file " + fileName + " from repository field " + value)
+            idarray = Parser.getSampleIDs(self.context, value, fileName)
+
+        # Check to see that we found it and that we only found one. Fail if not.
+        num_samples = len(idarray)
+        if num_samples == 0:
+            print("ERROR: Could not find annotation file " + fileName + " in the repository samples")
+            print("ERROR: No sample could be associated with this annotation file.")
+            return False
+        elif num_samples > 1:
+            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples)
+            print("ERROR: Unique assignment of annotations to a single sample are required.")
+            return False
+
+        # Get the sample ID and assign it to sample ID field
+        ir_project_sample_id = idarray[0]
+
+        # Open the tar file, extract the data, and close the tarfile. 
+        # This leaves us with a folder with all of the individual vQUest
+        # files extracted in this location.
         tar = tarfile.open(path)
-
         tar.extractall(self.getScratchFolder())
-
         tar.close()
 
-        Summary_1 = self.readDf('1_Summary.txt')
+        # Get the list of relevant vQuest files. Choose the vquest_file column,
+        # drop the NAs, and grab the unique members that remain. This gives us
+        # the list of relevant vQuest file names from the configuration file
+        # that we should be considering.
+        vquest_file_map = self.context.airr_map.airr_rearrangement_map['vquest_file']
+        vquest_files = vquest_file_map.dropna().unique()
+        if self.context.verbose:
+            print("VQuest Files")
+            print(vquest_files)
+        # Create a dictionary that stores an array of fields to process
+        # for each IMGT file that we need to process.
+        filedict = {}
+        first_dataframe = True
+        for vquest_file in vquest_files:
+            if self.context.verbose:
+                print("Processing file ", vquest_file)
+            # Read in the data frame for the file.
+            vquest_dataframe = self.readScratchDf(vquest_file)
+            # Extract the fields that are of interest for this file.
+            field_of_interest = self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])
+            # We select the rows in the mapping that contain fields of interest for this file.
+            # At this point, file_fields contains N columns that contain our mappings for the
+            # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
+            # only data that is relevant to this specific vquest file.
+            file_fields = self.context.airr_map.airr_rearrangement_map.loc[field_of_interest]
 
-        IMGT_gapped_nt_sequences_2 = self.readDf(
-            '2_IMGT-gapped-nt-sequences.txt')
+            # We need to build the set of fields that the repository can store. We don't
+            # want to extract fields that the repository doesn't want.
+            vquest_fields = []
+            mongo_fields = []
+            for index, row in file_fields.iterrows():
+                if self.context.verbose:
+                    print("    " + str(row['vquest']) + " -> " + str(row[repository_tag]))
+                # If the repository column has a value for the IMGT field, track the field
+                # from both the IMGT and repository side.
+                if not pd.isnull(row[repository_tag]):
+                    vquest_fields.append(row['vquest'])
+                    mongo_fields.append(row[repository_tag])
+                else:
+                    print("Repository does not support " + vquest_file + "/" + 
+                          str(row['vquest']) + ", not inserting into repository")
+            # Use the vquest column in our mapping to select the columns we want from the 
+            # possibly quite large vquest data frame.
+            mongo_dataframe = vquest_dataframe[vquest_fields]
+            # We now have a data frame that has only the vquest data we want from this file. 
+            # We now replace the vquest column names with the repository column names from
+            # the map
+            mongo_dataframe.columns = mongo_fields
+            # We now have a data frame with vquest data in it with AIRR compliant column names.
+            # Store all of this in a dictionay based on the file name so we can use it later.
+            filedict[vquest_file] = {'vquest': file_fields['vquest'],
+                                     repository_tag: file_fields[repository_tag],
+                                     'vquest_dataframe': vquest_dataframe,
+                                     'mongo_dataframe': mongo_dataframe}
+            # Manage the data frames that we extract from each file. Essentially we 
+            # just concatentate the data frames from each file into a single large
+            # data frame.
+            if first_dataframe:
+                mongo_concat = mongo_dataframe
+                vquest_concat = vquest_dataframe
+                first_dataframe = False
+            else:
+                mongo_concat = pd.concat([mongo_concat, mongo_dataframe], axis=1)
+                vquest_concat = pd.concat([vquest_concat, vquest_dataframe], axis=1)
+                
+        # We now have the data in a data frame with the correct headers mapped from the
+        # IMGT data fields to the correct repository field names. Now we have to perform
+        # any specific mappings that are specific to IMGT.
 
-        Nt_sequences_3 = self.readDf('3_Nt-sequences.txt')
+        # First, we want to keep track of some of the data from the IMGT Parameters file.
+        # Create a dictionary with keys the first column of the parameter file and the values
+        # the second column in the parameter file.
+        Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt')
+        parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
-        IMGT_gapped_AA_sequences_4 = self.readDf(
-            '4_IMGT-gapped-AA-sequences.txt')
-
-        AA_sequences_5 = self.readDf('5_AA-sequences.txt')
-
-        V_REGION_mutation_and_AA_change_table_7 = self.readDf(
-            '7_V-REGION-mutation-and-AA-change-table.txt')
-
-        Parameters_11 = self.readDfNoHeader('11_Parameters.txt')
-
-        Para_dict = dict(zip(Parameters_11[0], Parameters_11[1]))
-
-        Summary_column_list = Summary_1.columns.values.tolist()
-
-        if 'Functionality' in Summary_column_list:
-
-            df_1 = Summary_1[[
-                'Sequence ID', 'V-GENE and allele', 'J-GENE and allele',
-                'D-GENE and allele', 'Functionality', 'V-REGION score',
-                'J-REGION score', 'V-REGION identity %',
-                'D-REGION reading frame', 'CDR1-IMGT length',
-                'CDR2-IMGT length', 'CDR3-IMGT length',
-                'Functionality comment', 'Orientation', 'V-REGION identity %'
-            ]]
-
-            df_1.columns = [
-                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
-                'v_score', 'j_score', 'vgene_probablity',
-                'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
-                'cdr3_length', 'functionality_comment', 'rev_comp',
-                'vgene_probability'
-            ]
-
-        elif 'V-DOMAIN Functionality' in Summary_column_list:
-
-            df_1 = Summary_1[[
-                'Sequence ID', 'V-GENE and allele', 'J-GENE and allele',
-                'D-GENE and allele', 'V-DOMAIN Functionality',
-                'V-REGION score', 'J-REGION score', 'V-REGION identity %',
-                'D-REGION reading frame', 'CDR1-IMGT length',
-                'CDR2-IMGT length', 'CDR3-IMGT length',
-                'V-DOMAIN Functionality comment', 'Orientation',
-                'V-REGION identity %'
-            ]]
-
-            df_1.columns = [
-                'seq_name', 'v_string', 'j_string', 'd_string', 'functionality',
-                'v_score', 'j_score', 'vgene_probablity',
-                'dregion_reading_frame', 'cdr1_length', 'cdr2_length',
-                'cdr3_length', 'functionality_comment', 'rev_comp',
-                'vgene_probability'
-            ]
-
-        df_2 = IMGT_gapped_nt_sequences_2[[
-            'V-D-J-REGION', 'V-J-REGION', 'V-REGION', 'J-REGION', 'FR1-IMGT',
-            'FR2-IMGT', 'FR3-IMGT', 'FR4-IMGT', 'CDR1-IMGT', 'CDR2-IMGT',
-            'CDR3-IMGT', 'JUNCTION'
-        ]]
-
-        df_2.columns = [
-            'vdjregion_sequence_nt_gapped', 'vjregion_sequence_nt_gapped',
-            'vregion_sequence_nt_gapped', 'jregion_sequence_nt_gapped',
-            'fr1region_sequence_nt_gapped', 'fr2region_sequence_nt_gapped',
-            'fr3region_sequence_nt_gapped', 'fr4region_sequence_nt_gapped',
-            'cdr1region_sequence_nt_gapped', 'cdr2region_sequence_nt_gapped',
-            'cdr3region_sequence_nt_gapped', 'junction_sequence_nt_gapped'
-        ]
-
-        df_3 = Nt_sequences_3[[
-            'V-D-J-REGION', 'V-J-REGION', 'D-J-REGION', 'V-REGION', 'J-REGION',
-            'D-REGION', 'FR1-IMGT', 'FR2-IMGT', 'FR3-IMGT', 'FR4-IMGT',
-            'CDR1-IMGT', 'CDR2-IMGT', 'CDR3-IMGT', 'JUNCTION',
-            'V-D-J-REGION start', 'V-D-J-REGION end', 'V-J-REGION start',
-            'V-J-REGION end', 'V-REGION start', 'V-REGION end',
-            'J-REGION start', 'J-REGION end', 'D-REGION start', 'D-REGION end',
-            'FR1-IMGT start', 'FR1-IMGT end', 'FR2-IMGT start', 'FR2-IMGT end',
-            'FR3-IMGT start', 'FR3-IMGT end', 'FR4-IMGT start', 'FR4-IMGT end',
-            'CDR1-IMGT start', 'CDR1-IMGT end', 'CDR2-IMGT start',
-            'CDR2-IMGT end', 'CDR3-IMGT start', 'CDR3-IMGT end',
-            'JUNCTION start', 'JUNCTION end', 'D-J-REGION start',
-            'D-J-REGION end'
-        ]]
-
-        df_3.columns = [
-            'vdjregion_sequence_nt', 'vjregion_sequence_nt',
-            'djregion_sequence_nt', 'vregion_sequence_nt',
-            'jregion_sequence_nt', 'dregion_sequence_nt',
-            'fr1region_sequence_nt', 'fr2region_sequence_nt',
-            'fr3region_sequence_nt', 'fr4region_sequence_nt',
-            'cdr1region_sequence_nt', 'cdr2region_sequence_nt',
-            'cdr3region_sequence_nt', 'junction_nt', 'vdjregion_start',
-            'vdjregion_end', 'vjregion_start', 'vjregion_end', 'v_start',
-            'v_end', 'j_start', 'j_end', 'd_start', 'd_end', 'fwr1_start',
-            'fwr1_end', 'fwr2_start', 'fwr2_end', 'fwr3_start', 'fwr3_end',
-            'fwr4_start', 'fwr4_end', 'cdr1_start', 'cdr1_end', 'cdr2_start',
-            'cdr2_end', 'cdr3_start', 'cdr3_end', 'junction_start',
-            'junction_end', 'djregion_start', 'djregion_end'
-        ]
-
-        df_4 = IMGT_gapped_AA_sequences_4[[
-            'V-D-J-REGION', 'V-J-REGION', 'V-REGION', 'J-REGION', 'FR1-IMGT',
-            'FR2-IMGT', 'FR3-IMGT', 'FR4-IMGT', 'CDR1-IMGT', 'CDR2-IMGT',
-            'CDR3-IMGT', 'JUNCTION'
-        ]]
-
-        df_4.columns = [
-            'vdjregion_sequence_aa_gapped', 'vjregion_sequence_aa_gapped',
-            'vregion_sequence_aa_gapped', 'jregion_sequence_aa_gapped',
-            'fr1region_sequence_aa_gapped', 'fr2region_sequence_aa_gapped',
-            'fr3region_sequence_aa_gapped', 'fr4region_sequence_aa_gapped',
-            'cdr1region_sequence_aa_gapped', 'cdr2region_sequence_aa_gapped',
-            'cdr3region_sequence_aa_gapped', 'junction_sequence_aa_gapped'
-        ]
-
-        df_5 = AA_sequences_5[[
-            'V-D-J-REGION', 'V-J-REGION', 'V-REGION', 'J-REGION', 'FR1-IMGT',
-            'FR2-IMGT', 'FR3-IMGT', 'FR4-IMGT', 'CDR1-IMGT', 'CDR2-IMGT',
-            'CDR3-IMGT', 'JUNCTION'
-        ]]
-
-        df_5.columns = [
-            'vdjregion_sequence_aa', 'vjregion_sequence_aa',
-            'vregion_sequence_aa', 'jregion_sequence_aa',
-            'fr1region_sequence_aa', 'fr2region_sequence_aa',
-            'fr3region_sequence_aa', 'fr4region_sequence_aa',
-            'cdr1region_sequence_aa', 'cdr2region_sequence_aa',
-            'cdr3region_sequence_aa', 'junction_aa'
-        ]
-
-        df_7 = V_REGION_mutation_and_AA_change_table_7[[
-            'V-REGION', 'FR1-IMGT', 'FR2-IMGT', 'FR3-IMGT', 'CDR1-IMGT',
-            'CDR2-IMGT', 'CDR3-IMGT'
-        ]]
-
-        df_7.columns = [
-            'vregion_mutation_string', 'fr1region_mutation_string',
-            'fr2region_mutation_string', 'fr3region_mutation_string',
-            'cdr1region_mutation_string', 'cdr2region_mutation_string',
-            'cdr3region_mutation_string'
-        ]
-
-        df_concat = pd.concat([df_1, df_2, df_3, df_4, df_5, df_7], axis=1)
-        df_concat['annotation_date'] = Para_dict['Date']
-        df_concat['tool_version'] = Para_dict['IMGT/V-QUEST programme version']
-        df_concat['reference_version'] = Para_dict[
+        # Need to grab some data out of the parameters dictionary.
+        mongo_concat['annotation_date'] = parameter_dictionary['Date']
+        mongo_concat['tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
+        mongo_concat['reference_version'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory release']
-        df_concat['species'] = Para_dict['Species']
-        df_concat['receptor_type'] = Para_dict['Receptor type or locus']
-        df_concat['reference_directory_set'] = Para_dict[
+        mongo_concat['species'] = parameter_dictionary['Species']
+        mongo_concat['receptor_type'] = parameter_dictionary['Receptor type or locus']
+        mongo_concat['reference_directory_set'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory set']
-        df_concat['search_insert_delete'] = Para_dict[
+        mongo_concat['search_insert_delete'] = parameter_dictionary[
             'Search for insertions and deletions']
-        df_concat['no_nucleotide_to_add'] = Para_dict[
+        mongo_concat['no_nucleotide_to_add'] = parameter_dictionary[
             "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
-        df_concat['no_nucleotide_to_exclude'] = Para_dict[
+        mongo_concat['no_nucleotide_to_exclude'] = parameter_dictionary[
             "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
-        df_concat = df_concat.where((pd.notnull(df_concat)), "")
-        df_concat['cdr1_length'] = df_concat['cdr1region_sequence_aa'].apply(
-            len)
-        df_concat['cdr2_length'] = df_concat['cdr2region_sequence_aa'].apply(
-            len)
-        df_concat['cdr3_length'] = df_concat['cdr3region_sequence_aa'].apply(
-            len)
-        df_concat['functional'] = df_concat['functionality'].apply(functional_boolean)
 
-        sampleid = self.context.samples.find({
-            "imgt_file_name": {
-                '$regex': fileName
-            }
-        }, {'_id': 1})
-        ir_project_sample_id = [i['_id'] for i in sampleid][0]
-        # Critical iReceptor specific fields
+        # Get rid of columns where the column is null.
+        mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
+
+        # Critical iReceptor specific fields that need to be built from existing IMGT
+        # generated fields.
+
+        # IMGT annotates a rearrangement's functionality  with a string. We have a function
+        # that takes the string and changes it to an integer 1/0 which the repository
+        # expects. We want to keep the original data in case we need further interpretation,
+        mongo_concat['ir_productive'] = mongo_concat['functional']
+        mongo_concat['functional'] = mongo_concat['functional'].apply(functional_boolean)
+
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
-        df_concat['ir_project_sample_id'] = ir_project_sample_id
+        mongo_concat['ir_project_sample_id'] = ir_project_sample_id
+
         # The annotation tool used
-        df_concat['ir_annotation_tool'] = "V-Quest"
+        mongo_concat['ir_annotation_tool'] = "V-Quest"
 
         # Generate the substring field, which we use to heavily optmiize junction AA
-        # searches.
-        df_concat['substring'] = df_concat['junction_aa'].apply(Parser.get_substring)
+        # searches. Technically, this should probably be an ir_ field, but because
+        # it is fundamental to the indexes that already exist, we won't change it for
+        # now.
+        mongo_concat['substring'] = mongo_concat['junction_aa'].apply(Parser.get_substring)
 
+        # We want to keep the original vQuest vdj_string data, so we capture that in the
+        # ir_vdj_string variables. We use the ir_ prefix because they are non AIRR fields.
+        mongo_concat['ir_v_string'] = mongo_concat['v_call']
+        mongo_concat['ir_j_string'] = mongo_concat['j_call']
+        mongo_concat['ir_d_string'] = mongo_concat['d_call']
         # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
         # needs, which is [vdj]_call, [vdj]gene_gene, [vdj]gene_family
-        Parser.processGene(self.context, df_concat, "v_string", "v_call", "vgene_gene", "vgene_family")
-        Parser.processGene(self.context, df_concat, "j_string", "j_call", "jgene_gene", "jgene_family")
-        Parser.processGene(self.context, df_concat, "d_string", "d_call", "dgene_gene", "dgene_family")
+        Parser.processGene(self.context, mongo_concat, "ir_v_string", "v_call", "vgene_gene", "vgene_family")
+        Parser.processGene(self.context, mongo_concat, "ir_j_string", "j_call", "jgene_gene", "jgene_family")
+        Parser.processGene(self.context, mongo_concat, "ir_d_string", "d_call", "dgene_gene", "dgene_family")
+        # If we don't already have a locus (that is the data file didn't provide one) then
+        # calculate the locus based on the v_call array.
+        if not 'locus' in mongo_concat:
+            mongo_concat['locus'] = mongo_concat['v_call'].apply(Parser.getLocus)
+
 
         # Generate the junction length values as required.
-        df_concat['junction_length'] = df_concat['junction_nt'].apply(len)
-        df_concat['junction_aa_length'] = df_concat['junction_aa'].apply(len)
+        mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
+        mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
 
-        records = json.loads(df_concat.T.to_json()).values()
+        # Convert the mongo data frame dats int JSON.
+        records = json.loads(mongo_concat.T.to_json()).values()
 
         # The climax: insert the records into the MongoDb collection!
+        if self.context.verbose:
+            print("Inserting %d records into the repository"%(len(records)))
         self.context.sequences.insert(records)
 
-        ir_sequence_count = len(records)
+        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
+        if self.context.verbose:
+            print("Getting the number of annotations for this repertoire")
+        annotation_count = self.context.sequences.find(
+                {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
+            ).count()
+        if self.context.verbose:
+            print("Annotation count = %d" % (annotation_count))
 
-        #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":0}})
-
-        if self.context.counter == 'reset':
-            ori_count = 0
-        else:
-            ori_count = self.context.samples.find_one({
-                "imgt_file_name": {
-                    '$regex': fileName
-                }
-            }, {"ir_sequence_count": 1})["ir_sequence_count"]
-
+        # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
-            {
-                "imgt_file_name": {
-                    '$regex': fileName
-                }
-            }, {"$set": {
-                "ir_sequence_count": ir_sequence_count + ori_count
-            }},
-            multi=True)
-
-        #     self.context.samples.update_one({"imgt_file_name":{'$regex': fileName}},{"$set" : {"ir_sequence_count":ir_sequence_count+ori_count}})
+            {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
+        )
 
         # Clean up annotation files and scratch folder
         if self.context.verbose:
             print("Cleaning up scratch folder: ", self.getScratchFolder())
-
         rmtree(self.getScratchFolder())
 
         return True
