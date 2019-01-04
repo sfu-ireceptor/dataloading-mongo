@@ -40,7 +40,9 @@ def updateDocument(doc, targetCollections):
         id_array[sample_id]= "Set"
         db_cm.update({"_id": sample_id},{"$set":doc});
     else:
-        print ("Query found " + str(result_count) + " results " + " for number " + str(doc["ir_rearrangement_number"])
+        print ("Query found " + str(result_count) + " results " + " for number " + str(doc["ir_rearrangement_number"]))
+
+
 df = pd.read_csv(filename,sep=None,engine='python')
 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 records = json.loads(df.T.to_json()).values()
