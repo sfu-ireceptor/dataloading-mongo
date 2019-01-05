@@ -271,11 +271,13 @@ class IMGT(Parser):
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
             print("Info: Getting the number of annotations for this repertoire", flush=True)
+        t_start = time.perf_counter()
         annotation_count = self.context.sequences.find(
                 {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
             ).count()
+        t_end = time.perf_counter()
         if self.context.verbose:
-            print("Info: Annotation count = %d" % (annotation_count), flush=True)
+            print("Info: Annotation count = %d, time = %f" % (annotation_count, (t_end - t_start)), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
