@@ -189,7 +189,7 @@ class Parser:
         return join(self.getScratchFolder(), fileName)
 
     def readScratchDf(self, fileName):
-        return pd.read_table(self.getScratchPath(fileName))
+        return pd.read_table(self.getScratchPath(fileName), low_memory=False)
 
     def readScratchDfNoHeader(self, fileName):
-        return pd.read_table(self.getScratchPath(fileName), header=None)
+        return pd.read_table(self.getScratchPath(fileName), low_memory=False, header=None)
