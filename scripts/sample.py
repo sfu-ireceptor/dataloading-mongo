@@ -94,8 +94,10 @@ class Sample(Parser):
 				print("Repository does not map " +
 					str(row[curation_tag]) + ", inserting into repository as is")
 
-                # Read in the CSV file
-		df = pd.read_csv( self.context.path , sep=None, engine='python' )
+                # Read in the CSV file. We need to read this with a utf-8-sig encoding,
+		# which means it is a UTF file with a BOM signature. Note that this has
+		# been confirmed to work with a Non-UTF ASCII file fine...
+		df = pd.read_csv( self.context.path , sep=None, engine='python', encoding='utf-8-sig' )
 		# Remove any records that are Unnamed. Note: This occurs when a 
 		# Pandas dataframe has a column without a name. In general, this 
 		# should not occur and it should probably be detected as an error or
