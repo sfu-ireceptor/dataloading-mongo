@@ -18,9 +18,7 @@ id_array = [None] * 1000
 find_ids = db_cm.find({})
 for sample in list(find_ids):
   sample_id = sample["_id"]
-  print (str(sample_id))
   id_array[sample_id] =  "Not Set"
-print ("-----------")  
 #filename = "master_metadata_20171031.csv"
 filename = sys.argv[3]
 
@@ -31,19 +29,20 @@ def updateDocument(doc, targetCollections):
     fasta_file_name =  doc["ir_fasta_file_name"]
     if not file_name: 
         return()
+    tool_name = doc["ir_rearrangement_tool"]
+    if (tool_name == "igblast"):
+        return
     result = db_cm.find({"$or":[{"mixcr_file_name": {"$regex": file_name}}, {"imgt_file_name": {"$regex": file_name}}, {"fasta_file_name": {"$regex": fasta_file_name}}]})
     result_count = db_cm.count_documents({"$or":[{"mixcr_file_name": {"$regex": file_name}}, {"imgt_file_name": {"$regex": file_name}}, {"fasta_file_name": {"$regex": fasta_file_name}}]})
     if result_count==1 :
         sample_id = result[0]["_id"]
-        print (sample_id)
         total_found = total_found + 1
         id_array[sample_id]= "Set"
         db_cm.update({"_id": sample_id},{"$set":doc});
     else:
         print ("Query found " + str(result_count) + " results " + " for number " + str(doc["ir_rearrangement_number"]))
 
-
-df = pd.read_csv(filename,sep=None,engine='python')
+df = pd.read_csv(filename,sep=None,engine='python',encoding='utf8')
 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 records = json.loads(df.T.to_json()).values()
 record_list = list(records)
