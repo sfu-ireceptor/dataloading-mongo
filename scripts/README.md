@@ -6,8 +6,8 @@ This directory contains the core python code for loading data into the iReceptor
 
 Usage of dataloader.py is quite straight forward. You run it as a python script, providing command line arguments to minimally describe the type of file that you are loading and the file that you want to load. A minimal command line would be:
 
-python dataloader.py --sample -f PRJNA248411_Palanichamy_2018-12-18.csv
-python dataloader.py --imgt -f SRR1298731.txz
+- python dataloader.py --sample -f PRJNA248411_Palanichamy_2018-12-18.csv
+- python dataloader.py --imgt -f SRR1298731.txz
 
 The first command above would load a repertiore metadata file, in this case the repertoire metadata from a study "Immunoglobulin class-switched B cells provide an active immune axis between CNS and periphery in multiple sclerosis" by Palanichamy et. al. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4176763/).
 
