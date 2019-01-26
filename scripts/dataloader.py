@@ -248,7 +248,7 @@ def getArguments():
         #     print('SAMPLE SEQUENCE COUNTER:', options.counter)
         print('HOST         :', options.host)
         print('PORT         :', options.port)
-        print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1])
+        print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1] if options.user else "")
         print('PASSWORD     :', options.password[0] + (len(options.password) - 2) * "*" + options.password[-1] if options.password else "")
         print('DATABASE     :', options.database)
         print('DATABASE_MAP :', options.database_map)
