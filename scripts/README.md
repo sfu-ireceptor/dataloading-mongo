@@ -24,28 +24,28 @@ The iReceptor Data Loader takes various classes of options.
 
 ## General Options
 
---verbose (-v): Run the program in verbose mode. This option will generate a lot of output, but is recommended from a data provenance perspective as it will inform you of how it mapped input data columns into repository columns.
---mapfile: the iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run. This file contains the mappings between the AIRR Community field definitions, the annotation tool field definitions, and the fields and their names that are stored in the repository.
+- --verbose (-v): Run the program in verbose mode. This option will generate a lot of output, but is recommended from a data provenance perspective as it will inform you of how it mapped input data columns into repository columns.
+- --mapfile: the iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run. This file contains the mappings between the AIRR Community field definitions, the annotation tool field definitions, and the fields and their names that are stored in the repository.
 
 ## File Options
 
---sample (-s): The file to be loaded is a sample/repertoire metadata file (a 'csv' file with standard iReceptor/AIRR column headers)
---imgt (-i): The file to be loaded is a compressed archive files as provided by the IMGT HighV-QUEST annotation tool.
---mixcr (-m): The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool.
---airr (-a): The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files.
---filename=filename - Name of the file to load. It is assumed that the filename provided is in the appropiate format that matches either the --sample, --imgt, --mixcr, or --airr command line options. An error will be reported if the formats do not match.
+- --sample (-s): The file to be loaded is a sample/repertoire metadata file (a 'csv' file with standard iReceptor/AIRR column headers)
+- --imgt (-i): The file to be loaded is a compressed archive files as provided by the IMGT HighV-QUEST annotation tool.
+- --mixcr (-m): The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool.
+- --airr (-a): The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files.
+- --filename=filename - Name of the file to load. It is assumed that the filename provided is in the appropiate format that matches either the --sample, --imgt, --mixcr, or --airr command line options. An error will be reported if the formats do not match.
 
 ## Repository Options
 
---host=host - MongoDb server hostname. Defaults to 'localhost'.
---port=port - MongoDb server port number. Defaults to 27017.
---user=user - MongoDb  user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to empty string (no user name) otherwise."
---password=password - MongoDb user account password. Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise (no password)"
---database=db - Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise."
---database_map - Mapping to use to map data terms into repository terms. Defaults to ir_turnkey, which is the mapping for the iReceptor Turnkey repository. This mapping keyword MUST be in the term mapping file as specified by --mapfile
---database_chunk=250000 - Number of records to process in a single step when loading rearrangement data into the repository. This is used to reduce the memory footprint of the loading process when very large files are being loaded. Defaults to 100,000"
---repertoire_collection=sample - The collection to use for storing and searching repertoires (sample metadata). This is the collection that sample metadata is inserted into when the --sample option is specified. Defaults to 'sample', which is the collection in the iReceptor Turnkey repository.
---rearrangement_collection=sequence - The collection to use for storing and searching rearrangements (sequence annotations). This is the collection that data is inserted into when the --mixcr, --imgt, and --airr options are used to load files. Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository.
+- --host=host - MongoDb server hostname. Defaults to 'localhost'.
+- --port=port - MongoDb server port number. Defaults to 27017.
+- --user=user - MongoDb  user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to empty string (no user name) otherwise."
+- --password=password - MongoDb user account password. Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise (no password)"
+- --database=db - Target MongoDb database. Defaults to the MONGODB_DB environment variable if set. Defaults to 'ireceptor' otherwise."
+- --database_map - Mapping to use to map data terms into repository terms. Defaults to ir_turnkey, which is the mapping for the iReceptor Turnkey repository. This mapping keyword MUST be in the term mapping file as specified by --mapfile
+- --database_chunk=250000 - Number of records to process in a single step when loading rearrangement data into the repository. This is used to reduce the memory footprint of the loading process when very large files are being loaded. Defaults to 100,000"
+- --repertoire_collection=sample - The collection to use for storing and searching repertoires (sample metadata). This is the collection that sample metadata is inserted into when the --sample option is specified. Defaults to 'sample', which is the collection in the iReceptor Turnkey repository.
+- --rearrangement_collection=sequence - The collection to use for storing and searching rearrangements (sequence annotations). This is the collection that data is inserted into when the --mixcr, --imgt, and --airr options are used to load files. Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository.
 
 # Requirements
 
