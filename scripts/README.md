@@ -18,3 +18,12 @@ The second command would load a single rearrangement file, in the IMGT HighV-QUE
 
 If this is not the case, the dataloader will produce an error message and will refuse to load the rearrangement file.
 
+# Requirements
+
+The iReceptor python data loader has the following requirements:
+
+- Python 3 or later
+- Pandas (https://pandas.pydata.org/pandas-docs/stable/)
+- AIRR python library (https://github.com/airr-community/airr-standards/tree/master/lang/python)
+
+If you are using the iReceptor data loading module through one of the iReceptor provided services (the iReceptor Turnkey Repository) then these requirements are satisfied through the docker containers used for those services.
