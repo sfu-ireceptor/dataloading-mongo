@@ -2,6 +2,8 @@
 # Extracted common code patterns shared across various parsers.
 
 from os.path import join
+from datetime import datetime
+from datetime import timezone
 import re
 import os
 import pandas as pd
@@ -45,17 +47,17 @@ class Parser:
         # assignment made by the annotator.
             if base_tag in dataframe:
                 if context.verbose:
-                    print("Constructing %s array from %s"%(call_tag, base_tag), flush=True)
+                    print("Info: Constructing %s array from %s"%(call_tag, base_tag), flush=True)
                 dataframe[call_tag] = dataframe[base_tag].apply(Parser.setGene)
 
                 # Build the vgene_gene field (with no allele)
                 if context.verbose:
-                    print("Constructing %s from %s"%(gene_tag, base_tag), flush=True)
+                    print("Info: Constructing %s from %s"%(gene_tag, base_tag), flush=True)
                 dataframe[gene_tag] = dataframe[call_tag].apply(Parser.setGeneGene)
 
                 # Build the vgene_family field (with no allele and no gene)
                 if context.verbose:
-                    print("Constructing %s from %s"%(family_tag, base_tag), flush=True)
+                    print("Info: Constructing %s from %s"%(family_tag, base_tag), flush=True)
                 dataframe[family_tag] = dataframe[call_tag].apply(Parser.setGeneFamily)
 
 
@@ -146,9 +148,9 @@ class Parser:
                 print("Warning: Inconsistent loci across " + str(v_call_array))
         # Sanity check, check to see that we found a locus of length three and that it
         # is either a valid IG or TR value.
-        if len(final_locus) != 3:
-            print("Warning: unable to compute locus from v_call " + str(v_call_array))
-        if final_locus[:2] != "IG" and final_locus[:2] != "TR":
+        #if len(final_locus) != 3:
+        #    print("Warning: unable to compute locus from v_call " + str(v_call_array))
+        if len(final_locus) == 3 and final_locus[:2] != "IG" and final_locus[:2] != "TR":
             print("Warning: locus with non IG and non TR found in " + str(v_call_array))
         return final_locus
 
@@ -163,6 +165,9 @@ class Parser:
         idarray = [sample['_id'] for sample in samples_cursor]
         return idarray
 
+    @staticmethod
+    def getDateTimeNowUTC():
+        return datetime.now(timezone.utc).strftime("%a %b %d %Y %H:%M:%S %Z")
 
     def __init__(self, context):
         self.context = context
@@ -184,7 +189,7 @@ class Parser:
         return join(self.getScratchFolder(), fileName)
 
     def readScratchDf(self, fileName):
-        return pd.read_table(self.getScratchPath(fileName))
+        return pd.read_table(self.getScratchPath(fileName), low_memory=False)
 
     def readScratchDfNoHeader(self, fileName):
-        return pd.read_table(self.getScratchPath(fileName), header=None)
+        return pd.read_table(self.getScratchPath(fileName), low_memory=False, header=None)
