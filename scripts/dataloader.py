@@ -3,15 +3,6 @@
  ireceptor_data_loader.py is a batch loading script for loading
  iReceptor sample metadata and sequence annotation
  
- The current version accepts 
- 1) Sample metadata in the form of csv files with AIRR compliant tagged column headers
- 
- 2) IMGT annotation txt files, currently assumed bundled into tgz archives, 
-    themselves wrapped inside a zip files.
- 
- Running the ireceptor_data_loader.py script with 
- the -h flag publishes the usage of the script.
- 
 """
 import os
 # from os.path import exists, isfile, basename, join
@@ -49,7 +40,7 @@ def getArguments():
         "-v",
         "--verbose",
         action="store_true",
-        help="print out the list of options given to this script")
+        help="Run the program in verbose mode. This option will generate a lot of output, but is recommended from a data provenance perspective as it will inform you of how it mapped input data columns into repository columns.")
 
     # Add configuration options 
     config_group = parser.add_argument_group("Configuration file options", "")
@@ -57,7 +48,7 @@ def getArguments():
         "--mapfile",
         dest="mapfile",
         default="ireceptor.cfg",
-        help="iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run."
+        help="the iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run. This file contains the mappings between the AIRR Community field definitions, the annotation tool field definitions, and the fields and their names that are stored in the repository."
     )
 
     type_group = parser.add_argument_group("data type options", "")
@@ -71,7 +62,7 @@ def getArguments():
         const="sample",
         dest="type",
         default="",
-        help="Load a sample metadata file (a 'csv' file with standard iReceptor column headers)."
+        help="The file to be loaded is a sample/repertoire metadata file (a 'csv' file with standard iReceptor/AIRR column headers)."
     )
 
     # Processing IMGT VQuest data, in the form of a zip archive
@@ -81,7 +72,7 @@ def getArguments():
         action='store_const',
         const="imgt",
         dest="type",
-        help="Load a zip archive of IMGT analysis results."
+        help="The file to be loaded is a compressed archive files as provided by the IMGT HighV-QUEST annotation tool."
     )
 
     # Processing MiXCR data
@@ -91,7 +82,7 @@ def getArguments():
         action='store_const',
         const="mixcr",
         dest="type",
-        help="Load a zip archive of MiXCR analysis results."
+        help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool."
     )
 
     # Processing AIRR TSV annotation data, typically (but not limited to) from igblast
@@ -101,7 +92,7 @@ def getArguments():
         action='store_const',
         const="airr",
         dest="type",
-        help="Load data from AIRR TSV analysis results."
+        help="The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files."
     )
 
     counter_group = parser.add_argument_group(
@@ -143,14 +134,14 @@ def getArguments():
         "--user",
         dest="user",
         default=os.environ.get("MONGODB_SERVICE_USER", ""),
-        help="MongoDb service user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to 'admin' otherwise."
+        help="MongoDb user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to empty string (no user name) otherwise."
     )
     db_group.add_argument(
         "-p",
         "--password",
         dest="password",
         default=os.environ.get("MONGODB_SERVICE_SECRET", ""),
-        help="MongoDb service user account secret ('password'). Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string otherwise."
+        help="MongoDb service user account password. Defaults to the MONGODB_SERVICE_SECRET environment variable if set. Defaults to empty string (no password) otherwise."
     )
     db_group.add_argument(
         "-d",
@@ -176,13 +167,13 @@ def getArguments():
         "--repertoire_collection",
         dest="repertoire_collection",
         default="sample",
-        help="The collection to use for storing and searching repertoires (sample metadata). Defaults to 'sample', which is the collection in the iReceptor Turnkey repository."
+        help="The collection to use for storing and searching repertoires (sample metadata). This is the collection that sample metadata is inserted into when the --sample option is specified. Defaults to 'sample', which is the collection in the iReceptor Turnkey repository."
     )
     db_group.add_argument(
         "--rearrangement_collection",
         dest="rearrangement_collection",
         default="sequence",
-        help="The collection to use for storing and searching rearrangments (sequence annotations). Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository."
+        help="The collection to use for storing and searching rearrangements (sequence annotations). This is the collection that data is inserted into when the --mixcr, --imgt, and --airr options are used to load files. Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository."
     )
 
     path_group = parser.add_argument_group("file path options")
@@ -199,7 +190,7 @@ def getArguments():
         "--filename",
         dest="filename",
         default="",
-        help="Name of file to load. Defaults to a data file with the --type name as the root name (appropriate file format and extension assumed)."
+        help="Name of the file to load. It is assumed that the filename provided is in the appropiate format that matches either the --sample, --imgt, --mixcr, or --airr command line options. An error will be reported if the formats do not match."
     )
 
     index_group = parser.add_argument_group("index control options")
