@@ -166,14 +166,14 @@ def getArguments():
     db_group.add_argument(
         "--repertoire_collection",
         dest="repertoire_collection",
-        default="samples",
-        help="The collection to use for storing and searching repertoires (sample metadata). This is the collection that sample metadata is inserted into when the --sample option is specified. Defaults to 'samples', which is the collection in the iReceptor Turnkey repository."
+        default="sample",
+        help="The collection to use for storing and searching repertoires (sample metadata). This is the collection that sample metadata is inserted into when the --sample option is specified. Defaults to 'sample', which is the collection in the iReceptor Turnkey repository."
     )
     db_group.add_argument(
         "--rearrangement_collection",
         dest="rearrangement_collection",
-        default="sequences",
-        help="The collection to use for storing and searching rearrangements (sequence annotations). This is the collection that data is inserted into when the --mixcr, --imgt, and --airr options are used to load files. Defaults to 'sequences', which is the collection in the iReceptor Turnkey repository."
+        default="sequence",
+        help="The collection to use for storing and searching rearrangements (sequence annotations). This is the collection that data is inserted into when the --mixcr, --imgt, and --airr options are used to load files. Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository."
     )
 
     path_group = parser.add_argument_group("file path options")
