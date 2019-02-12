@@ -94,26 +94,6 @@ def getArguments():
         help="The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files."
     )
 
-    counter_group = parser.add_argument_group(
-        "sample counter reset options",
-        "options to specify whether or not the sample sequence counter should be reset or incremented during a current annotated sequence data loading run. Has no effect on sample metadata loading (Default: 'reset').")
-    counter_group = counter_group.add_mutually_exclusive_group()
-    counter_group.add_argument(
-        "--reset",
-        action="store_const",
-        const="reset",
-        dest="counter",
-        default="reset",
-        help="Reset sample counter when loading current annotated sequence data set."
-    )
-    counter_group.add_argument(
-        "--increment",
-        action="store_const",
-        const="increment",
-        dest="counter",
-        help="Increment sample counter when loading current annotated sequence data set."
-    )
-
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
         "--host",
@@ -213,16 +193,6 @@ def getArguments():
 
     return options
 
-def prompt_counter(context):
-    while True:
-        decision = input("### WARNING: reset the sample sequence counter to zero? (Yes/No): ")
-        if decision.upper().startswith('Y'):
-            context.counter = "reset"
-            break
-        elif decision.upper().startswith('N'):
-            context.counter = "increment"
-            break
-
 # determine path to a data file or a directory of data files
 def set_path(options):
     path = ""
@@ -254,7 +224,7 @@ def validate_library(library_path):
 
 
 class Context:
-    def __init__(self, mapfile, type, library, filename, path, samples, sequences, database_map, database_chunk, counter, verbose):
+    def __init__(self, mapfile, type, library, filename, path, samples, sequences, database_map, database_chunk, verbose):
         """Create an execution context with various info.
 
 
@@ -272,8 +242,6 @@ class Context:
 
         sequences -- the mongo collection named 'sequence'
 
-        counter -- sequence counter
-
         verbose -- make output verbose
         """
 
@@ -285,7 +253,6 @@ class Context:
         self.path = path
         self.samples = samples
         self.sequences = sequences
-        self.counter = counter
         self.verbose = verbose
         # Create the AIRR Mapping object from the mapfile.
         self.airr_map = AIRRMap(self.verbose)
@@ -351,7 +318,7 @@ class Context:
         return cls(options.mapfile, options.type, options.library, options.filename, options.path,
                     mng_db[options.repertoire_collection], mng_db[options.rearrangement_collection], 
                     options.database_map, options.database_chunk,
-                    options.counter, options.verbose)
+                    options.verbose)
 
     @staticmethod
     def checkValidity(context):
@@ -407,41 +374,18 @@ def load_file(context):
         # process samples
         print("Info: Processing repertoire metadata file: {}".format(context.filename))
         parser = Sample(context)
-        #sample = Sample(context)
-        #if sample.process():
-        #    print("Info: Repertoire metadata file loaded")
-        #else:
-        #    print("ERROR: Repertoire metadata file", context.filename, "not loaded correctly")
     elif context.type == "imgt":
         # process imgt
         print("Info: Processing IMGT data file: {}".format(context.filename))
-        #prompt_counter(context)
         parser = IMGT(context)
-        #imgt = IMGT(context)
-        #if imgt.process():
-        #    print("Info: IMGT data file loaded")
-        #else:
-        #    print("ERROR: IMGT data file", context.filename, "not loaded correctly")
     elif context.type == "mixcr":
         # process mixcr
         print("Info: Processing MiXCR data file: {}".format(context.filename))
-        #prompt_counter(context)
         parser = MiXCR(context)
-        #mixcr = MiXCR(context)
-        #if mixcr.process():
-        #    print("Info: MiXCR data file loaded")
-        #else:
-        #    print("ERROR: MiXCR data file", context.filename, "not loaded correctly")
     elif options.type == "airr":
         # process AIRR TSV
         print("Info: Processing AIRR TSV annotation data file: ", context.filename)
-        #prompt_counter(context)
         parser = AIRR_TSV(context)
-        #airr = AIRR_TSV(context)
-        #if airr.process():
-        #    print("Info: AIRR TSV data file loaded")
-        #else:
-        #    print("ERROR: AIRR TSV data file", context.filename, "not loaded correctly")
     else:
         print("ERROR: unknown data type '{}'".format(context.type))
         return False
