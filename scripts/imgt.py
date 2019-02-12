@@ -110,7 +110,7 @@ class IMGT(Parser):
             if self.context.verbose:
                 print("Info: Processing file ", vquest_file, flush=True)
             # Read in the data frame for the file.
-            vquest_dataframe = self.readScratchDf(vquest_file)
+            vquest_dataframe = self.readScratchDf(vquest_file, sep='\t')
             # Extract the fields that are of interest for this file.
             field_of_interest = self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])
             # We select the rows in the mapping that contain fields of interest for this file.
@@ -168,7 +168,7 @@ class IMGT(Parser):
         # First, we want to keep track of some of the data from the IMGT Parameters file.
         # Create a dictionary with keys the first column of the parameter file and the values
         # the second column in the parameter file.
-        Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt')
+        Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt', sep='\t')
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
         # Need to grab some data out of the parameters dictionary.

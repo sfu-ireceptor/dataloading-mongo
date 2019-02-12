@@ -39,7 +39,7 @@ class MiXCR(Parser):
                 print("Info: Reading data gzip archive: "+self.context.path)
             with gzip.open(self.context.path, 'rb') as file_handle:
                 # read file directly from the file handle 
-                # (Panda read_table call handles this...)
+                # (Pandas read_csv call handles this...)
                 success = self.processMiXcrFile(file_handle, filename)
 
         else: # read directly as a regular text file
@@ -126,7 +126,7 @@ class MiXCR(Parser):
         # then not tell the difference between a "nan" string and a "NAN" Junction sequence.
         if self.context.verbose:
             print("Info: Preparing the file reader...", flush=True)
-        df_reader = pd.read_table(file_handle, chunksize=chunk_size, na_filter=False)
+        df_reader = pd.read_csv(file_handle, sep='\t', chunksize=chunk_size, na_filter=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
         total_records = 0

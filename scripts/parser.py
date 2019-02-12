@@ -188,8 +188,8 @@ class Parser:
     def getScratchPath(self, fileName):
         return join(self.getScratchFolder(), fileName)
 
-    def readScratchDf(self, fileName):
-        return pd.read_table(self.getScratchPath(fileName), low_memory=False)
+    def readScratchDf(self, fileName, sep=','):
+        return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False)
 
-    def readScratchDfNoHeader(self, fileName):
-        return pd.read_table(self.getScratchPath(fileName), low_memory=False, header=None)
+    def readScratchDfNoHeader(self, fileName, sep=','):
+        return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False, header=None)

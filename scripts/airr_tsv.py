@@ -38,7 +38,7 @@ class AIRR_TSV(Parser):
                 print("Info: Reading data gzip archive: "+self.context.path)
             with gzip.open(self.context.path, 'rb') as f:
                 # read file directly from the file handle 
-                # (Panda read_table call handles this...)
+                # (Pandas read_csv call handles this...)
                 success = self.processAIRRTSVFile(f)
 
         else: # read directly as a regular text file
@@ -146,7 +146,7 @@ class AIRR_TSV(Parser):
         ir_project_sample_id = idarray[0]
 
         # Create a reader for the data frame with step size "chunk_size"
-        airr_df_reader = pd.read_table(path, chunksize=chunk_size)
+        airr_df_reader = pd.read_csv(path, sep='\t', chunksize=chunk_size)
 
         # Iterate over the file with data frames of size "chunk_size"
         total_records = 0
