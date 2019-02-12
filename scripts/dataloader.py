@@ -20,7 +20,6 @@ from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
 from airr_map import AIRRMap
-from ireceptor_indexes import indexes
 
 _type2ext = {
     "sample": "csv",
@@ -193,50 +192,13 @@ def getArguments():
         help="Name of the file to load. It is assumed that the filename provided is in the appropiate format that matches either the --sample, --imgt, --mixcr, or --airr command line options. An error will be reported if the formats do not match."
     )
 
-    index_group = parser.add_argument_group("index control options")
-    index_group.add_argument(
-        "--drop",
-        dest="drop_index",
-        action="store_true",
-        default=False,
-        help="Drop the set of standard iReceptor indexes on the sequence level."
-    )
-    index_group.add_argument(
-        "--build",
-        dest="build_index",
-        action="store_true",
-        default=False,
-        help="Build the set of standard iReceptor indexes on the sequence level."
-    )
-    index_group.add_argument(
-        "--rebuild",
-        dest="rebuild_index",
-        action="store_true",
-        default=False,
-        help="Rebuild the set of standard iReceptor indexes on the sequence level. This is the same as running with the '--drop --build' options."
-    )
-
     options = parser.parse_args()
 
     validate_library(options.library)
     validate_filename(options.filename)
     set_path(options)
 
-    # # If we have a type and the type isn't a sample then we are processing sequences
-    # # If we are doing a reset on the sequences, confirm that we really want to do it.
-    # if options.type and options.type != 'sample' and options.counter == 'reset':
-    #     prompt_counter(options)
-
-    if options.drop_index and options.build_index:
-        options.rebuild_index = True
-
-    if options.rebuild_index:
-        options.drop_index = True
-        options.build_index = True
-
     if options.verbose:
-        # if options.type != 'sample':
-        #     print('SAMPLE SEQUENCE COUNTER:', options.counter)
         print('HOST         :', options.host)
         print('PORT         :', options.port)
         print('USER         :', options.user[0] + (len(options.user) - 2) * "*" + options.user[-1] if options.user else "")
@@ -248,9 +210,6 @@ def getArguments():
         print('LIBRARY_PATH :', options.library)
         print('FILE_NAME    :', options.filename)
         print('FILE_PATH    :', options.path)
-        print('DROP_INDEX   :', options.drop_index)
-        print('BUILD_INDEX  :', options.build_index)
-        print('REBUILD_INDEX:', options.rebuild_index)
 
     return options
 
@@ -295,7 +254,7 @@ def validate_library(library_path):
 
 
 class Context:
-    def __init__(self, mapfile, type, library, filename, path, samples, sequences, database_map, database_chunk, counter, verbose, drop_index=False, build_index=False, rebuild_index=False):
+    def __init__(self, mapfile, type, library, filename, path, samples, sequences, database_map, database_chunk, counter, verbose):
         """Create an execution context with various info.
 
 
@@ -328,9 +287,6 @@ class Context:
         self.sequences = sequences
         self.counter = counter
         self.verbose = verbose
-        self.drop_index = drop_index
-        self.build_index = build_index
-        self.rebuild_index = rebuild_index
         # Create the AIRR Mapping object from the mapfile.
         self.airr_map = AIRRMap(self.verbose)
         self.airr_map.readMapFile(self.mapfile)
@@ -395,8 +351,7 @@ class Context:
         return cls(options.mapfile, options.type, options.library, options.filename, options.path,
                     mng_db[options.repertoire_collection], mng_db[options.rearrangement_collection], 
                     options.database_map, options.database_chunk,
-                    options.counter, options.verbose,
-                    options.drop_index, options.build_index, options.rebuild_index)
+                    options.counter, options.verbose)
 
     @staticmethod
     def checkValidity(context):
@@ -503,39 +458,20 @@ def load_file(context):
     return parse_ok
 
 if __name__ == "__main__":
+    # Get the command line arguments.
     options = getArguments()
+    # Create the context given the options.
     context = Context.getContext(options)
 
-    # Check on the successful creation of the context.
+    # Check on the successful creation of the context and its validity.
     if not context:
         sys.exit(1)
     if not Context.checkValidity(context):
         sys.exit(1)
 
-    # drop any indexes first, then load data and build indexes
-    if context.drop_index or context.rebuild_index:
-        print("Info: Dropping indexes on sequence level...")
-        context.sequences.drop_indexes()
-
-    # load data files if path is provided by user
-    #if context.path:
-    #    if os.path.exists(context.path):
-    #            if not load_data(context):
-    #                sys.exit(4)
-    #    else:
-    #        print("ERROR: {1} data file '{0}' does not exist?".format(context.path, context.type))
-
+    # Try to load the file, return an error if not...
     if not load_file(context):
         sys.exit(4)
 
-    # build indexes
-    if context.build_index or context.rebuild_index:
-        print("Info: Building indexes on sequence level...")
-        for index in indexes:
-            print("Info: Now building index: {0}".format(index))
-            t_start = time.perf_counter()
-            context.sequences.create_index(index)
-            t_end = time.perf_counter()
-            print("Info: Finished processing index in {:.2f} mins".format((t_end - t_start) / 60))
-
+    # Return success
     sys.exit(0)
