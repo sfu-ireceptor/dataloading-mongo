@@ -75,3 +75,5 @@ There are a range of component columns (e.g. one entry in each column for v_call
 	- airr_full: A description of the MiAIRR field.
 	- airr_desc: A longer description of the field and its uses.
 	- airr_exp: An example of a valid value for the field.
+
+Note that these fields are extensible and can be used in various ways by iReceptor Platform components. For example, it would be possible for a repository to create their own AIRR Mapping column and use this same configuration file to use the iReceptor Data Loading module to load data into their repository.
