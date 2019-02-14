@@ -2,8 +2,7 @@
 # into an iReceptor data node MongoDb database
 #
 
-from os.path import isfile
-
+import os.path
 import pandas as pd
 import time
 import json
@@ -11,6 +10,8 @@ import gzip
 import airr
 
 from parser import Parser
+from airr.io import RearrangementReader
+from airr.schema import ValidationError
 
 class AIRR_TSV(Parser):
     
@@ -27,28 +28,27 @@ class AIRR_TSV(Parser):
 
     def process(self):
 
-        # This first iteration just reads one AIRR TSV file
-        # at a time, given the full file (path) name
-        # e.g. SRR4084213_aa_AIRR_annotation.tsv
-        # May also be gzip compressed file
+        # Check to see if the file exists and return if not.
+        if not os.path.isfile(self.context.path):
+            print("ERROR: Could not open file ", self.context.path)
+            return False
         
         # Open, decompress then read(), if it is a gz archive
         if self.context.path.endswith(".gz"):
             if self.context.verbose:
-                print("Info: Reading data gzip archive: "+self.context.path)
-            with gzip.open(self.context.path, 'rb') as f:
-                # read file directly from the file handle 
-                # (Pandas read_csv call handles this...)
-                success = self.processAIRRTSVFile(f)
-
-        else: # read directly as a regular text file
+                print("Info: Reading gzip file: "+self.context.path)
+            with gzip.open(self.context.path, 'rt') as file_handle:
+                # Use gzip to get a file handle in text mode. 
+                success = self.processAIRRTSVFile(file_handle, self.context.path)
+        else: # or get a normal file handle for the file directly.
             if self.context.verbose:
                 print("Info: Reading text file: "+self.context.path)
-            success = self.processAIRRTSVFile(self.context.path)
+            file_handle = open(self.context.path, "r")
+            success = self.processAIRRTSVFile(file_handle, self.context.path)
 
         return success
 
-    def processAIRRTSVFile( self, path ):
+    def processAIRRTSVFile( self, file_handle, path ):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
@@ -57,14 +57,53 @@ class AIRR_TSV(Parser):
         # Set the size of each chunk of data that is inserted.
         chunk_size = self.context.repository_chunk
 
-        # Validate the AIRR TSV file and confirm if loading is desired if 
-        # the file is not valid. Note that this function processes the entire
-        # file and validates all of the data. For a large file this could be
-        # expensive. 
-        if airr.validate_rearrangement(path):
-                print("Info: File", path, "is a valid AIRR TSV file")
+        # Validate the AIRR TSV file header. We do not validate the entire
+        # file becasue that is too expensive of an operation.
+        # Validate header by trying to read the first record. If it throws
+        # an error then we have a problem.
+        airr_reader = RearrangementReader(file_handle, validate=True)
+        airr_valid = True
+        try:
+            iter(airr_reader)
+        except ValidationError as e:
+            airr_valid = False
+        if airr_valid:
+                print("Info: File", path, "has a valid AIRR TSV header")
         else:
-                print("Warning: File", path, "is NOT a valid AIRR TSV file")
+                print("Warning: File", path, "does NOT have a valid AIRR TSV header")
+
+        # Get root filename from the path
+        filename = os.path.basename(path)
+        # May need to strip off any gzip 'archive' file extension
+        filename = filename.replace(".gz","")
+
+        # Get the sample ID of the data we are processing. We use the ir_rearrangement_file_name 
+        # field in the repository to mathc the file at the moment, but this may not be the most robust method.
+        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        idarray = []
+        if value is None:
+            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            return False
+        else:
+            # Look up the filename in the repository field and get an array of sample ids
+            # where the file name was found.
+            if self.context.verbose:
+                print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
+            idarray = Parser.getSampleIDs(self.context, value, filename)
+
+        # Check to see that we found it and that we only found one. Fail if not.
+        num_samples = len(idarray)
+        if num_samples == 0:
+            print("ERROR: Could not find annotation file", filename)
+            print("ERROR: No sample in the repository could be associated with this annotation file.")
+            return False
+        elif num_samples > 1:
+            print("ERROR: Annotation file can not be associated with a unique sample in the repository, found", num_samples)
+            print("ERROR: Unique assignment of annotations to a single sample are required.")
+            return False
+            
+        # We found a unique sample, keep track of it for later. 
+        ir_project_sample_id = idarray[0]
 
         # Extract the fields that are of interest for this file. Essentiall all non null mixcr fields
         field_of_interest = self.context.airr_map.airr_rearrangement_map['igblast'].notnull()
@@ -93,11 +132,7 @@ class AIRR_TSV(Parser):
                 print("Info:     Repository does not support " +
                       str(row['igblast']) + ", not inserting into repository")
 
-        # Get a new rearrangement reader so we can get the field names in the file.
-        if self.context.verbose:
-            print("Info: Processing raw data frame...")
-        airr_reader = airr.read_rearrangement(path)
-
+        # Get the field names from the file from the airr_reader object. 
         # Determing the mapping from the file input to the repository.
         finalMapping = {}
         for airr_field in airr_reader.fields:
@@ -116,36 +151,9 @@ class AIRR_TSV(Parser):
                 if self.context.verbose:
                     print("Info: Missing data in input AIRR file for " + igblast_column)
 
-        # Get root filename: may need to strip off any gzip 'archive' file extension
-        filename = self.context.filename.replace(".gz","")
-
-        # Get the sample ID of the data we are processing. We use the IMGT file name for
-        # this at the moment, but this may not be the most robust method.
-        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
-        idarray = []
-        if value is None:
-            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
-            return False
-        else:
-            if self.context.verbose:
-                print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
-            idarray = Parser.getSampleIDs(self.context, value, filename)
-
-        # Check to see that we found it and that we only found one. Fail if not.
-        num_samples = len(idarray)
-        if num_samples == 0:
-            print("ERROR: Could not find annotation file", filename)
-            print("ERROR: No sample could be associated with this annotation file.")
-            return False
-        elif num_samples > 1:
-            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples)
-            print("ERROR: Unique assignment of annotations to a single sample are required.")
-            return False
-            
-        # We found a unique sample, keep track of it for later. 
-        ir_project_sample_id = idarray[0]
-
         # Create a reader for the data frame with step size "chunk_size"
+        if self.context.verbose:
+            print("Info: Processing raw data frame...")
         airr_df_reader = pd.read_csv(path, sep='\t', chunksize=chunk_size)
 
         # Iterate over the file with data frames of size "chunk_size"
@@ -222,7 +230,7 @@ class AIRR_TSV(Parser):
                 {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
             ).count()
         if self.context.verbose:
-            print("Annotation count = %d" % (annotation_count), flush=True)
+            print("Info: Annotation count = %d" % (annotation_count), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.context.samples.update(
