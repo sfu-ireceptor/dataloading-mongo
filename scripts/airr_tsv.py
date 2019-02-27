@@ -105,10 +105,10 @@ class AIRR_TSV(Parser):
         # We found a unique sample, keep track of it for later. 
         ir_project_sample_id = idarray[0]
 
-        # Extract the fields that are of interest for this file. Essentiall all non null mixcr fields
+        # Extract the fields that are of interest for this file. Essentiall all non null igblast fields
         field_of_interest = self.context.airr_map.airr_rearrangement_map['igblast'].notnull()
 
-        # We select the rows in the mapping that contain fields of interest for MiXCR.
+        # We select the rows in the mapping that contain fields of interest for igblast.
         # At this point, file_fields contains N columns that contain our mappings for the
         # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
         # only data that is relevant to igblast
@@ -119,7 +119,7 @@ class AIRR_TSV(Parser):
         igblastColumns = []
         columnMapping = {}
         if self.context.verbose:
-            print("Info: Dumping AIRR mapping")
+            print("Info: Dumping expected igblast mapping")
         for index, row in file_fields.iterrows():
             if self.context.verbose:
                 print("Info:    " + str(row['igblast']) + " -> " + str(row[repository_tag]))
