@@ -202,15 +202,20 @@ class IMGT(Parser):
         # IMGT annotates a rearrangement's functionality  with a string. We have a function
         # that takes the string and changes it to an integer 1/0 which the repository
         # expects. We want to keep the original data in case we need further interpretation,
-        mongo_concat['ir_productive'] = mongo_concat['functional']
-        mongo_concat['functional'] = mongo_concat['functional'].apply(functional_boolean)
+        productive = self.context.airr_map.getMapping("productive", "ir_id", repository_tag)
+        ir_productive = self.context.airr_map.getMapping("ir_productive", "ir_id", repository_tag)
+        if productive in mongo_concat:
+            mongo_concat[ir_productive] = mongo_concat[productive]
+            mongo_concat[productive] = mongo_concat[productive].apply(functional_boolean)
 
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
-        mongo_concat['ir_project_sample_id'] = ir_project_sample_id
+        ir_project_sample_id_field = self.context.airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
+        mongo_concat[ir_project_sample_id_field] = ir_project_sample_id
 
         # The annotation tool used
-        mongo_concat['ir_annotation_tool'] = "V-Quest"
+        ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
+        mongo_concat[ir_annotation_tool] = "V-Quest"
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
@@ -218,36 +223,66 @@ class IMGT(Parser):
         # now.
         if self.context.verbose:
             print("Info: Computing substring from junction", flush=True) 
-        mongo_concat['substring'] = mongo_concat['junction_aa'].apply(Parser.get_substring)
+        junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
+        ir_substring = self.context.airr_map.getMapping("ir_substring", "ir_id", repository_tag)
+        
+        if junction_aa in mongo_concat:
+            mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Parser.get_substring)
 
         # We want to keep the original vQuest vdj_string data, so we capture that in the
-        # ir_vdj_string variables. We use the ir_ prefix because they are non AIRR fields.
-        mongo_concat['ir_v_string'] = mongo_concat['v_call']
-        mongo_concat['ir_j_string'] = mongo_concat['j_call']
-        mongo_concat['ir_d_string'] = mongo_concat['d_call']
+        # ir_vdjgene_string variables.
+        # We need to look up the "known parameter" from an iReceptor perspective (the field
+        # name in the "ir_id" column mapping and map that to the correct field name for the
+        # repository we are writing to.
+        v_call = self.context.airr_map.getMapping("v_call", "ir_id", repository_tag)
+        d_call = self.context.airr_map.getMapping("d_call", "ir_id", repository_tag)
+        j_call = self.context.airr_map.getMapping("j_call", "ir_id", repository_tag)
+        ir_vgene_gene = self.context.airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
+        ir_dgene_gene = self.context.airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
+        ir_jgene_gene = self.context.airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
+        ir_vgene_family = self.context.airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
+        ir_dgene_family = self.context.airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
+        ir_jgene_family = self.context.airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
+        ir_vgene_string = self.context.airr_map.getMapping("ir_vgene_string", "ir_id", repository_tag)
+        ir_dgene_string = self.context.airr_map.getMapping("ir_dgene_string", "ir_id", repository_tag)
+        ir_jgene_string = self.context.airr_map.getMapping("ir_jgene_string", "ir_id", repository_tag)
+        mongo_concat[ir_vgene_string] = mongo_concat[v_call]
+        mongo_concat[ir_jgene_string] = mongo_concat[j_call]
+        mongo_concat[ir_dgene_string] = mongo_concat[d_call]
         # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
-        # needs, which is [vdj]_call, [vdj]gene_gene, [vdj]gene_family
-        Parser.processGene(self.context, mongo_concat, "ir_v_string", "v_call", "vgene_gene", "vgene_family")
-        Parser.processGene(self.context, mongo_concat, "ir_j_string", "j_call", "jgene_gene", "jgene_family")
-        Parser.processGene(self.context, mongo_concat, "ir_d_string", "d_call", "dgene_gene", "dgene_family")
+        # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
+        Parser.processGene(self.context, mongo_concat, ir_vgene_string, v_call, ir_vgene_gene, ir_vgene_family)
+        Parser.processGene(self.context, mongo_concat, ir_jgene_string, j_call, ir_jgene_gene, ir_jgene_family)
+        Parser.processGene(self.context, mongo_concat, ir_dgene_string, d_call, ir_dgene_gene, ir_dgene_family)
         # If we don't already have a locus (that is the data file didn't provide one) then
         # calculate the locus based on the v_call array.
-        if self.context.verbose:
-            print("Info: Computing locus from v_call", flush=True) 
-        if not 'locus' in mongo_concat:
-            mongo_concat['locus'] = mongo_concat['v_call'].apply(Parser.getLocus)
+        locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
+        if not locus in mongo_concat:
+            if self.context.verbose:
+                print("Info: Computing locus from v_call", flush=True) 
+            mongo_concat[locus] = mongo_concat[v_call].apply(Parser.getLocus)
 
         # Generate the junction length values as required.
         if self.context.verbose:
             print("Info: Computing junction lengths", flush=True) 
-        mongo_concat['junction_length'] = mongo_concat['junction_nt'].apply(len)
-        mongo_concat['junction_aa_length'] = mongo_concat['junction_aa'].apply(len)
+        junction = self.context.airr_map.getMapping("junction", "ir_id", repository_tag)
+        junction_length = self.context.airr_map.getMapping("junction_length", "ir_id", repository_tag)
+        if junction in mongo_concat and not junction_length in mongo_concat:
+            mongo_concat[junction_length] = mongo_concat[junction].apply(len)
+        # Special case for junction_aa_length. This does not exist in the AIRR standard,
+        # so we have to check to see if the mapping returned None as well. 
+        junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
+        junction_aa_length = self.context.airr_map.getMapping("junction_aa_length", "ir_id", repository_tag)
+        if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
+            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
         now_str = Parser.getDateTimeNowUTC()
-        mongo_concat["ir_created_at"] = now_str
-        mongo_concat["ir_updated_at"] = now_str
+        ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
+        ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
+        mongo_concat[ir_created_at] = now_str
+        mongo_concat[ir_updated_at] = now_str
 
         # Convert the mongo data frame dats int JSON.
         if self.context.verbose:
@@ -267,13 +302,12 @@ class IMGT(Parser):
         if self.context.verbose:
             print("Info: Inserted records, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
-
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
         annotation_count = self.context.sequences.find(
-                {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
+                {ir_project_sample_id_field:{'$eq':ir_project_sample_id}}
             ).count()
         t_end = time.perf_counter()
         if self.context.verbose:
