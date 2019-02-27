@@ -154,41 +154,65 @@ class MiXCR(Parser):
             
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings. Also calculate junction AA length
-            if 'junction_aa' in df_chunk:
+            junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
+            ir_substring = self.context.airr_map.getMapping("ir_substring", "ir_id", repository_tag)
+            ir_junction_aa_length = self.context.airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
+            if junction_aa in df_chunk:
                 if self.context.verbose:
                     print("Info: Computing junction amino acids substrings...", flush=True)
-                df_chunk['substring'] = df_chunk['junction_aa'].apply(Parser.get_substring)
+                df_chunk[ir_substring] = df_chunk[junction_aa].apply(Parser.get_substring)
                 if self.context.verbose:
                     print("Info: Computing junction amino acids length...", flush=True)
-                df_chunk['junction_aa_length'] = df_chunk['junction_aa'].apply(str).apply(len)
+                df_chunk[ir_junction_aa_length] = df_chunk[junction_aa].apply(str).apply(len)
 
             # MiXCR doesn't have junction nucleotide length, we want it in our repository.
-            if 'junction_nt' in df_chunk:
+            junction = self.context.airr_map.getMapping("junction", "ir_id", repository_tag)
+            junction_length = self.context.airr_map.getMapping("junction_length", "ir_id", repository_tag)
+            if junction in df_chunk:
                 if self.context.verbose:
                     print("Info: Computing junction length...", flush=True)
-                df_chunk['junction_length'] = df_chunk['junction_nt'].apply(str).apply(len)
+                df_chunk[junction_length] = df_chunk[junction].apply(str).apply(len)
 
+
+            # We need to look up the "known parameter" from an iReceptor perspective (the field
+            # name in the "ir_id" column mapping and map that to the correct field name for the
+            # repository we are writing to.
+            v_call = self.context.airr_map.getMapping("v_call", "ir_id", repository_tag)
+            d_call = self.context.airr_map.getMapping("d_call", "ir_id", repository_tag)
+            j_call = self.context.airr_map.getMapping("j_call", "ir_id", repository_tag)
+            ir_vgene_gene = self.context.airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
+            ir_dgene_gene = self.context.airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
+            ir_jgene_gene = self.context.airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
+            ir_vgene_family = self.context.airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
+            ir_dgene_family = self.context.airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
+            ir_jgene_family = self.context.airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
-            Parser.processGene(self.context, df_chunk, "v_call", "v_call", "vgene_gene", "vgene_family")
-            Parser.processGene(self.context, df_chunk, "j_call", "j_call", "jgene_gene", "jgene_family")
-            Parser.processGene(self.context, df_chunk, "d_call", "d_call", "dgene_gene", "dgene_family")
+            Parser.processGene(self.context, df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
+            Parser.processGene(self.context, df_chunk, j_call, j_call, ir_jgene_gene, ir_jgene_family)
+            Parser.processGene(self.context, df_chunk, d_call, d_call, ir_dgene_gene, ir_dgene_family)
             # If we don't already have a locus (that is the data file didn't provide one) then
             # calculate the locus based on the v_call array.
-            if not 'locus' in df_chunk:
-                df_chunk['locus'] = df_chunk['v_call'].apply(Parser.getLocus)
+            locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
+            if not locus in df_chunk:
+                df_chunk[locus] = df_chunk[v_call].apply(Parser.getLocus)
 
             # Assign each record the constant fields for all records in the chunk
-            df_chunk['functional'] = 1
+            productive = self.context.airr_map.getMapping("productive", "ir_id", repository_tag)
+            df_chunk[productive] = 1
             # Assign any iReceptor specific custom fields for the records in the chunk
-            df_chunk['ir_annotation_tool'] = 'MiXCR'
-            df_chunk['ir_project_sample_id'] = ir_project_sample_id
+            ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
+            df_chunk[ir_annotation_tool] = 'MiXCR'
+            ir_project_sample_id_field = self.context.airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
+            df_chunk[ir_project_sample_id_field] = ir_project_sample_id
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
             now_str = Parser.getDateTimeNowUTC()
-            df_chunk["ir_created_at"] = now_str
-            df_chunk["ir_updated_at"] = now_str
+            ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
+            ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
+            df_chunk[ir_created_at] = now_str
+            df_chunk[ir_updated_at] = now_str
 
             # Insert the chunk of records into Mongo.
             num_records = len(df_chunk)
@@ -206,7 +230,7 @@ class MiXCR(Parser):
         if self.context.verbose:
             print("Info: Getting the number of annotations for this repertoire")
         annotation_count = self.context.sequences.find(
-                {"ir_project_sample_id":{'$eq':ir_project_sample_id}}
+                {ir_project_sample_id_field:{'$eq':ir_project_sample_id}}
             ).count()
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
