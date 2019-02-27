@@ -104,7 +104,7 @@ class MiXCR(Parser):
         mixcrColumns = []
         columnMapping = {}
         if self.context.verbose:
-            print("Info: Dumping AIRR mapping")
+            print("Info: Dumping expected MiXCR mapping")
         for index, row in file_fields.iterrows():
             if self.context.verbose:
                 print("Info:    " + str(row['mixcr']) + " -> " + str(row[repository_tag]))
