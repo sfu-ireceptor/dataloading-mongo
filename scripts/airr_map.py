@@ -60,8 +60,12 @@ class AIRRMap:
         labels = self.airr_mappings['ir_subclass'].isin(self.airr_repertoire_classes)
         # Get all of the rows that have the repertoire class labels.
         self.airr_repertoire_map = self.airr_mappings.loc[labels]
+
+        # Debug stuff
         #print(self.airr_repertoire_map['ir_id'])
         #print(self.airr_rearrangement_map['ir_id'])
+
+        # Return success if we get here.
         return True
 
 
