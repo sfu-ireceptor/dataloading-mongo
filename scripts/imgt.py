@@ -272,9 +272,9 @@ class IMGT(Parser):
         # Special case for junction_aa_length. This does not exist in the AIRR standard,
         # so we have to check to see if the mapping returned None as well. 
         junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        junction_aa_length = self.context.airr_map.getMapping("junction_aa_length", "ir_id", repository_tag)
-        if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
-            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
+        ir_junction_aa_length = self.context.airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
+        if junction_aa in mongo_concat and (ir_junction_aa_length is None or not ir_junction_aa_length in mongo_concat):
+            mongo_concat[ir_junction_aa_length] = mongo_concat[junction_aa].apply(len)
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
