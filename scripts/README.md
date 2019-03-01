@@ -56,3 +56,10 @@ The iReceptor python data loader has the following requirements:
 - AIRR python library (https://github.com/airr-community/airr-standards/tree/master/lang/python)
 
 If you are using the iReceptor data loading module through one of the iReceptor provided services (the iReceptor Turnkey Repository) then these requirements are satisfied through the docker containers used for those services.
+
+# Data loading performance caveats
+
+Data loading into a Mongo repository is faster if you load the data without indexes, in particular without indexes on some of the larger and more complicated fields. As a result, it is faster to load data with only the indexes that are used by the data loading process itself. To maximize data loading performance, you should perform the data loading with all indexes dropped except the index on "ir_project_sample_id". The index on ir_project_sample_id is used to count the number of rearrangments loaded, and without this index the count process can be quite slow. There are several caveats to data loading in this configuration:
+
+1) After data loading is complete, it is necessary to rebuild all of the indexes. Although this process takes a long time in itself, it is more efficient to drop the indexes (except the ir_project_sample_id index), load the data, and then rebuild the indexes.
+2) During data loading, without the indexes, your repository will perform very poorly on searches. If it is necessary to keep your repository in production with fast searching, it will be necessary to load the data with the indexes in place.
