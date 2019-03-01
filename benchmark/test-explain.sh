@@ -1,17 +1,18 @@
 #!/bin/bash
 
-# Default number of iterations is 5
-count=5
+# Default number of iterations through the test
+count=3
 
 # Get the command line arguements, the number of iterations, the DB name,
-# and the DB port to use.
-if [ $# -eq 3 ]
+# the DB host, and the DB port to use.
+if [ $# -eq 4 ]
 then
     count=$1
     db_name=$2
-    db_port=$3
+    db_host=$3
+    db_port=$4
 else
-    echo "usage: $0 count db port"
+    echo "usage: $0 count db host port"
     exit
 fi
 
@@ -27,7 +28,7 @@ echo "Test performed at: $current_time"
 
 # Dump the query plan cache. This is important to know as if the performance
 # is not as good as expected this can help diagnose the problem.
-mongo $db_name --port $db_port $cache_js_file > cache-$host_name-$db_port-$db_name-$current_time.txt
+mongo $db_name --host $db_host --port $db_port $cache_js_file > cache-$host_name-$db-host-$db_port-$db_name-$current_time.txt
 
 # Perform the benchmark test the number of times requested.
 for i in `seq 1 $count`;
@@ -35,7 +36,7 @@ do
     # Run the performance test once. Output file is named such that it is
     # possible to track down where (and when) a performance file came from
     echo "Performing test iteration $i"
-    time mongo $db_name --port $db_port $perf_js_file > run$i-$host_name-$db_port-$db_name-$current_time.txt
+    time mongo $db_name --host $db_host --port $db_port $perf_js_file > run$i-$host_name-$db_host-$db_port-$db_name-$current_time.txt
 done
 
 # Print out the time when the test run finished.
