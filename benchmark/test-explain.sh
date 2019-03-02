@@ -29,11 +29,11 @@ echo "Test performed at: $current_time"
 
 # Dump the indexes. This is important to know as if the performance
 # is not as good as expected this can help diagnose the problem.
-mongo $db_name --host $db_host --port $db_port $index_js_file > index-$host_name-$db-host-$db_port-$db_name-$current_time.txt
+mongo $db_name --host $db_host --port $db_port $index_js_file > index-$host_name-$db_host-$db_port-$db_name-$current_time.txt
 
 # Dump the query plan cache. This is important to know as if the performance
 # is not as good as expected this can help diagnose the problem.
-mongo $db_name --host $db_host --port $db_port $cache_js_file > cache-$host_name-$db-host-$db_port-$db_name-$current_time.txt
+mongo $db_name --host $db_host --port $db_port $cache_js_file > cache-$host_name-$db_host-$db_port-$db_name-$current_time.txt
 
 # Perform the benchmark test the number of times requested.
 for i in `seq 1 $count`;
