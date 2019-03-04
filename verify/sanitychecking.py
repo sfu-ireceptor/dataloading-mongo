@@ -54,20 +54,15 @@ def get_unique_identifier(JSON_DATA_FILE,ir_rear_number):
             if 'ir_rearrangement_number' in JSON_DATA_FILE[i].keys():
                 if int(JSON_DATA_FILE[i]["ir_rearrangement_number"])==(ir_rear_number):
                     JSON_index.append(i) 
-                
-                    
-#             else:
-#                 print("WARNING! ir_rearrangement_number was not found.\n")
-         
+
         return JSON_index
     except:
-        print("INVALID DATA FORMAT\nEnter a JSON file from API call,a mixcr file name entry from metadata spreadsheet,\nmixcr file name entry from metadata spreadsheet and an ir_rearrangement file from metadata spreadsheet.")
+        print("INVALID DATA FORMAT\nEnter a JSON file from API call, and an ir_rearrangement file from metadata spreadsheet.")
 
 def get_dataframes_from_metadata(master_MD_dataframe):
     
     try:
         data_dafr = pd.read_excel(master_MD_dataframe,encoding = 'utf8')
-        #data_dafr = data_dafr.replace('\n',' ', regex=True)
         new_header = data_dafr.iloc[0] #grab the first row for the header
         data_dafr = data_dafr[1:] #take the data less the header row
         data_dafr.columns = new_header #set the header row as the df header
@@ -76,7 +71,7 @@ def get_dataframes_from_metadata(master_MD_dataframe):
     except:
         print("INVALID INPUT\nInput is a single variable containing path and name to metadata spreadsheet.")
 
-        
+# Section 2. Sanity Checking        
         
 def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):
     
@@ -241,14 +236,9 @@ study_id = str(sys.argv[3])
 annotation_dir = str(sys.argv[4])
 given_option = str(sys.argv[5])
 
-
-    
 # NEW IPA
 with open(API_file) as f:
     DATA= json.load(f)
-    
-    
-
     
     
 print("########################################################################################################")
@@ -265,11 +255,8 @@ elif "csv" in input_f:
 # Check ir_rearrangement_number is unique
 check_uniqueness_ir_rearrangement_nr(master)
 
-
-#master = pd.read_csv(input_f ,encoding='utf8')
+# Get metadata and specific study
 master = master.replace('\n',' ', regex=True)
-
-    # Get specific study
 master["study_id"] = master["study_id"].str.strip()
 
 data_df = master.loc[master['study_id'] == study_id]
@@ -344,9 +331,6 @@ if "F" in given_option:
 
 
     level_three(data_df,annotation_dir)
-
-
-#annotation_dir='/home/lgutierrezfunderburk/Documents/Notebooks/iReceptor/Sanity_checks/Sanity_Check_Multiple_Sites/annotation/'
 
  
 print("########################################################################################################")
