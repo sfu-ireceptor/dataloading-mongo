@@ -1,0 +1,5 @@
+FROM mongo:3
+
+# add this folder to the Docker image
+COPY . /app
+WORKDIR /root
