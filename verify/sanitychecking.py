@@ -186,7 +186,7 @@ def level_three(input_f, data_df,annotation_dir,study_id):
         end_ = no_rows
     
     # Count number of lines in annotation file     
-    with open(study_id + "outfile_seq_count.csv","w") as f:    
+    with open(study_id + "_outfile_seq_count.csv","w") as f:    
 
         f.write("File names" + "\t" + "Number of lines found in each file" + "\t" + "Sum of all lines" + "\n")
         for i in range(start_,end_):
@@ -228,6 +228,8 @@ def level_three(input_f, data_df,annotation_dir,study_id):
                 
     ############## CASE 2            
             elif tool=="igblast":
+                number_lines = []
+                sum_all = 0
                 ir_file = data_df["ir_rearrangement_file_name"][i]
                 
                 if type(ir_file)==float:
@@ -260,6 +262,8 @@ def level_three(input_f, data_df,annotation_dir,study_id):
                         
     ############## CASE 3                       
             elif tool=="MiXCR":
+                number_lines = []
+                sum_all = 0
                 ir_file = data_df["ir_rearrangement_file_name"][i]
                                 
                 if type(ir_file)==float:
