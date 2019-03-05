@@ -1,4 +1,3 @@
-
 ######### SANITY CHECK PYTHON SCRIPT
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
@@ -20,9 +19,7 @@ import tarfile
 #### FUNCTION DEFINITION AREA ####
 ##################################
 
-
 #### Section 1. Verify, read and parse files
-
 def test_book(filename):
     try:
         open_workbook(filename)
@@ -40,8 +37,6 @@ def verify_non_corrupt_file(master_metadata_file):
         
     else:
         print("HEALTHY FILE: Proceed with tests\n")
-
-
 
 def get_unique_identifier(JSON_DATA_FILE,ir_rear_number):
     
@@ -73,8 +68,7 @@ def get_dataframes_from_metadata(master_MD_dataframe):
 
 # Section 2. Sanity Checking        
         
-def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):
-    
+def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):  
 
     print("Uniquenes of ir_rearrangement_number:")
     
@@ -83,8 +77,7 @@ def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):
        
     else:
         print("TRUE: All entries under ir_rearrangement_number in master metadata are unique\n")
-        
-        
+                
 def level_one(data_df,DATA):
     
     count_find =0
@@ -158,7 +151,6 @@ def level_two(data_df,DATA):
                 else:
                     continue
 
-
             # PRINT RESULTS
             print("TEST: FIELD NAMES MATCH\nRESULT --------------------------------------------------------------------------------->" + str(column_names_JSON.issubset(column_names_MD)) + "\n")
 
@@ -182,8 +174,7 @@ def level_two(data_df,DATA):
 
         print("END OF ENTRY\n")
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")       
-        
-        
+                
 def level_three(input_f, data_df,annotation_dir):
     
     no_rows = data_df.shape[0]
@@ -195,38 +186,33 @@ def level_three(input_f, data_df,annotation_dir):
         end_ = no_rows
     
     # Count number of lines in annotation file     
-    with open("outfile_seq_count.csv","w") as f:
-        
-       
-        
+    with open("outfile_seq_count.csv","w") as f:    
 
         f.write("File names" + "\t" + "Number of lines found in each file" + "\t" + "Sum of all lines" + "\n")
         for i in range(start_,end_):
             tool = data_df["ir_rearrangement_tool"][i]
-            
-            
+                       
     ############## CASE 1
             if tool=="IMGT high-Vquest":
             
                 number_lines = []
                 sum_all = 0
                 ir_file = data_df["ir_rearrangement_file_name"][i]
-                
-                
+                                
                 if type(ir_file)==float:
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
                     f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    continue
                     
-                    
-                if type(ir_file)==str and "txz" not in ir_file:
+                elif type(ir_file)==str and "txz" not in ir_file:
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ".  Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
                     f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
-                    
-                
+                    continue
+                                    
                 else:
                     line_one = ir_file.split(", ")
                     for item in line_one:
@@ -244,45 +230,70 @@ def level_three(input_f, data_df,annotation_dir):
             elif tool=="igblast":
                 ir_file = data_df["ir_rearrangement_file_name"][i]
                 
-                
                 if type(ir_file)==float:
-                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                    number_lines.append(0)
+                    sum_all = sum_all + 0
+                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                     
-                if type(ir_file)==str and "fmt19" not in ir_file:
-                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                elif type(ir_file)==str and "fmt19" not in ir_file:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                    number_lines.append(0)
+                    sum_all = sum_all + 0
+                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                 
                 else:
                     line_one = ir_file.split(", ")
+                    print(line_one)
                     for item in line_one:
-                        print(item.split(".")[0])
+                        if "txt" in item:
+                            print(" ")
+#                             stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + str(item)])
+#                             hold_val = stri.decode().split(' ')
+#                             number_lines.append(hold_val[0])
+#                             sum_all = sum_all + int(hold_val[0]) - 1
+#                             subprocess.check_output(['rm','-r',annotation_dir  + str(item.split(".")[0])+ "/"])
+
+#                         f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                         
     ############## CASE 3                       
             elif tool=="MiXCR":
                 ir_file = data_df["ir_rearrangement_file_name"][i]
-                
-                
+                                
                 if type(ir_file)==float:
-                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                    number_lines.append(0)
+                    sum_all = sum_all + 0
+                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                     
                 if type(ir_file)==str and "txt" not in ir_file:
-                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                    number_lines.append(0)
+                    sum_all = sum_all + 0
+                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                 
                 else:
                     line_one = ir_file.split(", ")
                     for item in line_one:
-                        print(item.split(".")[0])
-                
-                
+                        if "txt" in item:
+                            stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item)])
+                            hold_val = stri.decode().split(' ')
+                            number_lines.append(hold_val[0])
+                            sum_all = sum_all + int(hold_val[0]) - 1
+
+                        f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                        else:
+                            continue
+           
     f.close()   
         
 ##################################
 ####### VARIABLE INPUT AREA ######
 ##################################
-
 input_f = str(sys.argv[1])
 API_file = str(sys.argv[2])
 study_id = str(sys.argv[3])
@@ -292,7 +303,6 @@ given_option = str(sys.argv[5])
 # NEW IPA
 with open(API_file) as f:
     DATA= json.load(f)
-    
     
 print("########################################################################################################")
 print("---------------------------------------VERIFY FILES ARE HEALTHY-----------------------------------------\n")
@@ -314,14 +324,11 @@ master["study_id"] = master["study_id"].str.strip()
 
 data_df = master.loc[master['study_id'] == study_id]
 
-
-
 if data_df.empty:
     print("EMPTY DATA FRAME: Cannot find specified study ID\n")
     print(data_df)
     sys.exit(0)
-    
-    
+        
 no_rows = data_df.shape[0]
 
 print("---------------------------------------------API RESPONSE-----------------------------------------------\n")
@@ -342,25 +349,18 @@ else:
     print("WARNING: ir_rearrangement_number not found in API response\n")
     sys.exit(0)
     
-    
-
 if "H" in given_option: 
     print("########################################################################################################")
     print("------------------------------------------HIGH LEVEL SUMMARY--------------------------------------------\n")
- 
-
+    
     stu_title= list(set(data_df['study_title']))[0]
     sub_by= list(set(data_df['submitted_by']))[0]
 
     print(str(stu_title) + "\n")
     print(str(sub_by) + "\n")
-
     print("Study ID " + str(study_id) + "\n")    
 
     level_one(data_df,DATA)
-
-
-
 
 if "L" in given_option: 
     print("########################################################################################################")
@@ -377,13 +377,10 @@ if "L" in given_option:
     
     level_two(data_df,DATA)
     
-    
 if "F" in given_option: 
     print("########################################################################################################")
     print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
 
-
     level_three(input_f,data_df,annotation_dir)
-
  
 print("########################################################################################################")
