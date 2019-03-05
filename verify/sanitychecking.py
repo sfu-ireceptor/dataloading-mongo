@@ -175,7 +175,7 @@ def level_two(data_df,DATA):
         print("END OF ENTRY\n")
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")       
                 
-def level_three(input_f, data_df,annotation_dir):
+def level_three(input_f, data_df,annotation_dir,study_id):
     
     no_rows = data_df.shape[0]
     if "xlsx" in input_f:
@@ -186,7 +186,7 @@ def level_three(input_f, data_df,annotation_dir):
         end_ = no_rows
     
     # Count number of lines in annotation file     
-    with open("outfile_seq_count.csv","w") as f:    
+    with open(study_id + "outfile_seq_count.csv","w") as f:    
 
         f.write("File names" + "\t" + "Number of lines found in each file" + "\t" + "Sum of all lines" + "\n")
         for i in range(start_,end_):
@@ -248,7 +248,7 @@ def level_three(input_f, data_df,annotation_dir):
                     line_one = ir_file.split(", ")
                     print(line_one)
                     for item in line_one:
-                        if "txt" in item:
+                        if "fmt19" in item:
                             print(" ")
 #                             stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + str(item)])
 #                             hold_val = stri.decode().split(' ')
@@ -284,10 +284,14 @@ def level_three(input_f, data_df,annotation_dir):
                             hold_val = stri.decode().split(' ')
                             number_lines.append(hold_val[0])
                             sum_all = sum_all + int(hold_val[0]) - 1
-
-                        f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                            
+                        
                         else:
                             continue
+
+
+                        f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                        
            
     f.close()   
         
@@ -381,6 +385,6 @@ if "F" in given_option:
     print("########################################################################################################")
     print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
 
-    level_three(input_f,data_df,annotation_dir)
+    level_three(input_f,data_df,annotation_dir,study_id)
  
 print("########################################################################################################")
