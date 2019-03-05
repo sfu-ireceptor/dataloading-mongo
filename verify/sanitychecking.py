@@ -182,34 +182,47 @@ def level_two(data_df,DATA):
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")       
         
         
-def level_three(data_df,annotation_dir):
+def level_three(input_f, data_df,annotation_dir):
     
-    # Count number of lines in annotation file 
+    no_rows = data_df.shape[0]
+    if "xlsx" in input_f:
+        start_ = 1
+        end_ = no_rows+1
+    elif "csv" in input_f:
+        start_ = 0
+        end_ = no_rows
     
+    # Count number of lines in annotation file     
     with open("outfile_seq_count.csv","w") as f:
+        
+       
+        
 
         f.write("File names" + "\t" + "Number of lines found in each file" + "\t" + "Sum of all lines" + "\n")
-        for i in range(1,no_rows + 1):
-            print("Begin iteration \n")
-            
+        for i in range(start_,end_):
             tool = data_df["ir_rearrangement_tool"][i]
             
+            
+    ############## CASE 1
             if tool=="IMGT high-Vquest":
             
                 number_lines = []
                 sum_all = 0
-                line_one = data_df["ir_rearrangement_file_name"][i].split(", ")
+                ir_file = data_df["ir_rearrangement_file_name"][i]
                 
-                if type(line_one)==float:
-                    print("FOUND ODD ENTRY. Row index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                
+                if type(ir_file)==float:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
                     continue
                     
-                if type(line_one)==str and "txz" not in line_one:
-                    print("FOUND ODD ENTRY. Row index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                if type(ir_file)==str and "txz" not in ir_file:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
                     continue
-                else:    
+                
+                else:
+                    line_one = ir_file.split(", ")
                     for item in line_one:
-                        #print(item.split(".")[0])
+                        print("")
                         tf = tarfile.open(annotation_dir + item)
                         tf.extractall(annotation_dir  + str(item.split(".")[0]) + "/")
                         stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + "1_Summary.txt"])
@@ -220,8 +233,41 @@ def level_three(data_df,annotation_dir):
 
                     f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                 
+    ############## CASE 2            
+            elif tool=="igblast":
+                ir_file = data_df["ir_rearrangement_file_name"][i]
                 
-            #else:
+                
+                if type(ir_file)==float:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    continue
+                    
+                if type(ir_file)==str and "fmt19" not in ir_file:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    continue
+                
+                else:
+                    line_one = ir_file.split(", ")
+                    for item in line_one:
+                        print(item.split(".")[0])
+                        
+    ############## CASE 3                       
+            elif tool=="MiXCR":
+                ir_file = data_df["ir_rearrangement_file_name"][i]
+                
+                
+                if type(ir_file)==float:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    continue
+                    
+                if type(ir_file)==str and "txt" not in ir_file:
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
+                    continue
+                
+                else:
+                    line_one = ir_file.split(", ")
+                    for item in line_one:
+                        print(item.split(".")[0])
                 
                 
     f.close()   
@@ -330,7 +376,7 @@ if "F" in given_option:
     print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
 
 
-    level_three(data_df,annotation_dir)
+    level_three(input_f,data_df,annotation_dir)
 
  
 print("########################################################################################################")
