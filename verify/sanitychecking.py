@@ -98,7 +98,6 @@ def level_one(data_df,DATA):
         JSON_entry = get_unique_identifier(DATA,ir_rear_number)
         if not JSON_entry:
 
-
             count_not_find +=1
 
         else:
@@ -137,6 +136,7 @@ def level_two(data_df,DATA):
             fail_a = []
 
             for item in DATA[JSON_entry[0]]:
+                
                 if item in intersection:
                     if type(DATA[JSON_entry[0]][item]) == type(data_df.iloc[i][item]):
                         if DATA[JSON_entry[0]][item] == data_df.iloc[i][item]:
@@ -154,7 +154,9 @@ def level_two(data_df,DATA):
 
                         else:
                                 fail_a.append(item)
-
+                 
+                else:
+                    continue
 
 
             # PRINT RESULTS
@@ -212,17 +214,22 @@ def level_three(input_f, data_df,annotation_dir):
                 
                 
                 if type(ir_file)==float:
-                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
-                    continue
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                    number_lines.append(0)
+                    sum_all = sum_all + 0
+                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    
                     
                 if type(ir_file)==str and "txz" not in ir_file:
-                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Skipping this entry, but be careful to ensure this is correct.\n")
-                    continue
+                    print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ".  Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                    number_lines.append(0)
+                    sum_all = sum_all + 0
+                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    
                 
                 else:
                     line_one = ir_file.split(", ")
                     for item in line_one:
-                        print("")
                         tf = tarfile.open(annotation_dir + item)
                         tf.extractall(annotation_dir  + str(item.split(".")[0]) + "/")
                         stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + "1_Summary.txt"])
