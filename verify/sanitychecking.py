@@ -37,6 +37,30 @@ def verify_non_corrupt_file(master_metadata_file):
         
     else:
         print("HEALTHY FILE: Proceed with tests\n")
+        
+        
+def get_metadata_sheet(master_metadata_file):
+
+    # Tabulate Excel file
+    table = pd.ExcelFile(master_metadata_file,encoding="utf8")
+    # Identify sheet names in the file and store in array
+    sheets = table.sheet_names
+    # How many sheets does it have
+    number_sheets = len(sheets)
+
+    ### Select metadata spreadsheet
+    metadata_sheet = ""
+    for i in range(number_sheets):
+        # Check which one contains the word metadata in the title and hold on to it
+        if "Metadata"== sheets[i] or "metadata"==sheets[i]:
+            metadata_sheet = metadata_sheet + sheets[i]
+            break 
+        # Need to design test that catches when there is no metadata spreadsheet ; what if there are multiple metadata sheets?        
+        
+    # This is the sheet we want
+    metadata = table.parse(metadata_sheet)
+    
+    return metadata
 
 def get_unique_identifier(JSON_DATA_FILE,ir_rear_number):
     
@@ -54,10 +78,10 @@ def get_unique_identifier(JSON_DATA_FILE,ir_rear_number):
     except:
         print("INVALID DATA FORMAT\nEnter a JSON file from API call, and an ir_rearrangement file from metadata spreadsheet.")
 
-def get_dataframes_from_metadata(master_MD_dataframe):
+def get_dataframes_from_metadata(master_MD_sheet):
     
     try:
-        data_dafr = pd.read_excel(master_MD_dataframe,encoding = 'utf8')
+        data_dafr = get_metadata_sheet(master_MD_sheet)
         new_header = data_dafr.iloc[0] #grab the first row for the header
         data_dafr = data_dafr[1:] #take the data less the header row
         data_dafr.columns = new_header #set the header row as the df header
