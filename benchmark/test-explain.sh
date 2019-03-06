@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Get the location of where the files are. The JS files are in
+# the same location as this file...
+SCRIPT_DIR=`dirname "$0"`
+
 # Default number of iterations through the test
 count=3
 
@@ -17,9 +21,9 @@ else
 fi
 
 # The Javascript files to use for the performance test.
-perf_js_file="test_performance_explain.js"
-cache_js_file="cache_dump.js"
-index_js_file="index_dump.js"
+perf_js_file="$SCRIPT_DIR/test_performance_explain.js"
+cache_js_file="$SCRIPT_DIR/cache_dump.js"
+index_js_file="$SCRIPT_DIR/index_dump.js"
 # The host we are running on
 host_name=$(hostname)
 
