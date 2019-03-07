@@ -10,7 +10,6 @@ import requests
 import sys
 import math
 import os
-import numpy
 from xlrd import open_workbook, XLRDError
 import subprocess
 import tarfile
