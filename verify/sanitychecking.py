@@ -167,6 +167,12 @@ def level_two(data_df,DATA):
                                 pass_a.append(item)
                             else:
                                 fail_a.append(item)
+                        elif type(DATA[JSON_entry[0]][item]) == int and type(data_df.iloc[i][item])==float:
+                            floating_md = str(data_df.iloc[i][item]).split(".")[1]
+                            if  int(floating_md) != 0:
+                                fail_a.append(item)
+                            else:
+                                continue
 
                         else:
                                 fail_a.append(item)
