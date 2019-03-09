@@ -165,7 +165,6 @@ def getArguments():
     options = parser.parse_args()
 
     validate_filename(options.filename)
-    set_path(options)
 
     if options.verbose:
         print('HOST         :', options.host)
@@ -177,13 +176,8 @@ def getArguments():
         print('MAPFILE      :', options.mapfile)
         print('DATA_TYPE    :', options.type)
         print('FILE_NAME    :', options.filename)
-        print('FILE_PATH    :', options.path)
 
     return options
-
-# determine path to a data file or a directory of data files
-def set_path(options):
-    options.path = options.filename
 
 def validate_filename(filename_path):
     if filename_path:
@@ -192,16 +186,14 @@ def validate_filename(filename_path):
             raise SystemExit(1)
 
 class Context:
-    def __init__(self, mapfile, type, filename, path, samples, sequences, database_map, database_chunk, verbose):
+    def __init__(self, mapfile, type, filename, samples, sequences, database_map, database_chunk, verbose):
         """Create an execution context with various info.
 
         Keyword arguments:
         
         type -- the type of data file. e.g. imgt
 
-        filename -- name of the data file
-
-        path -- path to the data file
+        filename -- name of the data file including path
 
         samples -- the mongo collection named 'sample'
 
@@ -214,7 +206,6 @@ class Context:
         self.mapfile = mapfile
         self.type = type
         self.filename = filename
-        self.path = path
         self.samples = samples
         self.sequences = sequences
         self.verbose = verbose
@@ -279,7 +270,7 @@ class Context:
         # Set Mongo db name
         mng_db = mng_client[options.database]
 
-        return cls(options.mapfile, options.type, options.filename, options.path,
+        return cls(options.mapfile, options.type, options.filename, 
                     mng_db[options.repertoire_collection], mng_db[options.rearrangement_collection], 
                     options.database_map, options.database_chunk,
                     options.verbose)
@@ -319,7 +310,7 @@ def load_file(context):
         print("ERROR: unknown data type '{}'".format(context.type))
         return False
 
-    parse_ok = parser.process()
+    parse_ok = parser.process(context.filename)
     if parse_ok:
         print("Info: " + options.type + " file " + context.filename + " loaded successfully")
     else:
