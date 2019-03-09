@@ -2,7 +2,7 @@
 
 One of the challenges of maintaining a platform that federates data across multiple repositories
 is the mapping of terms between those repositories. In order for data to be interoperable (the I 
-in Findable, Accessible, Interoperable, and Reusable, or FAIR, principles) between repositories it
+in the FAIR data principles of being Findable, Accessible, Interoperable, and Reusable) between repositories it
 is necessary to have a well, defined consistent representation of the data. The iReceptor Platform
 relies on the AIRR
 Minimal Standards (MiAIRR) specification and the accompanying API and file formats to enable this
@@ -36,7 +36,7 @@ Components where mappings are required include:
 	- iReceptor Public Archive v0.1: This is the early version of the iReceptor public archive, which pre-existed the MiAIRR standard. In these repositories the v_call field was internally represented in a database field called "v_gene".
 	- iReceptor Public Archive v1.0: This version of the iReceptor Repository was created after the establishment of the MiAIRR standard, but its field names are based on MiAIRR v1.0.0 (Oct 2017)
 	- iReceptor Public Archive Turnkey v1.0: This version of the iReceptor Repository is based on MiAIRR v1.2 (Aug 2018). Although changes are relatively small between the MiAIRR versions, some refinements were made to the MiAIRR fields.
-- Data Loading: Data loaders map data from annotation tools into data that is stored in a AIRR-seq Repostiroty. Thus a data loader needs to map file formats (igblast, IMGT HighV-QUEST, and MiXCR) into repositories representations (IPA v0.1, IPA v1.0, IPA Turnkey v1.0)
+- Data Loading: Data loaders map data from annotation tools into data that is stored in a AIRR-seq Repository. Thus a data loader needs to map file formats (igblast, IMGT HighV-QUEST, and MiXCR) into repositories representations (IPA v0.1, IPA v1.0, IPA Turnkey v1.0)
 - Web APIs: AIRR Web APIs are the mechanism by which clients of the AIRR Data Commons perform queries against AIRR-seq repositories. The AIRR API, like the AIRR standards, implement different versions that change over time. Specific versions of the AIRR API implement specific versions of the MiAIRR standard. In addition, capabilities of the AIRR API change over time, meaning that different MiAIRR fields may or may not be supported. 
 - Web Services: Web services in the iReceptor Platform translate Web API requests (in a specific version) into queries against a AIRR-seq Repository. Thus they must be able to translate requests from a specific AIRR API version into a query against a specific version of a AIRR-seq Repository.
 - Web Applications: The iReceptor Scientific Gateway is a web application that allows users to explore data across the entire AIRR Data Commons. It performs queries on repositories in the AIRR Data Commons on behalf of the user and federates those results. Thus it needs to map MiAIRR field names into visual representations in the user interface as well as map field names to Web API queries for a specific API version.

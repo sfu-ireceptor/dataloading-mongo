@@ -10,10 +10,10 @@ import requests
 import sys
 import math
 import os
-import numpy
 from xlrd import open_workbook, XLRDError
 import subprocess
 import tarfile
+import numpy
 
 ##################################
 #### FUNCTION DEFINITION AREA ####
@@ -152,32 +152,41 @@ def level_two(data_df,DATA):
             pass_a = []
             fail_a = []
 
+
             for item in DATA[JSON_entry[0]]:
-                
                 if item in intersection:
-                    if type(DATA[JSON_entry[0]][item]) == type(data_df.iloc[i][item]):
+                    try:
                         if DATA[JSON_entry[0]][item] == data_df.iloc[i][item]:
                             pass_a.append(item)
-                        else:
-                            fail_a.append(item)
-
-                    else:
-                        if DATA[JSON_entry[0]][item]==None and type(data_df.iloc[i][item])==float:
+                                
+                                ## HANDLE NANs and NoneTypes 
+                        elif DATA[JSON_entry[0]][item]==None and type(data_df.iloc[i][item])==float:
                             x=float(data_df.iloc[i][item])
                             if math.isnan(x):
                                 pass_a.append(item)
                             else:
                                 fail_a.append(item)
-
-                        else:
+                        elif DATA[JSON_entry[0]][item]==None and type(data_df.iloc[i][item])==numpy.float64:
+                            x=float(data_df.iloc[i][item])
+                            if math.isnan(x):
+                                pass_a.append(item)
+                            else:
                                 fail_a.append(item)
-                 
+            # In this case python thinks the items are comparable (of the same type as 
+            # far as not generating an exception) but not the same value
+                        else:
+                            fail_a.append(item)
+                    except TypeError:
+                        print("UNABLE TO COMPARE ENTRIES")
+                   
+                            
                 else:
                     continue
 
             # PRINT RESULTS
             print("TEST: FIELD NAMES MATCH\nRESULT --------------------------------------------------------------------------------->" + str(column_names_JSON.issubset(column_names_MD)) + "\n")
 
+            
             print("Summary of non-matching field names \n")
 
             print("Field names in API response \n")
@@ -189,12 +198,19 @@ def level_two(data_df,DATA):
             for item in in_MD:
                 print(str(item))
             print("\n")    
-            print("TEST: FIELD CONTENT MATCHES\nRESULT --------------------------------------------------------------------------------->False" + "\n") 
-            print("Summary of non-matching entries \n")
-            for item in fail_a:
-                print("ENTRY:  " + str(item))
-                print("METADATA ENTRY RETURNS : "+  str(data_df.iloc[i][item]) + " type: " + str(type(data_df.iloc[i][item])))
-                print("API RESPONSE RETURNS : "+ str(DATA[JSON_entry[0]][item]) + " type: " + str(type(DATA[JSON_entry[0]][item])) + "\n")
+            
+            if len(fail_a)==0:
+                print("TEST: FIELD CONTENT MATCHES\nRESULT --------------------------------------------------------------------------------->TRUE "  + "\n") 
+            else:
+                print("TEST: FIELD CONTENT MATCHES\nRESULT --------------------------------------------------------------------------------->FALSE "  + "\n") 
+           
+                print("Summary of non-matching entries \n")
+                for item in fail_a:
+                    print("ENTRY:  " + str(item))
+                    print("METADATA ENTRY RETURNS : "+  str(data_df.iloc[i][item]) + " type: " + str(type(data_df.iloc[i][item])))
+                    print("API RESPONSE RETURNS : "+ str(DATA[JSON_entry[0]][item]) + " type: " + str(type(DATA[JSON_entry[0]][item])) + "\n")
+                    
+
 
         print("END OF ENTRY\n")
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")       
@@ -227,14 +243,14 @@ def level_three(input_f, data_df,annotation_dir,study_id):
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
-                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    f.write(str(ir_file) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                     
                 elif type(ir_file)==str and "txz" not in ir_file:
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ".  Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
-                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    f.write(str(ir_file) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                                     
                 else:
@@ -260,14 +276,14 @@ def level_three(input_f, data_df,annotation_dir,study_id):
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
-                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    f.write(str(ir_file) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                     
                 elif type(ir_file)==str and "fmt19" not in ir_file:
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
-                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    f.write(str(ir_file) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                 
                 else:
@@ -294,14 +310,14 @@ def level_three(input_f, data_df,annotation_dir,study_id):
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
-                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    f.write(str(ir_file) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                     
                 if type(ir_file)==str and "txt" not in ir_file:
                     print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(data_df["ir_rearrangement_number"][i]) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                     number_lines.append(0)
                     sum_all = sum_all + 0
-                    f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
+                    f.write(str(ir_file) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
                     continue
                 
                 else:
@@ -345,7 +361,8 @@ if "xlsx" in input_f:
     master = get_dataframes_from_metadata(input_f)
 elif "csv" in input_f:
     master = pd.read_csv(input_f ,encoding='utf8')
-    master = master.replace('\n',' ', regex=True)
+    master = master.loc[:, ~master.columns.str.contains('^Unnamed')]
+
 
 # Check ir_rearrangement_number is unique
 check_uniqueness_ir_rearrangement_nr(master)
