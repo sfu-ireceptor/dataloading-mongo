@@ -16,36 +16,34 @@ class MiXCR(Parser):
     def __init__( self, context ):
         Parser.__init__(self,context)
 
-    def process(self):
+    def process(self, filewithpath):
 
-        # This first iteration just reads one MiXCR file
-        # at a time, given the full file (path) name
-        # e.g. SRR4084213_aa_mixcr_annotation.txt
+        # This reads one MiXCR file at a time, given the full file (path) name
         # May also be gzip compressed file
         
         # Open, decompress then read(), if it is a gz archive
         success = True
 
         # Check to see if the file exists and return if not.
-        if not os.path.isfile(self.context.path):
-            print("ERROR: Could not open MiXCR file ", self.context.path)
+        if not os.path.isfile(filewithpath):
+            print("ERROR: Could not open MiXCR file ", filewithpath)
             return False
 
         # Get root filename from the path, should be a file if the path is file, so not checking again 8-)
-        filename = os.path.basename(self.context.path)
+        filename = os.path.basename(filewithpath)
 
-        if self.context.path.endswith(".gz"):
+        if filewithpath.endswith(".gz"):
             if self.context.verbose:
-                print("Info: Reading data gzip archive: "+self.context.path)
-            with gzip.open(self.context.path, 'rb') as file_handle:
+                print("Info: Reading data gzip archive: "+filewithpath)
+            with gzip.open(filewithpath, 'rb') as file_handle:
                 # read file directly from the file handle 
                 # (Pandas read_csv call handles this...)
                 success = self.processMiXcrFile(file_handle, filename)
 
         else: # read directly as a regular text file
             if self.context.verbose:
-                print("Info: Reading text file: "+self.context.path)
-            file_handle = open(self.context.path, "r")
+                print("Info: Reading text file: "+filewithpath)
+            file_handle = open(filewithpath, "r")
             success = self.processMiXcrFile(file_handle, filename)
 
         return success

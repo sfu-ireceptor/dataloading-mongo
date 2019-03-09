@@ -172,9 +172,9 @@ class Parser:
     def __init__(self, context):
         self.context = context
 
-    def getDataFolder(self):
+    def getDataFolder(self, fileWithPath):
         # Data folder is based on the path to the file.
-        data_dir = os.path.dirname(self.context.path)
+        data_dir = os.path.dirname(fileWithPath)
         # If there is no path, then the data directory is the current directory.
         if (not os.path.isdir(data_dir)):
             data_dir = "."
@@ -183,9 +183,9 @@ class Parser:
     scratchFolder = ""
 
     # We create a specific temporary 'scratch' folder for each sequence archive
-    def setScratchFolder(self, fileName):
+    def setScratchFolder(self, fileWithPath, fileName):
         folderName = fileName[:fileName.index('.')]
-        self.scratchFolder = self.getDataFolder() + "/tmp_" + str(os.getpid()) + "_" + folderName + "/"
+        self.scratchFolder = self.getDataFolder(fileWithPath) + "/tmp_" + str(os.getpid()) + "_" + folderName + "/"
 
     def getScratchFolder(self):
         return self.scratchFolder

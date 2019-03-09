@@ -51,10 +51,10 @@ class Sample(Parser):
 	    
 	    results = self.context.samples.insert(doc)
 	
-	def process(self):
+	def process(self, filename):
 		# Check to see if we have a file	
-		if not os.path.isfile(self.context.path):
-			print("ERROR: input file " + self.context.path + " is not a file")
+		if not os.path.isfile(filename):
+			print("ERROR: input file " + filename + " is not a file")
 			return False
 
 		# Set the tag for the repository that we are using.
@@ -98,9 +98,9 @@ class Sample(Parser):
 		# which means it is a UTF file with a BOM signature. Note that this has
 		# been confirmed to work with a Non-UTF ASCII file fine...
 		try:
-			df = pd.read_csv( self.context.path , sep=None, engine='python', encoding='utf-8-sig' )
+			df = pd.read_csv( filename, sep=None, engine='python', encoding='utf-8-sig' )
 		except Exception as err:
-			print("ERROR: Unable to open file %s - %s" % (self.context.path, err))
+			print("ERROR: Unable to open file %s - %s" % (filename, err))
 			return False
 
 		# Remove any records that are Unnamed. Note: This occurs when a 
@@ -108,7 +108,7 @@ class Sample(Parser):
 		# should not occur and it should probably be detected as an error or
 		# at least a warning given.
 		if (df.columns.str.contains('^Unnamed').any()):
-			print("Warning: column without a title detected in file ", self.context.path)	
+			print("Warning: column without a title detected in file ", filename)	
 		df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
 		# Check the validity of the columns in the actual file being loaded.

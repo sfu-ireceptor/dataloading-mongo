@@ -26,25 +26,25 @@ class AIRR_TSV(Parser):
         else:
             return 0
 
-    def process(self):
+    def process(self, filewithpath):
 
         # Check to see if the file exists and return if not.
-        if not os.path.isfile(self.context.path):
-            print("ERROR: Could not open file ", self.context.path)
+        if not os.path.isfile(filewithpath):
+            print("ERROR: Could not open file ", filewithpath)
             return False
         
         # Open, decompress then read(), if it is a gz archive
-        if self.context.path.endswith(".gz"):
+        if filewithpath.endswith(".gz"):
             if self.context.verbose:
-                print("Info: Reading gzip file: "+self.context.path)
-            with gzip.open(self.context.path, 'rt') as file_handle:
+                print("Info: Reading gzip file: "+filewithpath)
+            with gzip.open(filewithpath, 'rt') as file_handle:
                 # Use gzip to get a file handle in text mode. 
-                success = self.processAIRRTSVFile(file_handle, self.context.path)
+                success = self.processAIRRTSVFile(file_handle, filewithpath)
         else: # or get a normal file handle for the file directly.
             if self.context.verbose:
-                print("Info: Reading text file: "+self.context.path)
-            file_handle = open(self.context.path, "r")
-            success = self.processAIRRTSVFile(file_handle, self.context.path)
+                print("Info: Reading text file: "+filewithpath)
+            file_handle = open(filewithpath, "r")
+            success = self.processAIRRTSVFile(file_handle, filewithpath)
 
         return success
 

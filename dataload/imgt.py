@@ -32,17 +32,17 @@ class IMGT(Parser):
     def __init__(self, context):
         Parser.__init__(self, context)
 
-    def process(self):
+    def process(self, filewithpath):
 
         # Check to see if the file exists.
-        if not isfile(self.context.path):
-            print("ERROR: Could not find IMGT compressed archive ", self.context.path)
+        if not isfile(filewithpath):
+            print("ERROR: Could not find IMGT compressed archive ", filewithpath)
             return False
 
         # Process the file...
-        return self.processImgtArchive(self.context.path)
+        return self.processImgtArchive(filewithpath)
 
-    def processImgtArchive(self, path):
+    def processImgtArchive(self, filewithpath):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
@@ -50,15 +50,15 @@ class IMGT(Parser):
 
         # Get root filename from the path, should be a file if the path
         # is file, so not checking again 8-)
-        fileName = os.path.basename(path)
+        fileName = os.path.basename(filewithpath)
         # Set the scratch folder based on the file name. This computes a
         # unique termporary folder in which we can uncompress and process
         # data in a safe way.
-        self.setScratchFolder(fileName)
+        self.setScratchFolder(filewithpath, fileName)
 
         if self.context.verbose:
             print("Info: Extracting IMGT file: ", fileName)
-            print("Info: Path: ", path)
+            print("Info: Path: ", filewithpath)
             print("Info: Scratch folder: ", self.getScratchFolder())
 
         # Get the sample ID of the data we are processing. We use the IMGT file name for
@@ -90,7 +90,7 @@ class IMGT(Parser):
         # Open the tar file, extract the data, and close the tarfile. 
         # This leaves us with a folder with all of the individual vQUest
         # files extracted in this location.
-        tar = tarfile.open(path)
+        tar = tarfile.open(filewithpath)
         tar.extractall(self.getScratchFolder())
         tar.close()
 
