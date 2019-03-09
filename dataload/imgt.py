@@ -34,8 +34,7 @@ class IMGT(Parser):
 
     def process(self):
 
-        # The data is extracted in the "library" folder provided (the same
-        # folder in which the original zip file was found.
+        # Check to see if the file exists.
         if not isfile(self.context.path):
             print("ERROR: Could not find IMGT compressed archive ", self.context.path)
             return False
