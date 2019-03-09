@@ -173,7 +173,12 @@ class Parser:
         self.context = context
 
     def getDataFolder(self):
-        return self.context.library 
+        # Data folder is based on the path to the file.
+        data_dir = os.path.dirname(self.context.path)
+        # If there is no path, then the data directory is the current directory.
+        if (not os.path.isdir(data_dir)):
+            data_dir = "."
+        return data_dir
 
     scratchFolder = ""
 
