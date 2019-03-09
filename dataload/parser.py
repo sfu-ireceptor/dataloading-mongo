@@ -10,6 +10,13 @@ import pandas as pd
 
 
 class Parser:
+
+    def setAnnotationTool(self, toolname):
+        self.annotation_tool = toolname
+
+    def getAnnotationTool(self):
+        return self.annotation_tool
+
     @staticmethod
     def get_all_substrings(string):
         if type(string) == float:

@@ -15,6 +15,7 @@ class MiXCR(Parser):
     
     def __init__( self, context ):
         Parser.__init__(self,context)
+        self.setAnnotationTool("MiXCR")
 
     def process(self, filewithpath):
 
@@ -201,7 +202,7 @@ class MiXCR(Parser):
             df_chunk[productive] = 1
             # Assign any iReceptor specific custom fields for the records in the chunk
             ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
-            df_chunk[ir_annotation_tool] = 'MiXCR'
+            df_chunk[ir_annotation_tool] = self.getAnnotationTool()
             ir_project_sample_id_field = self.context.airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
             df_chunk[ir_project_sample_id_field] = ir_project_sample_id
             # Create the created and update values for this block of records. Note that this

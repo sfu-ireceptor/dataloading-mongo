@@ -31,6 +31,8 @@ def functional_boolean(functionality):
 class IMGT(Parser):
     def __init__(self, context):
         Parser.__init__(self, context)
+        self.setAnnotationTool("V-Quest")
+
 
     def process(self, filewithpath):
 
@@ -214,7 +216,7 @@ class IMGT(Parser):
 
         # The annotation tool used
         ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
-        mongo_concat[ir_annotation_tool] = "V-Quest"
+        mongo_concat[ir_annotation_tool] = self.getAnnotationTool()
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because

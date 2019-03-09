@@ -17,6 +17,7 @@ class AIRR_TSV(Parser):
     
     def __init__( self, context ):
         Parser.__init__(self,context)
+        self.setAnnotationTool("igblast")
 
     # We nedd to convert the AIRR TSV T/F to our mechanism for storing functionality
     # which is 1/0 
@@ -218,7 +219,7 @@ class AIRR_TSV(Parser):
             if self.context.verbose:
                 print("Info: Setting annotation tool to be igblast...", flush=True)
             ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
-            airr_df[ir_annotation_tool] = 'igblast'
+            airr_df[ir_annotation_tool] = self.getAnnotationTool() 
 
             # Keep track of the sample id so can link each rearrangement to a repertoire
             ir_project_sample_id_field = self.context.airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)

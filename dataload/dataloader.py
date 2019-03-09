@@ -48,6 +48,14 @@ def getArguments():
         help="the iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run. This file contains the mappings between the AIRR Community field definitions, the annotation tool field definitions, and the fields and their names that are stored in the repository."
     )
 
+    # Override the annotation tool being used. 
+    config_group.add_argument(
+        "--annotation_tool",
+        dest="annotation_tool",
+        default="",
+        help="The annotation tool to be noted for each rearrangment. This defaults to the tool that is chosen (airr, MiXCR, V-Quest) but can be overridden by the user if desired. This is most useful for AIRR files which can come from a variety of annotation tools (the default being igblast)."
+    )
+
     type_group = parser.add_argument_group("data type options", "")
     type_group = type_group.add_mutually_exclusive_group()
 
@@ -91,6 +99,7 @@ def getArguments():
         dest="type",
         help="The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files."
     )
+
 
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
@@ -309,6 +318,9 @@ def load_file(context):
     else:
         print("ERROR: unknown data type '{}'".format(context.type))
         return False
+
+    if not options.annotation_tool == "":
+        parser.setAnnotationTool(options.annotation_tool)
 
     parse_ok = parser.process(context.filename)
     if parse_ok:
