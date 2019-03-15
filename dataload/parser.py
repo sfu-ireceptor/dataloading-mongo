@@ -11,11 +11,44 @@ import pandas as pd
 
 class Parser:
 
+    # Class constructor
+    def __init__(self, context):
+        # Keep track of the global context for this parser.
+        # The context should probably be refactored...
+        self.context = context
+        # Each parser is used to parse data from an annotation tool.
+        # This keeps track of the annotation tool being used and is used
+        # to insert annotation tool information into the repository.
+        # Subclasses that process data files from a specific type of 
+        # annotation tool should set this value.
+        # This is only used for rearrangement files.
+        self.annotation_tool = ""
+        # Each file has fields in it. This variable holds the mapping column
+        # from the AIRR Mapping file to use for this parser. Again, subclasses
+        # for specific file types should explicitly set this to the correct
+        # column.
+        self.file_mapping = ""
+        # A helper variable that parser's can use if they need to create a scratch
+        # folder for storing temporary data in it. The folder name is guaranteed to
+        # be unique to the process being run, as it uses the process id in the folder
+        # name.
+        self.scratchFolder = ""
+
+    # Method to set the Annotation Tool for the class.
     def setAnnotationTool(self, toolname):
         self.annotation_tool = toolname
 
+    # Method to get the Annotation Tool for the class.
     def getAnnotationTool(self):
         return self.annotation_tool
+
+    # Method to set the File Mapping column for the class.
+    def setFileMapping(self, file_mapping):
+        self.file_mapping = file_mapping
+
+    # Method to get the File Mapping column for the class.
+    def getFileMapping(self):
+        return self.file_mapping
 
     @staticmethod
     def get_all_substrings(string):
@@ -176,9 +209,6 @@ class Parser:
     def getDateTimeNowUTC():
         return datetime.now(timezone.utc).strftime("%a %b %d %Y %H:%M:%S %Z")
 
-    def __init__(self, context):
-        self.context = context
-
     def getDataFolder(self, fileWithPath):
         # Data folder is based on the path to the file.
         data_dir = os.path.dirname(fileWithPath)
@@ -187,7 +217,6 @@ class Parser:
             data_dir = "."
         return data_dir
 
-    scratchFolder = ""
 
     # We create a specific temporary 'scratch' folder for each sequence archive
     def setScratchFolder(self, fileWithPath, fileName):
