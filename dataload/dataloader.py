@@ -53,7 +53,7 @@ def getArguments():
         "--annotation_tool",
         dest="annotation_tool",
         default="",
-        help="The annotation tool to be noted for each rearrangment. This defaults to the tool that is chosen (airr, MiXCR, V-Quest) but can be overridden by the user if desired. This is most useful for AIRR files which can come from a variety of annotation tools (the default being igblast)."
+        help="The annotation tool to be noted for each rearrangment. This defaults to the tool that is chosen (IgBLAST, MiXCR, V-Quest) but can be overridden by the user if desired. This is most useful for AIRR files which can come from a variety of annotation tools (the default being IgBLAST)."
     )
 
     type_group = parser.add_argument_group("data type options", "")
@@ -90,16 +90,24 @@ def getArguments():
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool."
     )
 
-    # Processing AIRR TSV annotation data, typically (but not limited to) from igblast
+    # Processing AIRR TSV annotation data, typically (but not limited to) from IgBLAST
     type_group.add_argument(
         "-a",
         "--airr",
         action='store_const',
         const="airr",
         dest="type",
-        help="The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files."
+        help="The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by IgBLAST (and other tools) that can produce AIRR TSV rearrangement files."
     )
 
+    # Process a general rearrangement mapping
+    type_group.add_argument(
+        "--general",
+        action='store_const',
+        const="ir_general",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file that uses a 'general' mapping that is non specific to an annotation tool. This feature allows for the creation of a generic rearrangement loading capability. This requires that an ir_general mapping be present in the AIRR Mapping configuration file being used by the data loader (see the --mapfile option)"
+    )
 
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
@@ -315,10 +323,19 @@ def load_file(context):
         # process AIRR TSV
         print("Info: Processing AIRR TSV annotation data file: ", context.filename)
         parser = AIRR_TSV(context)
+    elif options.type == "ir_general":
+        # process a general file (non annotation tool specific)
+        print("Info: Processing a general TSV annotation data file: ", context.filename)
+        parser = AIRR_TSV(context)
+        # Override the default file mapping that the parser subclass sets. This allows us
+        # to map an arbitrary set of fields in a file to the repository. This requires that
+        # an ir_general column exists in the AIRR Mapping file.
+        parser.setFileMapping(options.type)
     else:
         print("ERROR: unknown data type '{}'".format(context.type))
         return False
 
+    # Override what the default annotation tool that the Parser subclass set by default.
     if not options.annotation_tool == "":
         parser.setAnnotationTool(options.annotation_tool)
 
