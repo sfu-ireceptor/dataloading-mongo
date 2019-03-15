@@ -31,7 +31,16 @@ def functional_boolean(functionality):
 class IMGT(Parser):
     def __init__(self, context):
         Parser.__init__(self, context)
+        # The annotation tool used for the IMGT parser is V-Quest
         self.setAnnotationTool("V-Quest")
+        # The default column in the AIRR Mapping file is mixcr. This can be
+        # overrideen by the user should they choose to use a differnt set of
+        # columns from the file.
+        self.setFileMapping("vquest")
+        # IMGT also uses another file column from the AIRR Mapping file to specify
+        # which IMGT file to use. IMGT V-Quest annotations come in a set of 11 Annotation
+        # files so the parser needs to know which field is in which file.
+        self.imgt_filename_map = "vquest_file"
 
 
     def process(self, filewithpath):
@@ -49,6 +58,10 @@ class IMGT(Parser):
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
         repository_tag = self.context.repository_tag 
+
+        # Set the tag for the file mapping that we are using. Ths is essentially the
+        # look up into the columns of the AIRR Mapping that we are using.
+        filemap_tag = self.getFileMapping()
 
         # Get root filename from the path, should be a file if the path
         # is file, so not checking again 8-)
@@ -100,7 +113,7 @@ class IMGT(Parser):
         # drop the NAs, and grab the unique members that remain. This gives us
         # the list of relevant vQuest file names from the configuration file
         # that we should be considering.
-        vquest_file_map = self.context.airr_map.airr_rearrangement_map['vquest_file']
+        vquest_file_map = self.context.airr_map.airr_rearrangement_map[self.imgt_filename_map]
         vquest_files = vquest_file_map.dropna().unique()
 
         # Create a dictionary that stores an array of fields to process
@@ -113,7 +126,7 @@ class IMGT(Parser):
             # Read in the data frame for the file.
             vquest_dataframe = self.readScratchDf(vquest_file, sep='\t')
             # Extract the fields that are of interest for this file.
-            field_of_interest = self.context.airr_map.airr_rearrangement_map['vquest_file'].isin([vquest_file])
+            field_of_interest = self.context.airr_map.airr_rearrangement_map[self.imgt_filename_map].isin([vquest_file])
             # We select the rows in the mapping that contain fields of interest for this file.
             # At this point, file_fields contains N columns that contain our mappings for the
             # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
@@ -129,13 +142,13 @@ class IMGT(Parser):
                 # from both the IMGT and repository side.
                 if not pd.isnull(row[repository_tag]):
                     if self.context.verbose:
-                        print("Info:    " + str(row['vquest']) + " -> " + str(row[repository_tag]), flush=True)
-                    vquest_fields.append(row['vquest'])
+                        print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]), flush=True)
+                    vquest_fields.append(row[filemap_tag])
                     mongo_fields.append(row[repository_tag])
                 else:
                     if self.context.verbose:
                         print("Info:    Repository does not support " + vquest_file + "/" + 
-                              str(row['vquest']) + ", not inserting into repository", flush=True)
+                              str(row[filemap_tag]) + ", not inserting into repository", flush=True)
             # Use the vquest column in our mapping to select the columns we want from the 
             # possibly quite large vquest data frame.
             mongo_dataframe = vquest_dataframe[vquest_fields]
@@ -145,7 +158,7 @@ class IMGT(Parser):
             mongo_dataframe.columns = mongo_fields
             # We now have a data frame with vquest data in it with AIRR compliant column names.
             # Store all of this in a dictionay based on the file name so we can use it later.
-            filedict[vquest_file] = {'vquest': file_fields['vquest'],
+            filedict[vquest_file] = {filemap_tag: file_fields[filemap_tag],
                                      repository_tag: file_fields[repository_tag],
                                      'vquest_dataframe': vquest_dataframe,
                                      'mongo_dataframe': mongo_dataframe}
