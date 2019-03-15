@@ -1,6 +1,10 @@
-# Script for loading MIXCR formatted annotation file 
-# into an iReceptor data node MongoDb database
-#
+# Script for loading AIRR TSV formatted annotation file 
+# into an iReceptor database. Note that the AIRR TSV parser
+# is the default parser used for IgBLAST, but it can be used
+# for normal AIRR TSV files as well as can be used for general
+# file mapping by overriding the Parser's file mapping using
+# the Parser.setFileMapping() method before calling the process() 
+# method.
 
 import os.path
 import pandas as pd
@@ -17,7 +21,12 @@ class AIRR_TSV(Parser):
     
     def __init__( self, context ):
         Parser.__init__(self,context)
-        self.setAnnotationTool("igblast")
+        # The default annotation tool used for the AIRR parser is IgBLAST
+        self.setAnnotationTool("IgBLAST")
+        # The default column in the AIRR Mapping file is igblast. This can be
+        # overrideen by the user should they choose to use a differnt set of
+        # columns from the file.
+        self.setFileMapping("igblast")
 
     # We nedd to convert the AIRR TSV T/F to our mechanism for storing functionality
     # which is 1/0 
@@ -54,6 +63,12 @@ class AIRR_TSV(Parser):
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
         repository_tag = self.context.repository_tag
+
+        # Set the tag for the file mapping that we are using. Ths is essentially the
+        # look up into the columns of the AIRR Mapping that we are using. For the IgBLAST
+        # parser it is normally the "igblast" column (which is essentially the same as 
+        # AIRR TSV), but it can be overridden by the user.
+        filemap_tag = self.getFileMapping()
 
         # Set the size of each chunk of data that is inserted.
         chunk_size = self.context.repository_chunk
@@ -106,13 +121,15 @@ class AIRR_TSV(Parser):
         # We found a unique sample, keep track of it for later. 
         ir_project_sample_id = idarray[0]
 
-        # Extract the fields that are of interest for this file. Essentiall all non null igblast fields
-        field_of_interest = self.context.airr_map.airr_rearrangement_map['igblast'].notnull()
+        # Extract the fields that are of interest for this file. Essentiall all non null fields
+        # in the file. This is a boolean array that is T everywhere there is a notnull field in
+        # the column of interest.
+        field_of_interest = self.context.airr_map.airr_rearrangement_map[filemap_tag].notnull()
 
-        # We select the rows in the mapping that contain fields of interest for igblast.
+        # We select the rows in the mapping that contain fields of interest from the file.
         # At this point, file_fields contains N columns that contain our mappings for the
         # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
-        # only data that is relevant to igblast
+        # only data that is relevant to the file format column of interest. 
         file_fields = self.context.airr_map.airr_rearrangement_map.loc[field_of_interest]
 
         # We need to build the set of fields that the repository can store. We don't
@@ -120,18 +137,19 @@ class AIRR_TSV(Parser):
         igblastColumns = []
         columnMapping = {}
         if self.context.verbose:
-            print("Info: Dumping expected igblast mapping")
+            print("Info: Dumping expected " + self.getAnnotationTool() + "(" + filemap_tag +
+                  ") to repository mapping")
         for index, row in file_fields.iterrows():
             if self.context.verbose:
-                print("Info:    " + str(row['igblast']) + " -> " + str(row[repository_tag]))
-            # If the repository column has a value for the igblast field, track the field
-            # from both the igblast and repository side.
+                print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]))
+            # If the repository column has a value for the field in the file, track the field
+            # from both the file and repository side.
             if not pd.isnull(row[repository_tag]):
-                igblastColumns.append(row['igblast'])
-                columnMapping[row['igblast']] = row[repository_tag]
+                igblastColumns.append(row[filemap_tag])
+                columnMapping[row[filemap_tag]] = row[repository_tag]
             else:
                 print("Info:     Repository does not support " +
-                      str(row['igblast']) + ", not inserting into repository")
+                      str(row[filemap_tag]) + ", not inserting into repository")
 
         # Get the field names from the file from the airr_reader object. 
         # Determing the mapping from the file input to the repository.
@@ -139,18 +157,20 @@ class AIRR_TSV(Parser):
         for airr_field in airr_reader.fields:
             if airr_field in columnMapping:
                 if self.context.verbose:
-                    print("Info: AIRR field in file: " + airr_field + " -> " + columnMapping[airr_field])
+                    print("Info: Mapping " + self.getAnnotationTool() + " field in file: " +
+                          airr_field + " -> " + columnMapping[airr_field])
                 finalMapping[airr_field] = columnMapping[airr_field]
             else:
                 if self.context.verbose:
-                    print("Info: No mapping for input AIRR TSV field " + airr_field +
-                          ", adding to repository without mapping.")
+                    print("Info: No mapping for input " + self.getAnnotationTool() + " field "
+                          + airr_field + ", adding to repository without mapping.")
 
         # Determine if we are missing any repository columns from the input data.
         for igblast_column, mongo_column in columnMapping.items():
             if not igblast_column in airr_reader.fields:
                 if self.context.verbose:
-                    print("Info: Missing data in input AIRR file for " + igblast_column)
+                    print("Info: Missing data in input " + self.getAnnotationTool() +
+                          " file for " + igblast_column)
 
         # Create a reader for the data frame with step size "chunk_size"
         if self.context.verbose:
@@ -217,7 +237,7 @@ class AIRR_TSV(Parser):
             # been produced by igblast. This in general is not the case, but as a loader
             # script we assume this to be the case.
             if self.context.verbose:
-                print("Info: Setting annotation tool to be igblast...", flush=True)
+                print("Info: Setting annotation tool to be " + self.getAnnotationTool(), flush=True)
             ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
             airr_df[ir_annotation_tool] = self.getAnnotationTool() 
 
