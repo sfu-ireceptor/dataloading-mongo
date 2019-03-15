@@ -15,7 +15,12 @@ class MiXCR(Parser):
     
     def __init__( self, context ):
         Parser.__init__(self,context)
+        # The annotation tool used for the MiXCR parser is of course MiXCR
         self.setAnnotationTool("MiXCR")
+        # The default column in the AIRR Mapping file is mixcr. This can be 
+        # overrideen by the user should they choose to use a differnt set of 
+        # columns from the file.
+        self.setFileMapping("mixcr")
 
     def process(self, filewithpath):
 
@@ -56,6 +61,10 @@ class MiXCR(Parser):
         # multiple repositories.
         repository_tag = self.context.repository_tag
 
+        # Set the tag for the file mapping that we are using. Ths is essentially the
+        # look up into the columns of the AIRR Mapping that we are using. 
+        filemap_tag = self.getFileMapping()
+
         # Define the number of records to iterate over
         chunk_size = self.context.repository_chunk
 
@@ -89,8 +98,10 @@ class MiXCR(Parser):
         # Get the sample ID and assign it to sample ID field
         ir_project_sample_id = idarray[0]
 
-        # Extract the fields that are of interest for this file. Essentiall all non null mixcr fields
-        field_of_interest = self.context.airr_map.airr_rearrangement_map['mixcr'].notnull()
+        # Extract the fields that are of interest for this file. Essentiall all non null fields
+        # in the file. This is a boolean array that is T everywhere there is a notnull field in
+        # the column of interest.
+        field_of_interest = self.context.airr_map.airr_rearrangement_map[filemap_tag].notnull()
 
         # We select the rows in the mapping that contain fields of interest for MiXCR.
         # At this point, file_fields contains N columns that contain our mappings for the
@@ -103,19 +114,20 @@ class MiXCR(Parser):
         mixcrColumns = []
         columnMapping = {}
         if self.context.verbose:
-            print("Info: Dumping expected MiXCR mapping")
+            print("Info: Dumping expected " + self.getAnnotationTool() + "(" + filemap_tag +
+                  ") to repository mapping")
         for index, row in file_fields.iterrows():
             if self.context.verbose:
-                print("Info:    " + str(row['mixcr']) + " -> " + str(row[repository_tag]))
+                print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the IMGT field, track the field
             # from both the IMGT and repository side.
             if not pd.isnull(row[repository_tag]):
-                mixcrColumns.append(row['mixcr'])
-                columnMapping[row['mixcr']] = row[repository_tag]
+                mixcrColumns.append(row[filemap_tag])
+                columnMapping[row[filemap_tag]] = row[repository_tag]
             else:
                 if self.context.verbose:
                     print("Info:    Repository does not support " +
-                          str(row['mixcr']) + ", not inserting into repository")
+                          str(row[filemap_tag]) + ", not inserting into repository")
 
 	# Get a Pandas reader iterator for the file. When reading the file we only want to
         # read in the mixcrColumns we care about. We want to read in only a fixed number of 
@@ -140,16 +152,19 @@ class MiXCR(Parser):
                 if mixcr_column in columnMapping:
                     mongo_column = columnMapping[mixcr_column]
                     if self.context.verbose:
-                        print("Info: Mapping MiXCR column " + mixcr_column + " -> " + mongo_column)
+                        print("Info: Mapping " + self.getAnnotationTool() + " field in file: " +
+                              mixcr_column + " -> " + mongo_column)
                     df_chunk.rename({mixcr_column:mongo_column}, axis='columns', inplace=True)
                 else:
                     if self.context.verbose:
-                        print("Info: No mapping for MiXCR input file column " + mixcr_column + ", storing in repository as is")
+                        print("Info: No mapping for " + self.getAnnotationTool() + " input file column " +
+                              mixcr_column + ", storing in repository as is")
             # Check to see which desired MiXCR mappings we don't have...
             for mixcr_column, mongo_column in columnMapping.items():
                 if not mongo_column in df_chunk.columns:
                     if self.context.verbose:
-                        print("Info: Missing data in input MiXCR file for " + mixcr_column)
+                        print("Info: Missing data in input " + self.getAnnotationTool() + 
+                              " file for " + mixcr_column)
             
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings. Also calculate junction AA length
