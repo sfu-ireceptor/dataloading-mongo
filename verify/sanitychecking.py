@@ -2,7 +2,7 @@
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 ######### CREATED ON: DECEMBER 20, 2018
-######### LAST MODIFIED ON: MARCH 4, 2019
+######### LAST MODIFIED ON: MARCH 15, 2019
 
 import pandas as pd
 import json
@@ -271,13 +271,10 @@ def ir_seq_count_igblast(data_df,integer):
         line_one = ir_file.split(", ")
         for item in line_one:
             if "fmt" in item:
-                stri = subprocess.check_output(['wc','-l',annotation_dir + "igblast/" + str(item.split(".")[0])+ "/" + str(item)])
+                stri = subprocess.check_output(['wc','-l',annotation_dir + "igblast/" + str(item)])
                 hold_val = stri.decode().split(' ')
                 number_lines.append(hold_val[0])
                 sum_all = sum_all + int(hold_val[0]) - 1
-                subprocess.check_output(['rm','-r',annotation_dir  + str(item.split(".")[0])+ "/"])
-
-                f.write(str(line_one) + "\t" + str(number_lines) + "\t" + str(sum_all) + "\n")
 
         if sum_all == ir_sec:
             print("PASS")
@@ -285,7 +282,7 @@ def ir_seq_count_igblast(data_df,integer):
             print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
 
 
-def ir_seq_count_mixr(data_df,integer):
+def ir_seq_count_mixcr(data_df,integer):
     
     number_lines = []
     sum_all = 0
