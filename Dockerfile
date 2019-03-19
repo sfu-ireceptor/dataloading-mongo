@@ -6,5 +6,9 @@ RUN pip install -r /requirements.txt
 
 # add this folder to the Docker image
 COPY . /app
-WORKDIR /root
 
+# download mapping file
+ADD https://raw.githubusercontent.com/sfu-ireceptor/config/master/AIRR-iReceptorMapping.txt /app/config/
+
+# set working directory
+WORKDIR /root
