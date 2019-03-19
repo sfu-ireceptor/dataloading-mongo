@@ -247,7 +247,7 @@ def ir_seq_count_imgt(data_df,integer):
             subprocess.check_output(['rm','-r',annotation_dir  + str(item.split(".")[0])+ "/"])
         
         if sum_all == ir_sec:
-            print("PASS")
+            print("Pass. \nEntry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
         else:
             print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
         
@@ -277,7 +277,7 @@ def ir_seq_count_igblast(data_df,integer):
                 sum_all = sum_all + int(hold_val[0]) - 1
 
         if sum_all == ir_sec:
-            print("PASS")
+            print("Pass. \nEntry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
         else:
             print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
 
@@ -299,7 +299,7 @@ def ir_seq_count_mixcr(data_df,integer):
     else:
         line_one = ir_file.split(", ")
         for item in line_one:
-            if "txt" in item:
+            if "annotation" in item:
                 stri = subprocess.check_output(['wc','-l',annotation_dir +"mixcr/" + str(item)])
                 hold_val = stri.decode().split(' ')
                 number_lines.append(hold_val[0])
@@ -310,7 +310,7 @@ def ir_seq_count_mixcr(data_df,integer):
                 continue
 
         if sum_all == ir_sec:
-            print("PASS")
+            print("Pass. \nEntry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
         else:
             print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
 
