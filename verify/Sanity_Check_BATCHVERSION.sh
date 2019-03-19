@@ -49,9 +49,6 @@ Study_ID=`awk -F, '{print $1}' study_id_API_ann | head -$SLURM_ARRAY_TASK_ID | t
 API_REPO=`awk -F, '{print $2}' study_id_API_ann | head -$SLURM_ARRAY_TASK_ID | tail -1` 
 ANNO_DIR=`awk -F, '{print $3}' study_id_API_ann | head -$SLURM_ARRAY_TASK_ID | tail -1` 
 
-echo ${Study_ID}
-echo ${API_REPO}
-echo ${ANNO_DIR}
 
 #######################
 # AVerify Input Para ##
@@ -59,8 +56,8 @@ echo ${ANNO_DIR}
 
 echo "CHECK INPUT IS CORRECT"
 echo "Metadata version: " ${MD_dir}${MD_file}
-echo "Study ID: "${ANNO_DIR}
-echo "Entry point API response file: "${Study_ID}
+echo "Study ID: "${Study_ID}
+echo "Entry point API response file: "${API_REPO}
 echo "Annotation directory: "${ANNO_DIR}
 
 #######################
