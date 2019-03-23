@@ -83,15 +83,15 @@ def get_dataframes_from_metadata(master_MD_sheet):
     try:
         data_dafr = get_metadata_sheet(master_MD_sheet) 
         
-        ir_seq_col = data_dafr["ir_sequence_count"]
-        ir_seq_col = ir_seq_col[1:]
+#         ir_seq_col = data_dafr["ir_sequence_count"]
+#         ir_seq_col = ir_seq_col[1:]
         
         
         new_header = data_dafr.iloc[0] #grab the first row for the header
         data_dafr = data_dafr[1:] #take the data less the header row
         data_dafr.columns = new_header #set the header row as the df header
                 
-        data_dafr = data_dafr.join(ir_seq_col)
+        #data_dafr = data_dafr.join(ir_seq_col)
     
         return data_dafr
     except:
@@ -222,102 +222,168 @@ def level_two(data_df,DATA):
         print("END OF ENTRY\n")
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
         
-def ir_seq_count_imgt(data_df,integer):
+def ir_seq_count_imgt(data_df,integer,DATA):
     
     number_lines = []
     sum_all = 0
+    file_names = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
     ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
-    ir_sec = data_df["ir_sequence_count"].tolist()[integer] 
+    ir_sec = data_df["ir_curator_count"].tolist()[integer]
+    files = os.listdir(annotation_dir + "imgt/")
     
     if "txz" not in ir_file:
-        print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(integer) + ", ir_rearrangement_number: " + str(ir_rea) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
         number_lines.append(0)
-        sum_all = sum_all + 0
+        sum_all = "NFMD"
 
     else:   
         line_one = ir_file.split(", ")
         for item in line_one:
-            tf = tarfile.open(annotation_dir + "imgt/" + item)
-            tf.extractall(annotation_dir  + str(item.split(".")[0]) + "/")
-            stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + "1_Summary.txt"])
-            hold_val = stri.decode().split(' ')
-            number_lines.append(hold_val[0])
-            sum_all = sum_all + int(hold_val[0]) - 1
-            subprocess.check_output(['rm','-r',annotation_dir  + str(item.split(".")[0])+ "/"])
-        
-        if sum_all == ir_sec:
-            print("Pass. \nEntry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
-        else:
-            print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
-        
-
-
-            
-def ir_seq_count_igblast(data_df,integer):     
-    
-    number_lines = []
-    sum_all = 0
-    
-    ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
-    ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
-    ir_sec = data_df["ir_sequence_count"].tolist()[integer]
-
-    if "fmt" not in ir_file:
-        print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(integer) + ", ir_rearrangement_number: " + str(ir_rea) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
-        number_lines.append(0)
-        sum_all = sum_all + 0
-    else:   
-        line_one = ir_file.split(", ")
-        for item in line_one:
-            if "fmt" in item:
-                stri = subprocess.check_output(['wc','-l',annotation_dir + "igblast/" + str(item)])
+            if item in files:
+                file_names.append(item)
+                tf = tarfile.open(annotation_dir + "imgt/" + item)
+                tf.extractall(annotation_dir  + str(item.split(".")[0]) + "/")
+                stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + "1_Summary.txt"])
                 hold_val = stri.decode().split(' ')
                 number_lines.append(hold_val[0])
                 sum_all = sum_all + int(hold_val[0]) - 1
+                subprocess.check_output(['rm','-r',annotation_dir  + str(item.split(".")[0])+ "/"])
+            else:
+                    print("FILE NAMED " + str(item) + " NOT FOUND ON SERVER \n")
 
-        if sum_all == ir_sec:
-            print("Pass. \nEntry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
+        JSON_entry = get_unique_identifier(DATA,ir_rea)
+        if not JSON_entry:
+            ir_seq_API = "NINAPI"
         else:
-            print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
-
-
-def ir_seq_count_mixcr(data_df,integer):
+            ir_seq_API = str(DATA[JSON_entry[0]]['ir_sequence_count']) 
+        
+        test_flag = set([str(ir_seq_API), str(sum_all), str(int(ir_sec))])
+        if len(test_flag)==1:
+            test_result = True
+        else:
+            test_result=False
+        
+        print("\n")
+        print("Tested on : " + str(line_one) + "\n")
+        print("ir_rearrangement_number: " + str(ir_rea))
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\tir_sequence_count \t\t\t#Lines Annotation F \tTest Result")
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\tAPI Resp \t Metadata Resp")
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\t" + str(ir_seq_API) +" \t\t " + str(int(ir_sec)) + "\t\t" + str(sum_all) + "\t\t\t" + str(test_result))
+        print("\n")
+        print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+        
+def ir_seq_count_igblast(data_df,integer,DATA):     
     
     number_lines = []
     sum_all = 0
-    
+    file_names = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
     ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
-    ir_sec = data_df["ir_sequence_count"].tolist()[integer]
+    ir_sec = data_df["ir_curator_count"].tolist()[integer]
+    files = os.listdir(annotation_dir + "igblast/")
+
+    if "fmt" not in ir_file:
+        number_lines.append(0)
+        sum_all = "NFMD"
+    else:   
+        line_one = ir_file.split(", ")
+        for item in line_one:
+            if item in files:
+                if "fmt19" in item:
+                    file_names.append(item)
+                    stri = subprocess.check_output(['wc','-l',annotation_dir + "igblast/" + str(item)])
+                    hold_val = stri.decode().split(' ')
+                    number_lines.append(hold_val[0])
+                    sum_all = sum_all + int(hold_val[0]) - 1
+                else:
+                    continue
+            else:
+                print("FILE NAMED " + str(item) + " NOT FOUND ON SERVER \n")
+
+        JSON_entry = get_unique_identifier(DATA,ir_rea)
+        if not JSON_entry:
+            ir_seq_API = "NINAPI"
+        else:
+            ir_seq_API = str(DATA[JSON_entry[0]]['ir_sequence_count']) 
+        
+        test_flag = set([str(ir_seq_API), str(sum_all), str(int(ir_sec))])
+        if len(test_flag)==1:
+            test_result = True
+        else:
+            test_result=False
+        
+        print("\n")
+        print("Tested on : " + str(line_one) + "\n")
+        print("ir_rearrangement_number: " + str(ir_rea))
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\tir_sequence_count \t\t\t#Lines Annotation F \tTest Result")
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\tAPI Resp \t Metadata Resp")
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\t" + str(ir_seq_API) +" \t\t " + str(int(ir_sec)) + "\t\t" + str(sum_all) + "\t\t\t" + str(test_result))
+        print("\n")
+        print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+
+
+def ir_seq_count_mixcr(data_df,integer,DATA):
+    
+    number_lines = []
+    sum_all = 0
+    file_names = []
+    ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
+    ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
+    ir_sec = data_df["ir_curator_count"].tolist()[integer]
+    files = os.listdir(annotation_dir +"mixcr/")
     
     if "txt" not in ir_file:
-        print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(integer) + ", ir_rearrangement_number: " + str(ir_rea) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
         number_lines.append(0)
-        sum_all = sum_all + 0
+        sum_all = "NFMD"
 
     else:
         line_one = ir_file.split(", ")
+        
         for item in line_one:
-            if "annotation" in item:
-                stri = subprocess.check_output(['wc','-l',annotation_dir +"mixcr/" + str(item)])
-                hold_val = stri.decode().split(' ')
-                number_lines.append(hold_val[0])
-                sum_all = sum_all + int(hold_val[0]) - 1
-
-
+            if item in files:
+                if "annotation" in item:
+                    file_names.append(item)
+                    stri = subprocess.check_output(['wc','-l',annotation_dir +"mixcr/" + str(item)])
+                    hold_val = stri.decode().split(' ')
+                    number_lines.append(hold_val[0])
+                    sum_all = sum_all + int(hold_val[0]) - 1
+                else:
+                    continue
             else:
-                continue
+                print("FILE NAMED " + str(item) + " NOT FOUND ON SERVER")
 
-        if sum_all == ir_sec:
-            print("Pass. \nEntry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
+        JSON_entry = get_unique_identifier(DATA,ir_rea)
+        if not JSON_entry:
+            ir_seq_API = "NINAPI"
         else:
-            print("FAIL. \nRevise entry number: " + str(ir_rea) + "\nEntry under ir_sequence_count: " + str(ir_sec) + "\nNumber of lines found per file: " + str(number_lines) + "\nSum over total number of lines -1: " + str(sum_all) + "\n")
+            ir_seq_API = str(DATA[JSON_entry[0]]['ir_sequence_count']) 
+        
+        test_flag = set([str(ir_seq_API), str(sum_all), str(int(ir_sec))])
+        if len(test_flag)==1:
+            test_result = True
+        else:
+            test_result=False
+        
+        print("\n")
+        print("Tested on : " + str(line_one) + "\n")
+        print("ir_rearrangement_number: " + str(ir_rea))
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\tir_sequence_count \t\t\t#Lines Annotation F \tTest Result")
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\tAPI Resp \t Metadata Resp")
+        print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
+        print("\t\t\t\t" + str(ir_seq_API) +" \t\t " + str(int(ir_sec)) + "\t\t" + str(sum_all) + "\t\t\t" + str(test_result))
+        print("\n")
+        print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
             
-            
-            
-def level_three(data_df,annotation_dir,study_id):
+def level_three(data_df,annotation_dir,study_id,DATA):
     
     no_rows = data_df.shape[0]
 
@@ -342,16 +408,16 @@ def level_three(data_df,annotation_dir,study_id):
         else:
             ############## CASE 1
             if tool=="IMGT high-Vquest":
-                ir_seq_count_imgt(data_df,i)
+                ir_seq_count_imgt(data_df,i,DATA)
             
 
             ############## CASE 2            
             elif tool=="igblast":
-                ir_seq_count_igblast(data_df,i)
+                ir_seq_count_igblast(data_df,i,DATA)
 
             ############## CASE 3                       
             elif tool=="MiXCR":   
-                ir_seq_count_mixcr(data_df,i)
+                ir_seq_count_mixcr(data_df,i,DATA)
         
 ##################################
 ####### VARIABLE INPUT AREA ######
@@ -444,6 +510,6 @@ if "F" in given_option:
     print("########################################################################################################")
     print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
 
-    level_three(data_df,annotation_dir,study_id)
+    level_three(data_df,annotation_dir,study_id,DATA)
  
 print("########################################################################################################")
