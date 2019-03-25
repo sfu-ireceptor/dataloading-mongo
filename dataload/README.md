@@ -25,7 +25,7 @@ The iReceptor Data Loader takes various classes of options.
 ## General Options
 
 - --verbose (-v): Run the program in verbose mode. This option will generate a lot of output, but is recommended from a data provenance perspective as it will inform you of how it mapped input data columns into repository columns.
-- --mapfile: the iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run. This file contains the mappings between the AIRR Community field definitions, the annotation tool field definitions, and the fields and their names that are stored in the repository.
+- --mapfile: the iReceptor configuration file. Defaults to 'ireceptor.cfg' in the local directory where the command is run. This file contains the mappings between the AIRR Community field definitions, the annotation tool field definitions, and the fields and their names that are stored in the repository. The most recent version of the AIRR Mapping file for the iReceptor Project can be found here: https://github.com/sfu-ireceptor/config. In general, if you are using the iReceptor Data Loading tools as part of an iReceptor component (e.g. the iReceptor Turnkey - https://github.com/sfu-ireceptor/turnkey-service-php) the correct configuration file should be provided by the component you are using.
 
 ## File Options
 
