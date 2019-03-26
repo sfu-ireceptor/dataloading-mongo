@@ -8,7 +8,7 @@ RUN pip install -r /requirements.txt
 COPY . /app
 
 # download mapping file
-ADD https://raw.githubusercontent.com/sfu-ireceptor/config/master/AIRR-iReceptorMapping.txt /app/config/
+ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey/AIRR-iReceptorMapping.txt /app/config/
 
 # set working directory
 WORKDIR /root
