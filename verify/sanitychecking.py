@@ -62,7 +62,7 @@ def get_metadata_sheet(master_metadata_file):
     
     return metadata
 
-def get_unique_identifier(JSON_DATA_FILE,ir_rear_number):
+def get_unique_identifier(JSON_DATA_FILE,unique_field_id,ir_rear_number):
     
     try:
         
@@ -70,8 +70,8 @@ def get_unique_identifier(JSON_DATA_FILE,ir_rear_number):
         JSON_index = []
         for i in range(no_iterations):
             
-            if 'ir_rearrangement_number' in JSON_DATA_FILE[i].keys():
-                if int(JSON_DATA_FILE[i]["ir_rearrangement_number"])==(ir_rear_number):
+            if unique_field_id in JSON_DATA_FILE[i].keys():
+                if int(JSON_DATA_FILE[i][unique_field_id])==int(ir_rear_number):
                     JSON_index.append(i) 
 
         return JSON_index
@@ -99,23 +99,23 @@ def get_dataframes_from_metadata(master_MD_sheet):
 
 # Section 2. Sanity Checking        
         
-def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):  
+def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe,unique_field_id):  
 
-    print("Uniquenes of ir_rearrangement_number:")
+    print("Uniquenes of unique field id:")
     
-    if "ir_rearrangement_number" not in master_MD_dataframe.columns:
+    if unique_field_id not in master_MD_dataframe.columns:
         print("WARNING: NO COLUMN EXISTS TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
         sys.exit(0)
         
     else:
     
-        if pd.Series(master_MD_dataframe["ir_rearrangement_number"]).is_unique==False:
-            print("FALSE: There are duplicate entries under ir_rearrangement_number in master metadata\n")
+        if pd.Series(master_MD_dataframe[unique_field_id]).is_unique==False:
+            print("FALSE: There are duplicate entries under "+ str(unique_field_id) + " in master metadata\n")
 
         else:
-            print("TRUE: All entries under ir_rearrangement_number in master metadata are unique\n")
+            print("TRUE: All entries under  "+ str(unique_field_id) + "  in master metadata are unique\n")
                 
-def level_one(data_df,DATA):
+def level_one(data_df,DATA,unique_field_id):
     
     count_find =0
     count_not_find =0
@@ -124,8 +124,8 @@ def level_one(data_df,DATA):
 
     for i in range(no_rows):
 
-        ir_rear_number = data_df.iloc[i]["ir_rearrangement_number"]
-        JSON_entry = get_unique_identifier(DATA,ir_rear_number)
+        ir_rear_number = int(data_df.iloc[i][unique_field_id])
+        JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rear_number)
         if not JSON_entry:
 
             count_not_find +=1
@@ -136,16 +136,16 @@ def level_one(data_df,DATA):
 
     print(str(study_id) +  " has a total of " + str(no_rows) + " entries\nEntries found in API: " + str(count_find) + "\nEntries not found in API: " + str(count_not_find) + "\n")
 
-def level_two(data_df,DATA):
+def level_two(data_df,DATA,unique_field_id):
     
     no_rows = data_df.shape[0]
 
     for i in range(no_rows):
 
-        ir_rear_number = data_df.iloc[i]["ir_rearrangement_number"]
-        JSON_entry = get_unique_identifier(DATA,ir_rear_number)
+        ir_rear_number = int(data_df.iloc[i][unique_field_id])
+        JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rear_number)
 
-        print("ir_rearrangement_number: " + str(ir_rear_number))
+        print(str(unique_field_id) + ": " + str(ir_rear_number))
         print("JSON file index: " + str(JSON_entry)  + "\n")
 
         pass_a = []
@@ -153,7 +153,7 @@ def level_two(data_df,DATA):
 
         if not JSON_entry:
 
-            print("The ir_rearrangement_number associated to this study was not found in API response\n")
+            print("The " + str(unique_field_id) + " associated to this study was not found in API response\n")
 
         else:
 
@@ -230,7 +230,7 @@ def level_two(data_df,DATA):
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
     return [pass_a,fail_a]
         
-def ir_seq_count_imgt(data_df,integer,DATA):
+def ir_seq_count_imgt(data_df,integer,DATA,unique_field_id):
     
     number_lines = []
     sum_all = 0
@@ -259,8 +259,8 @@ def ir_seq_count_imgt(data_df,integer,DATA):
                 files_notfound.append(item)
                 
 
-        ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
-        JSON_entry = get_unique_identifier(DATA,ir_rea)
+        ir_rea = int(data_df[unique_field_id].tolist()[integer])
+        JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rea)
         if not JSON_entry:
             ir_seq_API = "NINAPI"
         else:
@@ -280,7 +280,7 @@ def ir_seq_count_imgt(data_df,integer,DATA):
             test_result=False
         
         print("\n")
-        print("ir_rearrangement_number: " + str(ir_rea))
+        print(str(unique_field_id) + ": " + str(ir_rea))
         print("Metadata file names: " + str(line_one))
         print("Files found in server: " + str(files_found))
         print("Files not found in server: " + str(files_notfound))
@@ -294,7 +294,7 @@ def ir_seq_count_imgt(data_df,integer,DATA):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
         
-def ir_seq_count_igblast(data_df,integer,DATA):     
+def ir_seq_count_igblast(data_df,integer,DATA,unique_field_id):     
     
     number_lines = []
     sum_all = 0
@@ -322,8 +322,8 @@ def ir_seq_count_igblast(data_df,integer,DATA):
                 files_notfound.append(item)
                 
 
-        ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
-        JSON_entry = get_unique_identifier(DATA,ir_rea)
+        ir_rea = int(data_df[unique_field_id].tolist()[integer])
+        JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rea)
         if not JSON_entry:
             ir_seq_API = "NINAPI"
         else:
@@ -343,7 +343,7 @@ def ir_seq_count_igblast(data_df,integer,DATA):
             test_result=False
         
         print("\n")
-        print("ir_rearrangement_number: " + str(ir_rea))
+        print(str(unique_field_id) + ": " + str(ir_rea))
         print("Metadata file names: " + str(line_one))
         print("Files found in server: " + str(files_found))
         print("Files not found in server: " + str(files_notfound))
@@ -357,7 +357,7 @@ def ir_seq_count_igblast(data_df,integer,DATA):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
-def ir_seq_count_mixcr(data_df,integer,DATA):
+def ir_seq_count_mixcr(data_df,integer,DATA,unique_field_id):
     
     number_lines = []
     sum_all = 0
@@ -387,8 +387,8 @@ def ir_seq_count_mixcr(data_df,integer,DATA):
                 files_notfound.append(item)
                 
 
-        ir_rea = data_df["ir_rearrangement_number"].tolist()[integer] 
-        JSON_entry = get_unique_identifier(DATA,ir_rea)
+        ir_rea = int(data_df[unique_field_id].tolist()[integer])
+        JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rea)
         if not JSON_entry:
             ir_seq_API = "NINAPI"
         else:
@@ -408,7 +408,7 @@ def ir_seq_count_mixcr(data_df,integer,DATA):
             test_result=False
         
         print("\n")
-        print("ir_rearrangement_number: " + str(ir_rea))
+        print(str(unique_field_id) + ": " + str(ir_rea))
         print("Metadata file names: " + str(line_one))
         print("Files found in server: " + str(files_found))
         print("Files not found in server: " + str(files_notfound))
@@ -422,7 +422,7 @@ def ir_seq_count_mixcr(data_df,integer,DATA):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
             
-def level_three(data_df,annotation_dir,study_id,DATA):
+def level_three(data_df,annotation_dir,study_id,DATA,unique_field_id):
     
     no_rows = data_df.shape[0]
 
@@ -431,14 +431,14 @@ def level_three(data_df,annotation_dir,study_id,DATA):
     for i in range(0,no_rows):
         tool = data_df["ir_rearrangement_tool"].tolist()[i]
         ir_file = data_df["ir_rearrangement_file_name"].tolist()[i]           
-        ir_rea = data_df["ir_rearrangement_number"].tolist()[i] 
+        ir_rea = data_df[unique_field_id].tolist()[i] 
         
         
         
         if type(ir_file)!=str:
                 number_lines = []
                 sum_all = 0
-                print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", ir_rearrangement_number: " + str(ir_rea) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
+                print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", " + str(unique_field_id) + ": " + str(ir_rea) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
                 number_lines.append(0)
                 sum_all = sum_all + 0
      
@@ -466,6 +466,7 @@ API_file = str(sys.argv[2])
 study_id = str(sys.argv[3])
 annotation_dir = str(sys.argv[4])
 given_option = str(sys.argv[5])
+input_unique_field_id = str(sys.argv[6])
 
 # NEW IPA
 with open(API_file) as f:
@@ -484,7 +485,7 @@ elif "csv" in input_f:
 
 
 # Check ir_rearrangement_number is unique
-check_uniqueness_ir_rearrangement_nr(master)
+check_uniqueness_ir_rearrangement_nr(master,input_unique_field_id)
 
 # Get metadata and specific study
 master = master.replace('\n',' ', regex=True)
@@ -501,10 +502,10 @@ no_rows = data_df.shape[0]
 
 print("---------------------------------------------API RESPONSE-----------------------------------------------\n")
 
-if "ir_rearrangement_number" in pd.DataFrame.from_dict(DATA):
+if input_unique_field_id in pd.DataFrame.from_dict(DATA):
     print("TRUE: ir_rearrangement_number found in API response\n")
-    all_ir_rearrangemet_unique = pd.DataFrame.from_dict(DATA)["ir_rearrangement_number"].unique()
-    all_ir_rearrangemet = pd.DataFrame.from_dict(DATA)["ir_rearrangement_number"]
+    all_ir_rearrangemet_unique = pd.DataFrame.from_dict(DATA)[input_unique_field_id].unique()
+    all_ir_rearrangemet = pd.DataFrame.from_dict(DATA)[input_unique_field_id]
 
     if len(all_ir_rearrangemet_unique)==len(all_ir_rearrangemet):
         print("TRUE: ir_rearrangement_number unique in API response\n")
@@ -528,7 +529,7 @@ if "H" in given_option:
     print(str(sub_by) + "\n")
     print("Study ID " + str(study_id) + "\n")    
 
-    level_one(data_df,DATA)
+    level_one(data_df,DATA,input_unique_field_id)
 
 if "L" in given_option: 
     print("########################################################################################################")
@@ -543,12 +544,12 @@ if "L" in given_option:
 
     print("Study ID " + str(study_id) + "\n")    
     
-    level_two(data_df,DATA)
+    level_two(data_df,DATA,input_unique_field_id)
     
 if "F" in given_option: 
     print("########################################################################################################")
     print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
 
-    level_three(data_df,annotation_dir,study_id,DATA)
+    level_three(data_df,annotation_dir,study_id,DATA,input_unique_field_id)
  
 print("########################################################################################################")
