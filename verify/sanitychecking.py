@@ -148,6 +148,9 @@ def level_two(data_df,DATA):
         print("ir_rearrangement_number: " + str(ir_rear_number))
         print("JSON file index: " + str(JSON_entry)  + "\n")
 
+        pass_a = []
+        fail_a = []
+
         if not JSON_entry:
 
             print("The ir_rearrangement_number associated to this study was not found in API response\n")
@@ -162,9 +165,7 @@ def level_two(data_df,DATA):
             in_JSON = [item for item in verify if item in column_names_JSON]
             in_MD = [item for item in verify if item in column_names_MD]
 
-            pass_a = []
-            fail_a = []
-
+            
 
             for item in DATA[JSON_entry[0]]:
                 if item in intersection:
