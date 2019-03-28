@@ -104,7 +104,7 @@ def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe,unique_field_id):
     print("Uniquenes of " + str(unique_field_id))
     
     if unique_field_id not in master_MD_dataframe.columns:
-        print("WARNING: NO COLUMN EXISTS TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
+        print("WARNING: FIELD NAME DOES NOT EXIST TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
         print("Verify the column name exists and contains the correct information in your spreadsheet\n")
         sys.exit(0)
         
