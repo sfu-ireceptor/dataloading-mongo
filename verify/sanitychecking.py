@@ -103,7 +103,7 @@ def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):
 
     print("Uniquenes of ir_rearrangement_number:")
     
-    if "ir_rearrangement_numnber" not in master_MD_dataframe.columns:
+    if "ir_rearrangement_number" not in master_MD_dataframe.columns:
         print("WARNING: NO COLUMN EXISTS TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
         sys.exit(0)
         
