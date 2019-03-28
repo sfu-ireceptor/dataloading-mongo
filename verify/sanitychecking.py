@@ -484,14 +484,14 @@ elif "csv" in input_f:
     master = master.loc[:, ~master.columns.str.contains('^Unnamed')]
 
 
-# Check ir_rearrangement_number is unique
-check_uniqueness_ir_rearrangement_nr(master,input_unique_field_id)
-
 # Get metadata and specific study
 master = master.replace('\n',' ', regex=True)
 master["study_id"] = master["study_id"].str.strip()
 
 data_df = master.loc[master['study_id'] == study_id]
+
+# Check entries under unique identifier are  unique
+check_uniqueness_ir_rearrangement_nr(data_df,input_unique_field_id)
 
 if data_df.empty:
     print("EMPTY DATA FRAME: Cannot find specified study ID\n")
