@@ -447,16 +447,16 @@ def level_three(data_df,annotation_dir,study_id,DATA,unique_field_id):
         else:
             ############## CASE 1
             if tool=="IMGT high-Vquest":
-                ir_seq_count_imgt(data_df,i,DATA)
+                ir_seq_count_imgt(data_df,i,DATA,unique_field_id)
             
 
             ############## CASE 2            
             elif tool=="igblast":
-                ir_seq_count_igblast(data_df,i,DATA)
+                ir_seq_count_igblast(data_df,i,DATA,unique_field_id)
 
             ############## CASE 3                       
             elif tool=="MiXCR":   
-                ir_seq_count_mixcr(data_df,i,DATA)
+                ir_seq_count_mixcr(data_df,i,DATA,unique_field_id)
         
 ##################################
 ####### VARIABLE INPUT AREA ######
