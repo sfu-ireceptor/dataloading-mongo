@@ -103,11 +103,17 @@ def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe):
 
     print("Uniquenes of ir_rearrangement_number:")
     
-    if pd.Series(master_MD_dataframe["ir_rearrangement_number"]).is_unique==False:
-        print("FALSE: There are duplicate entries under ir_rearrangement_number in master metadata\n")
-       
+    if "ir_rearrangement_numnber" not in master_MD_dataframe.columns:
+        print("WARNING: NO COLUMN EXISTS TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
+        sys.exit(0)
+        
     else:
-        print("TRUE: All entries under ir_rearrangement_number in master metadata are unique\n")
+    
+        if pd.Series(master_MD_dataframe["ir_rearrangement_number"]).is_unique==False:
+            print("FALSE: There are duplicate entries under ir_rearrangement_number in master metadata\n")
+
+        else:
+            print("TRUE: All entries under ir_rearrangement_number in master metadata are unique\n")
                 
 def level_one(data_df,DATA):
     
@@ -221,6 +227,7 @@ def level_two(data_df,DATA):
 
         print("END OF ENTRY\n")
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
+    return [pass_a,fail_a]
         
 def ir_seq_count_imgt(data_df,integer,DATA):
     
