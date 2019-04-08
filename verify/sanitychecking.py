@@ -20,6 +20,7 @@ import numpy
 ##################################
 
 #### Section 1. Verify, read and parse files
+# Test I can open file
 def test_book(filename):
     try:
         open_workbook(filename)
@@ -71,7 +72,7 @@ def get_unique_identifier(JSON_DATA_FILE,unique_field_id,ir_rear_number):
         for i in range(no_iterations):
             
             if unique_field_id in JSON_DATA_FILE[i].keys():
-                if int(JSON_DATA_FILE[i][unique_field_id])==int(ir_rear_number):
+                if JSON_DATA_FILE[i][unique_field_id]==ir_rear_number:
                     JSON_index.append(i) 
 
         return JSON_index
@@ -125,7 +126,7 @@ def level_one(data_df,DATA,unique_field_id):
 
     for i in range(no_rows):
 
-        ir_rear_number = int(data_df.iloc[i][unique_field_id])
+        ir_rear_number = data_df.iloc[i][unique_field_id]
         JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rear_number)
         if not JSON_entry:
 
@@ -143,7 +144,7 @@ def level_two(data_df,DATA,unique_field_id):
 
     for i in range(no_rows):
 
-        ir_rear_number = int(data_df.iloc[i][unique_field_id])
+        ir_rear_number = data_df.iloc[i][unique_field_id]
         JSON_entry = get_unique_identifier(DATA,unique_field_id,ir_rear_number)
 
         print(str(unique_field_id) + ": " + str(ir_rear_number))
