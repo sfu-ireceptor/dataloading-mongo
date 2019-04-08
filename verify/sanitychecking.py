@@ -377,14 +377,14 @@ def ir_seq_count_mixcr(data_df,integer,DATA,unique_field_id):
         
         for item in line_one:
             if item in files:
-                if "annotation" in item:
-                    files_found.append(item)
-                    stri = subprocess.check_output(['wc','-l',annotation_dir +"mixcr/" + str(item)])
-                    hold_val = stri.decode().split(' ')
-                    number_lines.append(hold_val[0])
-                    sum_all = sum_all + int(hold_val[0]) - 1
-                else:
-                    continue
+                #if "annotation" in item:
+                files_found.append(item)
+                stri = subprocess.check_output(['wc','-l',annotation_dir +"mixcr/" + str(item)])
+                hold_val = stri.decode().split(' ')
+                number_lines.append(hold_val[0])
+                sum_all = sum_all + int(hold_val[0]) - 1
+                #else:
+                    #continue
             else:
                 files_notfound.append(item)
                 
