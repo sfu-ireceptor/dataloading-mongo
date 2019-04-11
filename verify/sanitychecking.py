@@ -2,7 +2,7 @@
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 ######### CREATED ON: DECEMBER 20, 2018
-######### LAST MODIFIED ON: MARCH 15, 2019
+######### LAST MODIFIED ON: APRIL 11, 2019
 
 import pandas as pd
 import json
@@ -22,6 +22,10 @@ import numpy
 #### Section 1. Verify, read and parse files
 # Test I can open file
 def test_book(filename):
+    
+    """This function verifies whether it is possible to open a metadata EXCEL file. 
+    
+    It returns True if yes, False otherwise"""
     try:
         open_workbook(filename)
     except XLRDError:
@@ -29,18 +33,27 @@ def test_book(filename):
     else:
         return True
     
-
+# Report whether file can be opened or not
 def verify_non_corrupt_file(master_metadata_file):
     
-    if test_book(master_metadata_file)==False:
-        print("CORRUPT FILE: Please verify master metadata file\n")
-        sys.exit()
+    """This function verifies whether test_book returns True or False and prints a message to screen in either case"""
+    
+    try:
+        if test_book(master_metadata_file)==False:
+            print("CORRUPT FILE: Please verify master metadata file\n")
+            sys.exit()
         
-    else:
-        print("HEALTHY FILE: Proceed with tests\n")
+        else:
+            print("HEALTHY FILE: Proceed with tests\n")
+    except:
         
+        print("INVALID INPUT\nInput is an EXCEL metadata file.")
+    
         
+# Get appropriate metadata sheet        
 def get_metadata_sheet(master_metadata_file):
+    
+    """This function extracts the 'metadata' sheet from an EXCEL metadata file """
 
     # Tabulate Excel file
     table = pd.ExcelFile(master_metadata_file,encoding="utf8")
@@ -63,60 +76,117 @@ def get_metadata_sheet(master_metadata_file):
     
     return metadata
 
-def get_unique_identifier(JSON_DATA_FILE,unique_field_id,ir_rear_number):
-    
-    try:
-        
-        no_iterations = len(JSON_DATA_FILE)
-        JSON_index = []
-        for i in range(no_iterations):
-            
-            if unique_field_id in JSON_DATA_FILE[i].keys():
-                if JSON_DATA_FILE[i][unique_field_id]==ir_rear_number:
-                    JSON_index.append(i) 
-
-        return JSON_index
-    except:
-        print("INVALID DATA FORMAT\nEnter a JSON file from API call, and an ir_rearrangement file from metadata spreadsheet.")
-
+# Parse metadata sheet as pandas dataframe
 def get_dataframes_from_metadata(master_MD_sheet):
     
+    """This function parses the metadata EXCEL sheet into a pandas dataframe
+    
+    EXCEL metadata sheets normally have 2 headers: internal-use headers and AIRR header
+    
+    This function creates a pandas dataframe using only the AIRR headers. This is the dataframe
+    
+    that the sanity checks will be performed on"""
+    
     try:
+        # Get the appropriate sheet from EXCEL metadata file
         data_dafr = get_metadata_sheet(master_MD_sheet) 
         
-#         ir_seq_col = data_dafr["ir_sequence_count"]
-#         ir_seq_col = ir_seq_col[1:]
-        
-        
-        new_header = data_dafr.iloc[0] #grab the first row for the header
-        data_dafr = data_dafr[1:] #take the data less the header row
-        data_dafr.columns = new_header #set the header row as the df header
-                
-        #data_dafr = data_dafr.join(ir_seq_col)
+        #grab the first row for the header
+        new_header = data_dafr.iloc[0] 
+        #take the data less the header row
+        data_dafr = data_dafr[1:] 
+        #set the header row as the df header
+        data_dafr.columns = new_header 
     
         return data_dafr
     except:
         print("INVALID INPUT\nInput is a single variable containing path and name to metadata spreadsheet.")
 
 # Section 2. Sanity Checking        
-        
+# Uniqueness and existence of field uniquely identifying each sample in metadata        
 def check_uniqueness_ir_rearrangement_nr(master_MD_dataframe,unique_field_id):  
+    
+    """This function verifies that the unique field used to identify each sample exists and is unique in metadata"""
+    
+    try:
+        print("Existence and uniquenes of " + str(unique_field_id) + " in metadata")
 
-    print("Uniquenes of " + str(unique_field_id))
-    
-    if unique_field_id not in master_MD_dataframe.columns:
-        print("WARNING: FIELD NAME DOES NOT EXIST TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
-        print("Verify the column name exists and contains the correct information in your spreadsheet\n")
-        sys.exit(0)
-        
-    else:
-    
-        if pd.Series(master_MD_dataframe[unique_field_id]).is_unique==False:
-            print("FALSE: There are duplicate entries under "+ str(unique_field_id) + " in master metadata\n")
+        # Check it exists
+        if unique_field_id not in master_MD_dataframe.columns:
+            print("WARNING: FIELD NAME DOES NOT EXIST TO UNIQUELY IDENTIFY SAMPLES IN THIS STUDY\n")
+            print("Verify the column name exists and contains the correct information in your spreadsheet\n")
+            sys.exit(0)
 
         else:
-            print("TRUE: All entries under  "+ str(unique_field_id) + "  in master metadata are unique\n")
-                
+            # Check it is unique
+            if pd.Series(master_MD_dataframe[unique_field_id]).is_unique==False:
+                print("FALSE: There are duplicate entries under "+ str(unique_field_id) + " in master metadata\n")
+
+            else:
+                print("TRUE: All entries under  "+ str(unique_field_id) + "  in master metadata are unique\n")
+    except:
+        
+        print("INVALID INPUT\nInput is a dataframe containing metadata and a field from metadata which uniquely identifies each sample.")
+
+
+# Uniqueness and existence of field uniquely identifying each sample in API response                
+def check_unique_identifier_exists_API(JSON_DATA_FILE,unique_field):
+    
+    """This function verifies that the unique field used to identify each sample exists and is unique in API response"""
+
+    
+    try:
+        print("Existence and uniqueness of " + str(unique_field) + " in API response")
+    
+        # Check it exists
+        if unique_field in pd.DataFrame.from_dict(JSON_DATA_FILE):
+            print("TRUE: " + unique_field + " found in API response\n")
+            all_ir_rearrangemet_unique = pd.DataFrame.from_dict(DATA)[unique_field].unique()
+            all_ir_rearrangemet = pd.DataFrame.from_dict(DATA)[unique_field]
+
+            # Check it is unique
+            if len(all_ir_rearrangemet_unique)==len(all_ir_rearrangemet):
+                print("TRUE: ir_rearrangement_number unique in API response\n")
+            else:
+                print("WARNING: ir_rearrangement_number not unique in API response\n")
+                summ_odd_entries = list(set(all_ir_rearrangemet).symmetric_difference(set(all_ir_rearrangemet_unique)))
+                print("ODD ENTRIES: " + str(summ_odd_entries))
+
+        else:
+            print("WARNING: " + str(unique_field) + " not found in API response\n")
+            sys.exit(0)
+    except:
+        print("INVALID INPUT\nInput is a JSON file containing the API response and a field name which uniquely identifies each sample.")
+        
+# Verify corresponding unique identifier exists in API response
+def get_unique_identifier(JSON_DATA_FILE,unique_field_id,ir_rear_number):
+    
+    """This function obtains the index corresponding to a sample found in API response
+    
+    This function uses the unique identifies that the user provided, the unique number associated to it
+    
+    As well as the JSON file name containing API response"""
+    
+    try:
+        # Get total numnber of entries in JSON file containing API response
+        no_iterations = len(JSON_DATA_FILE)
+        
+        # Set up array to store index
+        JSON_index = []
+        # Iterate over all entries
+        for i in range(no_iterations):
+            # Check unique identifier is found in the entry 
+            if unique_field_id in JSON_DATA_FILE[i].keys():
+                # Check value under unique identifier matches the unique identifier for that sample in metadata
+                if JSON_DATA_FILE[i][unique_field_id]==ir_rear_number:
+                   # if both conditions are met, append the index, otherwise the array will be empty
+                    JSON_index.append(i) 
+
+        return JSON_index
+    except:
+        print("INVALID DATA FORMAT\nEnter a JSON file from API response, a field name which uniquely identifies each sample and an entry uniquely identifying the sample.")
+
+        
 def level_one(data_df,DATA,unique_field_id):
     
     count_find =0
@@ -504,21 +574,8 @@ no_rows = data_df.shape[0]
 
 print("---------------------------------------------API RESPONSE-----------------------------------------------\n")
 
-if input_unique_field_id in pd.DataFrame.from_dict(DATA):
-    print("TRUE: ir_rearrangement_number found in API response\n")
-    all_ir_rearrangemet_unique = pd.DataFrame.from_dict(DATA)[input_unique_field_id].unique()
-    all_ir_rearrangemet = pd.DataFrame.from_dict(DATA)[input_unique_field_id]
+check_unique_identifier_exists_API(DATA,input_unique_field_id)
 
-    if len(all_ir_rearrangemet_unique)==len(all_ir_rearrangemet):
-        print("TRUE: ir_rearrangement_number unique in API response\n")
-    else:
-        print("WARNING: ir_rearrangement_number not unique in API response\n")
-        summ_odd_entries = list(set(all_ir_rearrangemet).symmetric_difference(set(all_ir_rearrangemet_unique)))
-        print("ODD ENTRIES: " + str(summ_odd_entries))
-        
-else:
-    print("WARNING: ir_rearrangement_number not found in API response\n")
-    sys.exit(0)
     
 if "H" in given_option: 
     print("########################################################################################################")
