@@ -2,7 +2,7 @@
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 ######### CREATED ON: DECEMBER 20, 2018
-######### LAST MODIFIED ON: APRIL 11, 2019
+######### LAST MODIFIED ON: APRIL 18, 2019
 
 import pandas as pd
 import json
@@ -14,6 +14,7 @@ from xlrd import open_workbook, XLRDError
 import subprocess
 import tarfile
 import numpy
+import argparse
 
 ##################################
 #### FUNCTION DEFINITION AREA ####
@@ -56,7 +57,7 @@ def get_metadata_sheet(master_metadata_file):
     """This function extracts the 'metadata' sheet from an EXCEL metadata file """
 
     # Tabulate Excel file
-    table = pd.ExcelFile(master_metadata_file,encoding="utf8")
+    table = pd.ExcelFile(master_metadata_file)#,encoding="utf8")
     # Identify sheet names in the file and store in array
     sheets = table.sheet_names
     # How many sheets does it have
@@ -146,9 +147,9 @@ def check_unique_identifier_exists_API(JSON_DATA_FILE,unique_field):
 
             # Check it is unique
             if len(all_ir_rearrangemet_unique)==len(all_ir_rearrangemet):
-                print("TRUE: ir_rearrangement_number unique in API response\n")
+                print("TRUE: " + str(unique_field) + " unique in API response\n")
             else:
-                print("WARNING: ir_rearrangement_number not unique in API response\n")
+                print("WARNING: " +  str(unique_field) + " not unique in API response\n")
                 summ_odd_entries = list(set(all_ir_rearrangemet).symmetric_difference(set(all_ir_rearrangemet_unique)))
                 print("ODD ENTRIES: " + str(summ_odd_entries))
 
@@ -211,6 +212,13 @@ def level_one(data_df,DATA,unique_field_id):
 def level_two(data_df,DATA,unique_field_id):
     
     no_rows = data_df.shape[0]
+    
+    count_find =0
+    count_not_find =0
+    
+    no_rows = data_df.shape[0]
+    
+    store_sanity_check_results = []
 
     for i in range(no_rows):
 
@@ -227,12 +235,18 @@ def level_two(data_df,DATA,unique_field_id):
 
             print("The " + str(unique_field_id) + " associated to this study was not found in API response\n")
 
+            count_not_find +=1
+            
+            #store_sanity_check_results.append([ir_rear_number,JSON_entry,[],[],[],[],count_not_find])
+            
         else:
+            
+            count_find +=1
 
             column_names_JSON = set([item for item in DATA[JSON_entry[0]].keys()])
             column_names_MD = set([item for item in data_df.columns])
             intersection = column_names_JSON.intersection(column_names_MD)
-            verify = column_names_JSON.symmetric_difference(column_names_MD)
+            verify = column_names_JSON.symmetric_difference(column_names_MD) - {'ir_created_at', 'ir_updated_at','_id', 'ir_project_sample_id','ir_sequence_count'}
 
             in_JSON = [item for item in verify if item in column_names_JSON]
             in_MD = [item for item in verify if item in column_names_MD]
@@ -264,11 +278,12 @@ def level_two(data_df,DATA,unique_field_id):
                             fail_a.append(item)
                     except TypeError:
                         print("UNABLE TO COMPARE ENTRIES")
-                   
+                  
                             
                 else:
                     continue
-
+            store_sanity_check_results.append([ir_rear_number,in_JSON,pass_a,fail_a])
+            #store_sanity_check_results.append([ir_rear_number,JSON_entry,pass_a,fail_a,in_MD,in_JSON,count_find])
             # PRINT RESULTS
             print("TEST: FIELD NAMES MATCH\nRESULT --------------------------------------------------------------------------------->" + str(column_names_JSON.issubset(column_names_MD)) + "\n")
 
@@ -300,16 +315,16 @@ def level_two(data_df,DATA,unique_field_id):
 
         print("END OF ENTRY\n")
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
-    return [pass_a,fail_a]
+    return store_sanity_check_results
         
-def ir_seq_count_imgt(data_df,integer,DATA,unique_field_id):
+def ir_seq_count_imgt(imgt_subdir,data_df,integer,DATA,unique_field_id):
     
     number_lines = []
     sum_all = 0
     files_found = []
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
-    files = os.listdir(annotation_dir + "imgt/")
+    files = os.listdir(annotation_dir + imgt_subdir)
     
     if "txz" not in ir_file:
         number_lines.append(0)
@@ -320,7 +335,7 @@ def ir_seq_count_imgt(data_df,integer,DATA,unique_field_id):
         for item in line_one:
             if item in files:
                 files_found.append(item)
-                tf = tarfile.open(annotation_dir + "imgt/" + item)
+                tf = tarfile.open(annotation_dir + imgt_subdir + item)
                 tf.extractall(annotation_dir  + str(item.split(".")[0]) + "/")
                 stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + "1_Summary.txt"])
                 hold_val = stri.decode().split(' ')
@@ -366,14 +381,14 @@ def ir_seq_count_imgt(data_df,integer,DATA,unique_field_id):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
         
-def ir_seq_count_igblast(data_df,integer,DATA,unique_field_id):     
+def ir_seq_count_igblast(igbl_subdir,data_df,integer,DATA,unique_field_id):     
     
     number_lines = []
     sum_all = 0
     files_found = []
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer] 
-    files = os.listdir(annotation_dir + "igblast/")
+    files = os.listdir(annotation_dir + igbl_subdir)
 
     if "fmt" not in ir_file:
         number_lines.append(0)
@@ -384,7 +399,7 @@ def ir_seq_count_igblast(data_df,integer,DATA,unique_field_id):
             if item in files:
                 if "fmt19" in item:
                     files_found.append(item)
-                    stri = subprocess.check_output(['wc','-l',annotation_dir + "igblast/" + str(item)])
+                    stri = subprocess.check_output(['wc','-l',annotation_dir + igbl_subdir + str(item)])
                     hold_val = stri.decode().split(' ')
                     number_lines.append(hold_val[0])
                     sum_all = sum_all + int(hold_val[0]) - 1
@@ -429,14 +444,14 @@ def ir_seq_count_igblast(data_df,integer,DATA,unique_field_id):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
-def ir_seq_count_mixcr(data_df,integer,DATA,unique_field_id):
+def ir_seq_count_mixcr(mixr_subdir,data_df,integer,DATA,unique_field_id):
     
     number_lines = []
     sum_all = 0
     files_found = []
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer] 
-    files = os.listdir(annotation_dir +"mixcr/")
+    files = os.listdir(annotation_dir)
     
     if "txt" not in ir_file:
         number_lines.append(0)
@@ -449,7 +464,7 @@ def ir_seq_count_mixcr(data_df,integer,DATA,unique_field_id):
             if item in files:
                 #if "annotation" in item:
                 files_found.append(item)
-                stri = subprocess.check_output(['wc','-l',annotation_dir +"mixcr/" + str(item)])
+                stri = subprocess.check_output(['wc','-l',annotation_dir + mixr_subdir +str(item)])
                 hold_val = stri.decode().split(' ')
                 number_lines.append(hold_val[0])
                 sum_all = sum_all + int(hold_val[0]) - 1
@@ -494,7 +509,7 @@ def ir_seq_count_mixcr(data_df,integer,DATA,unique_field_id):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
             
-def level_three(data_df,annotation_dir,study_id,DATA,unique_field_id):
+def level_three(data_df,annotation_dir,imgt_subdir,mixr_subdir,igbl_subdir,study_id,DATA,unique_field_id):
     
     no_rows = data_df.shape[0]
 
@@ -508,6 +523,7 @@ def level_three(data_df,annotation_dir,study_id,DATA,unique_field_id):
         
         
         if type(ir_file)!=str:
+                print(type(ir_file))
                 number_lines = []
                 sum_all = 0
                 print("FOUND ODD ENTRY: " + str(ir_file) + "\nRow index " + str(i) + ", " + str(unique_field_id) + ": " + str(ir_rea) + ". Writing 0 on this entry, but be careful to ensure this is correct.\n")
@@ -519,96 +535,147 @@ def level_three(data_df,annotation_dir,study_id,DATA,unique_field_id):
         else:
             ############## CASE 1
             if tool=="IMGT high-Vquest":
-                ir_seq_count_imgt(data_df,i,DATA,unique_field_id)
+                ir_seq_count_imgt(imgt_subdir,data_df,i,DATA,unique_field_id)
             
 
             ############## CASE 2            
             elif tool=="igblast":
-                ir_seq_count_igblast(data_df,i,DATA,unique_field_id)
+                ir_seq_count_igblast(igbl_subdir,data_df,i,DATA,unique_field_id)
 
             ############## CASE 3                       
             elif tool=="MiXCR":   
-                ir_seq_count_mixcr(data_df,i,DATA,unique_field_id)
+                ir_seq_count_mixcr(mixr_subdir,data_df,i,DATA,unique_field_id)
+                
+                
+def getArguments():
+    # Set up the command line parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=""
+    )
+
+    # Input file: excel or csv metadata file
+    parser.add_argument("input_f")
+    # Input file: JSON file containing API response
+    parser.add_argument("API_file")
+    # Study_id used to identify a given study in sample metadata
+    parser.add_argument("study_id")
+    # Directory containing annotation files
+    parser.add_argument("annotation_dir")
+    # Annotations subdirectory containing annotations processed using imgt
+    parser.add_argument("imgt")
+    # Annotations subdirectory containing annotations processed using mixcr
+    parser.add_argument("mixcr")
+    # Annotations subdirectory containing annotations processed using igblast
+    parser.add_argument("igblast")
+    # High level, low level, file level sanity check option
+    parser.add_argument("sanity_level")
+    # Field used to uniquely identify each sample
+    parser.add_argument("unique_id")
+    # Verbosity flag
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Run the program in verbose mode.")
+
+    # Parse the command line arguements.
+    options = parser.parse_args()
+    return options
         
 ##################################
 ####### VARIABLE INPUT AREA ######
 ##################################
-input_f = str(sys.argv[1])
-API_file = str(sys.argv[2])
-study_id = str(sys.argv[3])
-annotation_dir = str(sys.argv[4])
-given_option = str(sys.argv[5])
-input_unique_field_id = str(sys.argv[6])
 
-# NEW IPA
-with open(API_file) as f:
-    DATA= json.load(f)
+if __name__ == "__main__":
     
-print("########################################################################################################")
-print("---------------------------------------VERIFY FILES ARE HEALTHY-----------------------------------------\n")
-print("---------------------------------------------Metadata file----------------------------------------------\n")
-# GET METADATA    
-if "xlsx" in input_f:
-    verify_non_corrupt_file(input_f)
-    master = get_dataframes_from_metadata(input_f)
-elif "csv" in input_f:
-    master = pd.read_csv(input_f ,encoding='utf8')
-    master = master.loc[:, ~master.columns.str.contains('^Unnamed')]
+    # Get the command line arguments.
+    options = getArguments()
+    input_f = options.input_f
+    API_file = options.API_file
+    study_id = options.study_id
+    annotation_dir = options.annotation_dir
+    imgt_subdir = options.imgt
+    mixr_subdir = options.mixcr
+    igbl_subdir = options.igblast
+    given_option = options.sanity_level
+    input_unique_field_id = options.unique_id
 
+    # NEW IPA
+    with open(API_file) as f:
+        DATA= json.load(f)
+    f.close()
 
-# Get metadata and specific study
-master = master.replace('\n',' ', regex=True)
-master["study_id"] = master["study_id"].str.strip()
-
-data_df = master.loc[master['study_id'] == study_id]
-
-# Check entries under unique identifier are  unique
-check_uniqueness_ir_rearrangement_nr(data_df,input_unique_field_id)
-
-if data_df.empty:
-    print("EMPTY DATA FRAME: Cannot find specified study ID\n")
-    print(data_df)
-    sys.exit(0)
-        
-no_rows = data_df.shape[0]
-
-print("---------------------------------------------API RESPONSE-----------------------------------------------\n")
-
-check_unique_identifier_exists_API(DATA,input_unique_field_id)
-
-    
-if "H" in given_option: 
     print("########################################################################################################")
-    print("------------------------------------------HIGH LEVEL SUMMARY--------------------------------------------\n")
-    
-    stu_title= list(set(data_df['study_title']))[0]
-    sub_by= list(set(data_df['submitted_by']))[0]
+    print("---------------------------------------VERIFY FILES ARE HEALTHY-----------------------------------------\n")
+    print("---------------------------------------------Metadata file----------------------------------------------\n")
+    # GET METADATA    
+    if "xlsx" in input_f:
+        verify_non_corrupt_file(input_f)
+        master = get_dataframes_from_metadata(input_f)
+    elif "csv" in input_f:
+        master = pd.read_csv(input_f ,encoding='utf8')
+        master = master.loc[:, ~master.columns.str.contains('^Unnamed')]
 
-    print(str(stu_title) + "\n")
-    print(str(sub_by) + "\n")
-    print("Study ID " + str(study_id) + "\n")    
 
-    level_one(data_df,DATA,input_unique_field_id)
+    # Get metadata and specific study
+    master = master.replace('\n',' ', regex=True)
+    master["study_id"] = master["study_id"].str.strip()
 
-if "L" in given_option: 
+    data_df = master.loc[master['study_id'] == study_id]
+
+    # Check entries under unique identifier are  unique
+    check_uniqueness_ir_rearrangement_nr(data_df,input_unique_field_id)
+
+    if data_df.empty:
+        print("EMPTY DATA FRAME: Cannot find specified study ID\n")
+        print(data_df)
+        sys.exit(0)
+
+    no_rows = data_df.shape[0]
+
+    print("---------------------------------------------API RESPONSE-----------------------------------------------\n")
+
+    check_unique_identifier_exists_API(DATA,input_unique_field_id)
+
+
+    if "H" in given_option: 
+        print("########################################################################################################")
+        print("------------------------------------------HIGH LEVEL SUMMARY--------------------------------------------\n")
+
+        stu_title= list(set(data_df['study_title']))[0]
+        sub_by= list(set(data_df['submitted_by']))[0]
+
+        print(str(stu_title) + "\n")
+        print(str(sub_by) + "\n")
+        print("Study ID " + str(study_id) + "\n")    
+
+        level_one(data_df,DATA,input_unique_field_id)
+
+    if "L" in given_option: 
+        print("########################################################################################################")
+        print("-----------------------------------------DETAILED SANITY CHECK------------------------------------------\n")
+        print("--------------------------BEGIN METADATA AND API FIELD AND CONTENT VERIFICATION-------------------------\n")
+
+        stu_title= list(set(data_df['study_title']))[0]
+        sub_by= list(set(data_df['submitted_by']))[0]
+
+        print(str(stu_title) + "\n")
+        print(str(sub_by) + "\n")
+
+        print("Study ID " + str(study_id) + "\n")    
+
+        level_two(data_df,DATA,input_unique_field_id)
+
+    if "F" in given_option: 
+        print("########################################################################################################")
+        print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
+
+        level_three(data_df,annotation_dir,imgt_subdir,mixr_subdir,igbl_subdir,study_id,DATA,input_unique_field_id)
+
     print("########################################################################################################")
-    print("-----------------------------------------DETAILED SANITY CHECK------------------------------------------\n")
-    print("--------------------------BEGIN METADATA AND API FIELD AND CONTENT VERIFICATION-------------------------\n")
-    
-    stu_title= list(set(data_df['study_title']))[0]
-    sub_by= list(set(data_df['submitted_by']))[0]
+    """TO DO 
+    edit code so that metadata boolean is interpreted as equivalent to a str 0 or 1
 
-    print(str(stu_title) + "\n")
-    print(str(sub_by) + "\n")
-
-    print("Study ID " + str(study_id) + "\n")    
-    
-    level_two(data_df,DATA,input_unique_field_id)
-    
-if "F" in given_option: 
-    print("########################################################################################################")
-    print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
-
-    level_three(data_df,annotation_dir,study_id,DATA,input_unique_field_id)
- 
-print("########################################################################################################")
+    add warning 
+    """
