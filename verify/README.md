@@ -13,7 +13,7 @@ Example usage:
 
 verify_dataload.sh dataloading-curation/test/mixcr/PRJNA330606_Wang_One_Sample.csv samples.json PRJNA330606 dataloading-curation/test/mixcr/
 
-where the samples.json file is produce by a command like wget on the API for a repository that contains the study in question.
+where the samples.json file is produced by a command like wget on the API for a repository that contains the study in question.
 
 wget http://turnkey-test.ireceptor.org/v2/samples -O samples.json
 
