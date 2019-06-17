@@ -600,28 +600,55 @@ def level_three(data_df,annotation_dir,imgt_subdir,mixr_subdir,igbl_subdir,study
 def getArguments():
     # Set up the command line parser
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=""
+         formatter_class=argparse.RawDescriptionHelpFormatter,
+         description="Note: for proper data processing, project --samples metadata should\n" + "generally be read first into the database before loading other data types."
     )
 
     # Input file: excel or csv metadata file
-    parser.add_argument("input_f")
+    parser.add_argument(
+        "metadata_file",
+        help="The EXCEL or CSV file containing sample metadata for a study."
+    )
     # api address 
-    parser.add_argument("API_url_address")
+    parser.add_argument(
+        "API_url_address",
+        help="The URL associated to your Turnkey, or the URL associated to the API containing sample metadata."
+    )
     # Study_id used to identify a given study in sample metadata
-    parser.add_argument("study_id")
+    parser.add_argument(
+        "study_id",
+        help="String value uniquely identifying study. Example: PRJEB1234, PRJNA1234."
+    )
     # Directory containing annotation files
-    parser.add_argument("annotation_dir")
+    parser.add_argument(
+        "annotation_dir",
+        help="Full path to directory containing annotation subdirectories for IMGT, MIXCR and IGBLAST annotations."
+    )
     # Annotations subdirectory containing annotations processed using imgt
-    parser.add_argument("imgt")
+    parser.add_argument(
+        "imgt_subdir",
+        help="Subdirectory found within annotations directory containing IMGT annotations only."
+    )
     # Annotations subdirectory containing annotations processed using mixcr
-    parser.add_argument("mixcr")
+    parser.add_argument(
+        "mixcr_subdir",
+        help="Subdirectory found within annotations directory containing MIXCR annotations only."
+    )
     # Annotations subdirectory containing annotations processed using igblast
-    parser.add_argument("igblast")
+    parser.add_argument(
+        "igblast_subdir",
+        help="Subdirectory found within annotations directory containing IGBLAST annotations only."
+    )
     # High level, low level, file level sanity check option
-    parser.add_argument("sanity_level")
+    parser.add_argument(
+        "sanity_level",
+        help="This option let's you choose the level: H for short summary, L for details on field name and content, F for details on number of lines in annotation files against what is found both in metadata spreadsheet and API response."
+    )
     # Field used to uniquely identify each sample
-    parser.add_argument("unique_id")
+    parser.add_argument(
+        "unique_identifier",
+        help="Choose a field name from the sample metadata spreadsheet which UNIQUELY identifies each sample."
+    )
     # Verbosity flag
     parser.add_argument(
         "-v",
@@ -641,15 +668,15 @@ if __name__ == "__main__":
     
     # Get the command line arguments.
     options = getArguments()
-    input_f = options.input_f
+    input_f = options.metadata_file
     base_url = options.API_url_address
     study_id = options.study_id
     annotation_dir = options.annotation_dir
-    imgt_subdir = options.imgt
-    mixr_subdir = options.mixcr
-    igbl_subdir = options.igblast
+    imgt_subdir = options.imgt_subdir
+    mixr_subdir = options.mixcr_subdir
+    igbl_subdir = options.igblast_subdir
     given_option = options.sanity_level
-    input_unique_field_id = options.unique_id
+    input_unique_field_id = options.unique_identifier
 
     # Ensure our HTTP set up has been done.
     initHTTP()
