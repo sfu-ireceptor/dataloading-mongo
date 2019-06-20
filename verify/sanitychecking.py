@@ -2,23 +2,71 @@
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 ######### CREATED ON: DECEMBER 20, 2018
-######### LAST MODIFIED ON: June 13, 2019
+######### LAST MODIFIED ON: June 17, 2019
 
 import pandas as pd
 import json
 import requests
 import sys
 import math
-import os
+import os, ssl
 from xlrd import open_workbook, XLRDError
 import subprocess
 import tarfile
 import numpy
 import argparse
+import urllib3
+import urllib
 
 ##################################
 #### FUNCTION DEFINITION AREA ####
 ##################################
+#### Section 0. Verify, read and parse files
+### Get Data from API
+def getHeaderDict():
+    # Set up the header for the post request.
+    header_dict = {'accept': 'application/json',
+                   'Content-Type': 'application/x-www-form-urlencoded'}
+    return header_dict
+
+def initHTTP():
+    # Deafult OS do not have create cient certificate bundles. It is
+    # easiest for us to ignore HTTPS certificate errors in this case.
+    if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
+        getattr(ssl, '_create_unverified_context', None)): 
+        ssl._create_default_https_context = ssl._create_unverified_context
+
+
+def getSamples(sample_url, header_dict, query_dict={}):
+    # Build the required JSON data for the post request. The user
+    # of the function provides both the header and the query data
+    url_dict = dict()
+    #url_dict.update(header_dict)
+    url_dict.update(query_dict)
+    url_data = urllib.parse.urlencode(url_dict).encode()
+
+    # Try to connect the URL and get a response. On error return an
+    # empty JSON array.
+    try:
+        request = urllib.request.Request(sample_url, url_data, header_dict)
+        #response = urllib.request.urlopen(sample_url, data=url_data, headers=header_dict)
+        response = urllib.request.urlopen(request)
+        url_response = response.read().decode(response.headers.get_content_charset())
+    except urllib.error.HTTPError as e:
+        print('Error: Server could not fullfil the request')
+        print('Error: Error code =', e.code)
+        print(e.read())
+        return json.loads('[]')
+    except urllib.error.URLError as e:
+        print('Error: Failed to reach the server')
+        print('Error: Reason =', e.reason)
+        return json.loads('[]')
+
+    # Convert the response to JSON so we can process it easily.
+    # print(url_response)
+    json_data = json.loads(url_response)
+    # Return the JSON data
+    return json_data
 
 #### Section 1. Verify, read and parse files
 # Test I can open file
@@ -272,8 +320,6 @@ def level_two(data_df,DATA,unique_field_id):
                                 pass_a.append(item)
                             else:
                                 fail_a.append(item)
-            # In this case python thinks the items are comparable (of the same type as 
-            # far as not generating an exception) but not the same value
                         else:
                             fail_a.append(item)
                     except TypeError:
@@ -283,7 +329,7 @@ def level_two(data_df,DATA,unique_field_id):
                 else:
                     continue
             store_sanity_check_results.append([ir_rear_number,in_JSON,pass_a,fail_a])
-            #store_sanity_check_results.append([ir_rear_number,JSON_entry,pass_a,fail_a,in_MD,in_JSON,count_find])
+
             # PRINT RESULTS
             print("TEST: FIELD NAMES MATCH\nRESULT --------------------------------------------------------------------------------->" + str(column_names_JSON.issubset(column_names_MD)) + "\n")
 
@@ -317,14 +363,14 @@ def level_two(data_df,DATA,unique_field_id):
         print("-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-\n")
     return store_sanity_check_results
         
-def ir_seq_count_imgt(imgt_subdir,data_df,integer,DATA,unique_field_id):
+def ir_seq_count_imgt(annotation_dir,data_df,integer,DATA,unique_field_id):
     
     number_lines = []
     sum_all = 0
     files_found = []
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
-    files = os.listdir(annotation_dir + imgt_subdir)
+    files = os.listdir(annotation_dir)
     
     if "txz" not in ir_file:
         number_lines.append(0)
@@ -335,7 +381,7 @@ def ir_seq_count_imgt(imgt_subdir,data_df,integer,DATA,unique_field_id):
         for item in line_one:
             if item in files:
                 files_found.append(item)
-                tf = tarfile.open(annotation_dir + imgt_subdir + item)
+                tf = tarfile.open(annotation_dir + item)
                 tf.extractall(annotation_dir  + str(item.split(".")[0]) + "/")
                 stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item.split(".")[0])+ "/" + "1_Summary.txt"])
                 hold_val = stri.decode().split(' ')
@@ -388,7 +434,7 @@ def ir_seq_count_igblast(igbl_subdir,data_df,integer,DATA,unique_field_id):
     files_found = []
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer] 
-    files = os.listdir(annotation_dir + igbl_subdir)
+    files = os.listdir(annotation_dir)
 
     if "fmt" not in ir_file:
         number_lines.append(0)
@@ -399,7 +445,7 @@ def ir_seq_count_igblast(igbl_subdir,data_df,integer,DATA,unique_field_id):
             if item in files:
                 if "fmt19" in item:
                     files_found.append(item)
-                    stri = subprocess.check_output(['wc','-l',annotation_dir + igbl_subdir + str(item)])
+                    stri = subprocess.check_output(['wc','-l',annotation_dir  + str(item)])
                     hold_val = stri.decode().split(' ')
                     number_lines.append(hold_val[0])
                     sum_all = sum_all + int(hold_val[0]) - 1
@@ -444,7 +490,7 @@ def ir_seq_count_igblast(igbl_subdir,data_df,integer,DATA,unique_field_id):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
 
-def ir_seq_count_mixcr(mixr_subdir,data_df,integer,DATA,unique_field_id):
+def ir_seq_count_mixcr(annotation_dir,data_df,integer,DATA,unique_field_id):
     
     number_lines = []
     sum_all = 0
@@ -452,6 +498,8 @@ def ir_seq_count_mixcr(mixr_subdir,data_df,integer,DATA,unique_field_id):
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer] 
     files = os.listdir(annotation_dir)
+    
+    print(annotation_dir)
     
     if "txt" not in ir_file:
         number_lines.append(0)
@@ -462,14 +510,13 @@ def ir_seq_count_mixcr(mixr_subdir,data_df,integer,DATA,unique_field_id):
         
         for item in line_one:
             if item in files:
-                #if "annotation" in item:
+
                 files_found.append(item)
-                stri = subprocess.check_output(['wc','-l',annotation_dir + mixr_subdir +str(item)])
+                stri = subprocess.check_output(['wc','-l',annotation_dir +str(item)])
                 hold_val = stri.decode().split(' ')
                 number_lines.append(hold_val[0])
                 sum_all = sum_all + int(hold_val[0]) - 1
-                #else:
-                    #continue
+
             else:
                 files_notfound.append(item)
                 
@@ -509,7 +556,7 @@ def ir_seq_count_mixcr(mixr_subdir,data_df,integer,DATA,unique_field_id):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
             
-def level_three(data_df,annotation_dir,imgt_subdir,mixr_subdir,igbl_subdir,study_id,DATA,unique_field_id):
+def level_three(data_df,annotation_dir,study_id,DATA,unique_field_id):
     
     no_rows = data_df.shape[0]
 
@@ -535,49 +582,57 @@ def level_three(data_df,annotation_dir,imgt_subdir,mixr_subdir,igbl_subdir,study
         else:
             ############## CASE 1
             if tool=="IMGT high-Vquest":
-                ir_seq_count_imgt(imgt_subdir,data_df,i,DATA,unique_field_id)
+                ir_seq_count_imgt(annotation_dir,data_df,i,DATA,unique_field_id)
             
 
             ############## CASE 2            
             elif tool=="igblast":
-                ir_seq_count_igblast(igbl_subdir,data_df,i,DATA,unique_field_id)
+                ir_seq_count_igblast(annotation_dir,data_df,i,DATA,unique_field_id)
 
             ############## CASE 3                       
             elif tool=="MiXCR":   
-                ir_seq_count_mixcr(mixr_subdir,data_df,i,DATA,unique_field_id)
+                ir_seq_count_mixcr(annotation_dir,data_df,i,DATA,unique_field_id)
                 
                 
 def getArguments():
     # Set up the command line parser
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=""
+         formatter_class=argparse.RawDescriptionHelpFormatter,
+         description="Ensure data was loaded successfully into Turnkey."
     )
 
     # Input file: excel or csv metadata file
-    parser.add_argument("input_f")
-    # Input file: JSON file containing API response
-    parser.add_argument("API_file")
-    # Study_id used to identify a given study in sample metadata
-    parser.add_argument("study_id")
-    # Directory containing annotation files
-    parser.add_argument("annotation_dir")
-    # Annotations subdirectory containing annotations processed using imgt
-    parser.add_argument("imgt")
-    # Annotations subdirectory containing annotations processed using mixcr
-    parser.add_argument("mixcr")
-    # Annotations subdirectory containing annotations processed using igblast
-    parser.add_argument("igblast")
-    # High level, low level, file level sanity check option
-    parser.add_argument("sanity_level")
-    # Field used to uniquely identify each sample
-    parser.add_argument("unique_id")
-    # Verbosity flag
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Run the program in verbose mode.")
+        "metadata_file",
+        help="The EXCEL or CSV file containing sample metadata for a study."
+    )
+    # api address 
+    parser.add_argument(
+        "API_url_address",
+        help="The URL associated to your Turnkey, or the URL associated to the API containing sample metadata."
+    )
+    # Study_id used to identify a given study in sample metadata
+    parser.add_argument(
+        "study_id",
+        help="String value uniquely identifying study. Example: PRJEB1234, PRJNA1234."
+    )
+    # Directory containing annotation files
+    parser.add_argument(
+        "annotation_dir",
+        help="Full path to directory containing annotation files for sequences processed using either IMGT, MIXCR and IGBLAST annotations."
+    )
+    
+    
+    # High level, low level, file level sanity check option
+    parser.add_argument(
+        "sanity_level",
+        help="This option let's you choose the level: H for short summary, L for details on field name and content, F for details on number of lines in annotation files against what is found both in metadata spreadsheet and API response."
+    )
+    # Field used to uniquely identify each sample
+    parser.add_argument(
+        "unique_identifier",
+        help="Choose a field name from the sample metadata spreadsheet which UNIQUELY identifies each sample."
+    )
 
     # Parse the command line arguements.
     options = parser.parse_args()
@@ -591,21 +646,28 @@ if __name__ == "__main__":
     
     # Get the command line arguments.
     options = getArguments()
-    input_f = options.input_f
-    API_file = options.API_file
+    input_f = options.metadata_file
+    base_url = options.API_url_address
     study_id = options.study_id
     annotation_dir = options.annotation_dir
-    imgt_subdir = options.imgt
-    mixr_subdir = options.mixcr
-    igbl_subdir = options.igblast
     given_option = options.sanity_level
-    input_unique_field_id = options.unique_id
+    input_unique_field_id = options.unique_identifier
+    
+    
+    print(base_url)
 
-    # NEW IPA
-    with open(API_file) as f:
-        DATA= json.load(f)
-    f.close()
+    # Ensure our HTTP set up has been done.
+    initHTTP()
+    # Get the HTTP header information (in the form of a dictionary)
+    header_dict = getHeaderDict()
 
+    # Select the API entry points to use, based on the base URL provided
+    sample_url = base_url
+    
+    # Get the sample metadata for the query. We want to keep track of each sample
+    DATA = getSamples(sample_url, header_dict)
+
+    # Begin sanity checking 
     print("########################################################################################################")
     print("---------------------------------------VERIFY FILES ARE HEALTHY-----------------------------------------\n")
     print("---------------------------------------------Metadata file----------------------------------------------\n")
