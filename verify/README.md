@@ -10,14 +10,13 @@ The following example assumes the following.
 - That the Turnkey is running
 
 
-The sanitychecking.py script takes as input:
+The verify_dataload.sh script takes as input:
 
 * the name of a CSV or EXCEL file containing sample metadata
 * the URL associated to the Turnkey
 * the study ID uniquely identifying the study
 * the full path to a directory containing annotation files for sequences processed using either MIXCR, IMGT or 
 IGBLAST
-* a sanity check level: "H" for summary on number of samples loaded, "L" for details on field name and content, "F" for number of sequences check 
 * a field name within the metadata uniquely idenfitying each sample
 
 And as output it generates a report covering points 1-4. 
