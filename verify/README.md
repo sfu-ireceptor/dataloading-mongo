@@ -33,11 +33,6 @@ And as output it generates a report covering points 1-4.
   annotation_dir     Full path to directory containing annotation files for
                      sequences processed using either IMGT, MIXCR and IGBLAST
                      annotations.
-  sanity_level       This option let's you choose the level: H for short
-                     summary, L for details on field name and content, F for
-                     details on number of lines in annotation files against
-                     what is found both in metadata spreadsheet and API
-                     response.
   unique_identifier  Choose a field name from the sample metadata spreadsheet
                      which UNIQUELY identifies each sample.
 
@@ -50,11 +45,11 @@ optional arguments:
 An example with positional arguments
 
 ```
-verify_dataload.sh /PATH/TO/metadata_file API_url_address study_id annotation_dir sanity_level unique_identifier
+verify_dataload.sh /PATH/TO/metadata_file API_url_address study_id annotation_dir unique_identifier
 ```
 A working example using specific filename for sample metadata, Turnkey URL http://localhost/v2/samples, study ID PRJEB1234, generic path to annotation files, option LHF and unique identifier field name unique_sample_ID. 
 
 ```
-verify_dataload.sh dataloading-curation/test/mixcr/PRJNA330606_Wang_One_Sample.csv http://localhost/v2/samples PRJEB1234 dataloading-curation/test/mixcr/ LHF unique_sample_ID
+verify_dataload.sh dataloading-curation/test/mixcr/PRJNA330606_Wang_One_Sample.csv http://localhost/v2/samples PRJEB1234 dataloading-curation/test/mixcr/ unique_sample_ID
 ```
 
