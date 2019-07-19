@@ -2,7 +2,7 @@
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 ######### CREATED ON: DECEMBER 20, 2018
-######### LAST MODIFIED ON: June 17, 2019
+######### LAST MODIFIED ON: July 11, 2019
 
 import pandas as pd
 import json
@@ -328,7 +328,7 @@ def level_two(data_df,DATA,unique_field_id):
                             
                 else:
                     continue
-            store_sanity_check_results.append([ir_rear_number,in_JSON,pass_a,fail_a])
+            store_sanity_check_results.append([ir_rear_number,in_JSON,in_MD,pass_a,fail_a])
 
             # PRINT RESULTS
             print("TEST: FIELD NAMES MATCH\nRESULT --------------------------------------------------------------------------------->" + str(column_names_JSON.issubset(column_names_MD)) + "\n")
@@ -371,6 +371,8 @@ def ir_seq_count_imgt(annotation_dir,data_df,integer,DATA,unique_field_id):
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer]  
     files = os.listdir(annotation_dir)
+    
+    print(annotation_dir)
     
     if "txz" not in ir_file:
         number_lines.append(0)
@@ -427,7 +429,7 @@ def ir_seq_count_imgt(annotation_dir,data_df,integer,DATA,unique_field_id):
         print("\n")
         print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
         
-def ir_seq_count_igblast(igbl_subdir,data_df,integer,DATA,unique_field_id):     
+def ir_seq_count_igblast(annotation_dir,data_df,integer,DATA,unique_field_id):     
     
     number_lines = []
     sum_all = 0
@@ -435,6 +437,8 @@ def ir_seq_count_igblast(igbl_subdir,data_df,integer,DATA,unique_field_id):
     files_notfound = []
     ir_file = data_df["ir_rearrangement_file_name"].tolist()[integer] 
     files = os.listdir(annotation_dir)
+    
+    print(annotation_dir)
 
     if "fmt" not in ir_file:
         number_lines.append(0)
@@ -727,17 +731,13 @@ if __name__ == "__main__":
 
         print("Study ID " + str(study_id) + "\n")    
 
-        level_two(data_df,DATA,input_unique_field_id)
+        store_res = level_two(data_df,DATA,input_unique_field_id)
 
     if "F" in given_option: 
         print("########################################################################################################")
         print("-------------------------------------------ir_sequence_count-------------------------------------------\n")
 
-        level_three(data_df,annotation_dir,imgt_subdir,mixr_subdir,igbl_subdir,study_id,DATA,input_unique_field_id)
+        level_three(data_df,annotation_dir,study_id,DATA,input_unique_field_id)
 
     print("########################################################################################################")
-    """TO DO 
-    edit code so that metadata boolean is interpreted as equivalent to a str 0 or 1
-
-    add warning 
-    """
+ 
