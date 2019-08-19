@@ -1,6 +1,6 @@
 # Overview
 
-This directory contains the core python code for loading data into the iReceptor Platform. It consists of a single data loading script that can load either repertoire metadata files or rearrangement annotation files. It supports a simple UTF-8 encoded Comma Separated Values (CSV) file for repertoire metadata loading as well as a supporting the loading of rearrangement files as produced by a number of widely used annotation tools (IMGT HighV-QUEST, MiXCR, and igblast).
+This directory contains the core python code for loading data into the iReceptor Platform. It consists of a single data loading script that can load either repertoire metadata files or rearrangement annotation files. It supports a simple UTF-8 encoded Comma Separated Values (CSV) file for repertoire metadata loading as well as a supporting the loading of rearrangement files as produced by a number of widely used annotation tools (IMGT HighV-QUEST, MiXCR, and igblast). The iReceptor data loader directly supports the loading of AIRR TSV files, and uses the AIRR TSV output of igblast to load igblast rearrangement files.
 
 # Usage
 
