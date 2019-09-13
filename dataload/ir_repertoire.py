@@ -7,7 +7,7 @@ from datetime import datetime
 from datetime import timezone
 from parser import Parser
 
-class Sample(Parser):
+class IRRepertoire(Parser):
 	
 	def __init__(self,context):
 		self.context = context
