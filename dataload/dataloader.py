@@ -13,7 +13,7 @@ import argparse
 import time
 import sys
 
-from sample import Sample
+from ir_repertoire import IRRepertoire
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
@@ -310,7 +310,7 @@ def load_file(context):
     if context.type == "sample":
         # process samples
         print("Info: Processing repertoire metadata file: {}".format(context.filename))
-        parser = Sample(context)
+        parser = IRRepertoire(context)
     elif context.type == "imgt":
         # process imgt
         print("Info: Processing IMGT data file: {}".format(context.filename))
