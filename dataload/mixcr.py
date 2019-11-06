@@ -9,12 +9,12 @@ import json
 import gzip
 import time
 
-from parser import Parser
+from rearrangement import Rearrangement
 
-class MiXCR(Parser):
+class MiXCR(Rearrangement):
     
     def __init__( self, context ):
-        Parser.__init__(self,context)
+        Rearrangement.__init__(self,context)
         # The annotation tool used for the MiXCR parser is of course MiXCR
         self.setAnnotationTool("MiXCR")
         # The default column in the AIRR Mapping file is mixcr. This can be 
@@ -81,7 +81,7 @@ class MiXCR(Parser):
         else:
             if self.context.verbose:
                 print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
-            idarray = Parser.getSampleIDs(self.context, value, filename)
+            idarray = Rearrangement.getSampleIDs(self.context, value, filename)
 
 
         # Check to see that we found it and that we only found one. Fail if not.
@@ -174,7 +174,7 @@ class MiXCR(Parser):
             if junction_aa in df_chunk:
                 if self.context.verbose:
                     print("Info: Computing junction amino acids substrings...", flush=True)
-                df_chunk[ir_substring] = df_chunk[junction_aa].apply(Parser.get_substring)
+                df_chunk[ir_substring] = df_chunk[junction_aa].apply(Rearrangement.get_substring)
                 if self.context.verbose:
                     print("Info: Computing junction amino acids length...", flush=True)
                 df_chunk[ir_junction_aa_length] = df_chunk[junction_aa].apply(str).apply(len)
@@ -203,14 +203,14 @@ class MiXCR(Parser):
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
-            Parser.processGene(self.context, df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
-            Parser.processGene(self.context, df_chunk, j_call, j_call, ir_jgene_gene, ir_jgene_family)
-            Parser.processGene(self.context, df_chunk, d_call, d_call, ir_dgene_gene, ir_dgene_family)
+            Rearrangement.processGene(self.context, df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
+            Rearrangement.processGene(self.context, df_chunk, j_call, j_call, ir_jgene_gene, ir_jgene_family)
+            Rearrangement.processGene(self.context, df_chunk, d_call, d_call, ir_dgene_gene, ir_dgene_family)
             # If we don't already have a locus (that is the data file didn't provide one) then
             # calculate the locus based on the v_call array.
             locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
             if not locus in df_chunk:
-                df_chunk[locus] = df_chunk[v_call].apply(Parser.getLocus)
+                df_chunk[locus] = df_chunk[v_call].apply(Rearrangement.getLocus)
 
             # Assign each record the constant fields for all records in the chunk
             productive = self.context.airr_map.getMapping("productive", "ir_id", repository_tag)
@@ -222,7 +222,7 @@ class MiXCR(Parser):
             df_chunk[ir_project_sample_id_field] = ir_project_sample_id
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
-            now_str = Parser.getDateTimeNowUTC()
+            now_str = Rearrangement.getDateTimeNowUTC()
             ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
             ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
             df_chunk[ir_created_at] = now_str
