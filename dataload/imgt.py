@@ -1,10 +1,6 @@
 # Script for taking IMGT formatted annotation files
 # extracted from a zip archive and loaded
 # into an iReceptor data node MongoDb database
-#
-# Original script by Yang Zhou
-# Adapted and revised by Richard Bruskiewich
-#
 
 import os
 from os.path import isfile
@@ -16,7 +12,7 @@ import tarfile
 import json
 import pandas as pd
 
-from parser import Parser
+from rearrangement import Rearrangement
 
 # IMGT has a "functionality" field which has a text string that indcates
 # a functional annotation with the string "productive". Note that the 
@@ -28,9 +24,9 @@ def functional_boolean(functionality):
     else:
         return 0
 
-class IMGT(Parser):
+class IMGT(Rearrangement):
     def __init__(self, context):
-        Parser.__init__(self, context)
+        Rearrangement.__init__(self, context)
         # The annotation tool used for the IMGT parser is V-Quest
         self.setAnnotationTool("V-Quest")
         # The default column in the AIRR Mapping file is mixcr. This can be
@@ -86,7 +82,7 @@ class IMGT(Parser):
         else:
             if self.context.verbose:
                 print("Info: Retrieving associated sample for file " + fileName + " from repository field " + value)
-            idarray = Parser.getSampleIDs(self.context, value, fileName)
+            idarray = Rearrangement.getSampleIDs(self.context, value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
@@ -241,7 +237,7 @@ class IMGT(Parser):
         ir_substring = self.context.airr_map.getMapping("ir_substring", "ir_id", repository_tag)
         
         if junction_aa in mongo_concat:
-            mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Parser.get_substring)
+            mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Rearrangement.get_substring)
 
         # We want to keep the original vQuest vdj_string data, so we capture that in the
         # ir_vdjgene_string variables.
@@ -265,16 +261,16 @@ class IMGT(Parser):
         mongo_concat[ir_dgene_string] = mongo_concat[d_call]
         # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
         # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
-        Parser.processGene(self.context, mongo_concat, ir_vgene_string, v_call, ir_vgene_gene, ir_vgene_family)
-        Parser.processGene(self.context, mongo_concat, ir_jgene_string, j_call, ir_jgene_gene, ir_jgene_family)
-        Parser.processGene(self.context, mongo_concat, ir_dgene_string, d_call, ir_dgene_gene, ir_dgene_family)
+        Rearrangement.processGene(self.context, mongo_concat, ir_vgene_string, v_call, ir_vgene_gene, ir_vgene_family)
+        Rearrangement.processGene(self.context, mongo_concat, ir_jgene_string, j_call, ir_jgene_gene, ir_jgene_family)
+        Rearrangement.processGene(self.context, mongo_concat, ir_dgene_string, d_call, ir_dgene_gene, ir_dgene_family)
         # If we don't already have a locus (that is the data file didn't provide one) then
         # calculate the locus based on the v_call array.
         locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
         if not locus in mongo_concat:
             if self.context.verbose:
                 print("Info: Computing locus from v_call", flush=True) 
-            mongo_concat[locus] = mongo_concat[v_call].apply(Parser.getLocus)
+            mongo_concat[locus] = mongo_concat[v_call].apply(Rearrangement.getLocus)
 
         # Generate the junction length values as required.
         if self.context.verbose:
@@ -292,7 +288,7 @@ class IMGT(Parser):
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
-        now_str = Parser.getDateTimeNowUTC()
+        now_str = Rearrangement.getDateTimeNowUTC()
         ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
         ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
         mongo_concat[ir_created_at] = now_str
