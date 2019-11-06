@@ -14,6 +14,7 @@ import time
 import sys
 
 from ir_repertoire import IRRepertoire
+from airr_repertoire import AIRRRepertoire
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
@@ -59,7 +60,7 @@ def getArguments():
     type_group = parser.add_argument_group("data type options", "")
     type_group = type_group.add_mutually_exclusive_group()
 
-    # Processing sample metadata
+    # Processing iReceptor Repertoire metadata
     type_group.add_argument(
         "-s",
         "--sample",
@@ -67,7 +68,18 @@ def getArguments():
         const="sample",
         dest="type",
         default="",
-        help="The file to be loaded is a sample/repertoire metadata file (a 'csv' file with standard iReceptor/AIRR column headers)."
+        help="The file to be loaded is an iReceptor sample/repertoire metadata file (a 'csv' file with standard iReceptor/AIRR column headers)."
+    )
+
+    # Processing AIRR Repertoire metadata
+    type_group.add_argument(
+        "-r",
+        "--repertoire",
+        action="store_const",
+        const="repertoire",
+        dest="type",
+        default="",
+        help="The file to be loaded is an AIRR repertoire metadata file (a 'JSON' file that adheres to the AIRR Repertoire standard)."
     )
 
     # Processing IMGT VQuest data, in the form of a zip archive
@@ -308,9 +320,13 @@ def load_file(context):
     t_start = time.perf_counter()
 
     if context.type == "sample":
-        # process samples
-        print("Info: Processing repertoire metadata file: {}".format(context.filename))
+        # process iReceptor Repertoire metadata 
+        print("Info: Processing iReceptor repertoire metadata file: {}".format(context.filename))
         parser = IRRepertoire(context)
+    elif context.type == "repertoire":
+        # process AIRR Repertoire metadata
+        print("Info: Processing AIRR repertoire metadata file: {}".format(context.filename))
+        parser = AIRRRepertoire(context)
     elif context.type == "imgt":
         # process imgt
         print("Info: Processing IMGT data file: {}".format(context.filename))
