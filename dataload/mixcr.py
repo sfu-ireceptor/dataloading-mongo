@@ -1,6 +1,5 @@
 # Script for loading MIXCR formatted annotation file 
 # into an iReceptor data node MongoDb database
-#
 
 import sys
 import os.path
@@ -239,6 +238,7 @@ class MiXCR(Rearrangement):
 
             # Keep track of the total number of records processed.
             total_records = total_records + num_records
+            print("Info: Total records so far =", total_records, flush=True)
 
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
