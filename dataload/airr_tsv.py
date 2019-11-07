@@ -2,8 +2,8 @@
 # into an iReceptor database. Note that the AIRR TSV parser
 # is the default parser used for IgBLAST, but it can be used
 # for normal AIRR TSV files as well as can be used for general
-# file mapping by overriding the Parser's file mapping using
-# the Parser.setFileMapping() method before calling the process() 
+# file mapping by overriding the Rearragnement's file mapping using
+# the Rearragnement.setFileMapping() method before calling the process() 
 # method.
 
 import os.path
@@ -13,14 +13,14 @@ import json
 import gzip
 import airr
 
-from parser import Parser
+from rearrangement import Rearrangement
 from airr.io import RearrangementReader
 from airr.schema import ValidationError
 
-class AIRR_TSV(Parser):
+class AIRR_TSV(Rearrangement):
     
     def __init__( self, context ):
-        Parser.__init__(self,context)
+        Rearrangement.__init__(self,context)
         # The default annotation tool used for the AIRR parser is IgBLAST
         self.setAnnotationTool("IgBLAST")
         # The default column in the AIRR Mapping file is igblast. This can be
@@ -105,7 +105,7 @@ class AIRR_TSV(Parser):
             # where the file name was found.
             if self.context.verbose:
                 print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
-            idarray = Parser.getSampleIDs(self.context, value, filename)
+            idarray = Rearrangement.getSampleIDs(self.context, value, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
@@ -192,7 +192,7 @@ class AIRR_TSV(Parser):
             if junction_aa in airr_df:
                 if self.context.verbose:
                     print("Info: Retrieving junction amino acids and building substrings...", flush=True)
-                airr_df[ir_substring] = airr_df[junction_aa].apply(Parser.get_substring)
+                airr_df[ir_substring] = airr_df[junction_aa].apply(Rearrangement.get_substring)
 
                 # The AIRR TSV format doesn't have AA length, we want it in our repository.
                 if not (ir_junction_aa_length in airr_df):
@@ -224,14 +224,14 @@ class AIRR_TSV(Parser):
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
-            Parser.processGene(self.context, airr_df, v_call, v_call, ir_vgene_gene, ir_vgene_family)
-            Parser.processGene(self.context, airr_df, j_call, j_call, ir_jgene_gene, ir_jgene_family)
-            Parser.processGene(self.context, airr_df, d_call, d_call, ir_dgene_gene, ir_dgene_family)
+            Rearrangement.processGene(self.context, airr_df, v_call, v_call, ir_vgene_gene, ir_vgene_family)
+            Rearrangement.processGene(self.context, airr_df, j_call, j_call, ir_jgene_gene, ir_jgene_family)
+            Rearrangement.processGene(self.context, airr_df, d_call, d_call, ir_dgene_gene, ir_dgene_family)
             # If we don't already have a locus (that is the data file didn't provide one) then
             # calculate the locus based on the v_call array.
             locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
             if not locus in airr_df:
-                airr_df[locus] = airr_df[v_call].apply(Parser.getLocus)
+                airr_df[locus] = airr_df[v_call].apply(Rearrangement.getLocus)
 
             # For now we assume that an AIRR TSV file, when loaded into iReceptor, has
             # been produced by igblast. This in general is not the case, but as a loader
@@ -247,7 +247,7 @@ class AIRR_TSV(Parser):
 
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
-            now_str = Parser.getDateTimeNowUTC()
+            now_str = Rearrangement.getDateTimeNowUTC()
             ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
             ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
             airr_df[ir_created_at] = now_str
@@ -264,7 +264,7 @@ class AIRR_TSV(Parser):
 
             # Keep track of the total number of records processed.
             total_records = total_records + num_records
-
+            print("Info: Total records so far =", total_records, flush=True)
  
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.context.verbose:
