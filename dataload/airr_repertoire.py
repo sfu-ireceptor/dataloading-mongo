@@ -80,7 +80,7 @@ class AIRRRepertoire(Repertoire):
                     # Look for the primary annotation
                     got_primary = False
                     for element in value:
-                        if element['primary_annotation']:
+                        if 'primary_annotation' in element and element['primary_annotation']:
                             # If we found it, flatten it and the break out of the loop
                             for sub_key, sub_value in element.items():
                                 self.ir_flatten(sub_key, sub_value, dictionary)
