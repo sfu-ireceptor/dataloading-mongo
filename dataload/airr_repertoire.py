@@ -10,47 +10,74 @@ import airr
 
 class AIRRRepertoire(Repertoire):
     
+    # Constructor - keep track of the context (although it is in the parent class)
+    # and call the parent class constructor.
     def __init__(self,context):
         self.context = context
         Repertoire.__init__(self, context)
-        
 
+    def ir_maptorepository(self, field):
+        # Check to see if the field is in the AIRR mapping, if not warn.
+        airr_field = self.context.airr_map.getMapping(field, "airr", "airr")
+        if airr_field is None:
+            print("Warning: Could not find %s in AIRR mapping"%(field))
+
+        # Check to see if the field can be mapped to a field in the repository, if not warn.
+        repo_field = self.context.airr_map.getMapping(field, "airr", self.context.repository_tag)
+        if repo_field is None:
+            repo_field = field
+            print("Warning: Could not find repository mapping for %s, storing as is"%(field))
+
+        # If we are verbose, tell about the mapping...
+        if self.context.verbose:
+            print("Info: Mapping %s => %s" % (field, repo_field))
+
+        # Return the mapping.
+        return repo_field
+
+    # This method is a recursive function that takes a key and value in a JSON
+    # object and recursively flattens the values adding each element to the dictionary 
+    # as it finds a "leaf node". Note a leaf node in general is a key value pair where
+    # the value is not a compoud object (not a dict or a list). If it is not a leaf node
+    # then the fucntion recurses on all of the elements in the dict or list. Note that
+    # a leaf node is a bit complex and specialized based on both the AIRR spec and how
+    # they are represented in the iReceptor repository. 
     def ir_flatten(self, key, value, dictionary):
         # If it is an integer, float, or bool we just use the key value pair.
         if isinstance(value, (int, float, bool)):
-            print("'"+key+"':"+str(value))
-            dictionary[key] = value
+            dictionary[self.ir_maptorepository(key)] = value
         # If it is a string we just use the key value pair.
         elif isinstance(value, str):
-            print("'"+key+"':'"+value+"'")
-            dictionary[key] = value
+            dictionary[self.ir_maptorepository(key)] = value
         elif isinstance(value, dict):
             # We need to handle the AIRR ontology terms. If we get one we want 
             # to use the value of the ontology term in our repository for now.
             if key == "organism" or key == "study_type" or key == "cell_subset":
-                print("'"+key+"':'"+value['value']+"'")
-                dictionary[key] = value['value']
+                dictionary[self.ir_maptorepository(key)] = value['value']
             else:
                 for sub_key, sub_value in value.items():
                     self.ir_flatten(sub_key, sub_value, dictionary)
-        # There are currently three possible array situations in the spec. 
-        # - keywords_study: This is an array of strings that should be concatenated
-        # - diagnosis: We only support one per repertoire. Warn and continue with 1st
-        # - pcr_target: We only support one per repertoire. Warn and continue with 1st
-        # - data_processing: We only support one per repertoire. Warn and continue with 1st
         elif isinstance(value, list):
-            # We flatten this explicitly as a special case.
+            # There are currently three possible list  situations in the spec. 
+            # - keywords_study: This is an array of strings that should be concatenated
+            # - diagnosis: We only support one per repertoire. Warn and continue with 1st
+            # - pcr_target: We only support one per repertoire. Warn and continue with 1st
+            # - data_processing: We only support one per repertoire. Warn and continue with 1st
+
+            # We flatten this explicitly as a special case. We want to store the list of strings.
             if key == "keywords_study":
-                print("'"+key+"':'"+str(value)+"'")
-                dictionary[key] = value
+                dictionary[self.ir_maptorepository(key)] = value
             else:
                 # If we are handling a data processing element list, we have a hint as 
                 # to which element is the most important, as we can use the "primary_annotation"
                 # field to determine which one to use.
                 if key == "data_processing":
-                    # Look for the primary annotation
+                    # Warn if we found more than one, as we only store one per repertoire. If
+                    # you have more than one and want to store the rearrangements separately
+                    # then you need to split this up into two repertoires.
                     if len(value) > 1:
                         print("Warning: Found more than one %s element (found %d)."%(key, len(value)))
+                    # Look for the primary annotation
                     got_primary = False
                     for element in value:
                         if element['primary_annotation']:
@@ -84,18 +111,15 @@ class AIRRRepertoire(Repertoire):
             print("ERROR: input file " + filename + " is not a file")
             return False
 
-        # Check for a valid repertoire file
-        #if not airr.validate_repertoire(filename):
-        #    print("ERROR: AIRR repertoire validation failed")
-        #    return False
-
-        # Load the repertoires
+        # Check the validity of the repertoires from an AIRR perspective
         try:
             data = airr.load_repertoire(filename, validate=True)
         except airr.ValidationError as err:
             print("ERROR: AIRR repertoire validation failed for file %s - %s" % (filename, err))
+            # If we failed, we still want to load and process the file, so reload
+            # with validation turned off.
+            data = airr.load_repertoire(filename)
 
-        data = airr.load_repertoire(filename)
         # The 'Repertoire' contains a dictionary for each repertoire.
         repertoire_list = []
         for repertoire in data['Repertoire']:
@@ -103,131 +127,50 @@ class AIRRRepertoire(Repertoire):
             for key, value in repertoire.items():
                 self.ir_flatten(key, value, repertoire_dict)
 
+            # Add repository specific fields to each repertoire as required.
+            # Add a created_at and updated_at field in the repository.
+            now_str = Repertoire.getDateTimeNowUTC()
+            repertoire_dict['ir_created_at'] = now_str
+            repertoire_dict['ir_updated_at'] = now_str
+
+            # Get the mapping for the sequence count field for the repository and 
+            # initialize the sequeunce count to 0. If we can't find a mapping for this
+            # field then we can't do anything. 
+            count_field = self.context.airr_map.getMapping("ir_sequence_count", "ir_id",
+                                                           self.context.repository_tag )
+            if count_field is None:
+                print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
+                      % ( self.context.repository_tag))
+            else:
+                repertoire_dict[count_field] = 0
+
+            # Ensure that we have a correct file name to link fields. If we can't find it 
+            # this is a fatal error as we can not link any data to this set repertoire,
+            # so there is no point adding the repertoire...
+            repository_file_field = self.context.airr_map.getMapping("ir_rearrangement_file_name",
+                                                               "ir_id",  self.context.repository_tag)
+            # If we can't find a mapping for this field in the repository mapping, then
+            # we might still be OK if the metadata spreadsheet has the field. If the fails, 
+            # then we should exit.
+            if repository_file_field is None or len(repository_file_field) == 0:
+                print("Warning: Could not find a valid repository mapping for the rearrangement file name (ir_rearrangement_file_name)")
+                repository_file_field = "ir_rearrangement_file_name"
+    
+            # If we can't find the file field for the rearrangement field in the repository, then
+            # abort, as we won't be able to link the repertoire to the rearrangement.
+            if not repository_file_field in repertoire_dict:
+                print("ERROR: Could not find a rearrangement file field in the metadata (ir_rearrangement_file_name)")
+                print("ERROR: Will not be able to link repertoire to rearrangement annotations")
+                repertoire_dict['ir_rearrangement_file_name'] = ""
+                return False
+
             repertoire_list.append(repertoire_dict)
                 
-        #print(repertoire_list)
-
-        print("AIRRRepertoire: Not yet implemented!")
-        return False
-
-        # Set the tag for the repository that we are using.
-        repository_tag = self.context.repository_tag
-
-        # Extract the fields that are of interest for this file. Essentiall all
-        # non null curator fields
-        curation_tag = "ir_curator"
-        if not curation_tag in self.context.airr_map.airr_repertoire_map:
-            print("ERROR: Could not find Curation mapping (" + curation_tag + ") in mapping file")
-            return False
-
-        field_of_interest = self.context.airr_map.airr_repertoire_map[curation_tag].notnull()
-        
-        # We select the rows in the mapping that contain fields of interest for curataion.
-        # At this point, file_fields contains N columns that contain our mappings for the
-        # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
-        # only data that is relevant to curataion
-        airr_fields = self.context.airr_map.airr_repertoire_map.loc[field_of_interest]
-        
-        # We need to build the set of fields that the repository can store. We don't
-        # want to extract fields that the repository doesn't want.
-        curationColumns = []
-        columnMapping = {}
-
-        if self.context.verbose:
-            print("Info: Dumping AIRR repertoire mapping")
-        for index, row in airr_fields.iterrows():
-            if self.context.verbose:
-                print("    " + str(row[curation_tag]) + " -> " + str(row[repository_tag]))
-            # If the repository column has a value for the curator field, track the field
-            # from both the curator and repository side.
-            if not pd.isnull(row[repository_tag]):
-                curationColumns.append(row[curation_tag])
-                columnMapping[row[curation_tag]] = row[repository_tag]
-            else:
-                print("Repository does not map " +
-                    str(row[curation_tag]) + ", inserting into repository as is")
-
-                # Read in the CSV file. We need to read this with a utf-8-sig encoding,
-        # which means it is a UTF file with a BOM signature. Note that this has
-        # been confirmed to work with a Non-UTF ASCII file fine...
-        try:
-            df = pd.read_csv( filename, sep=None, engine='python', encoding='utf-8-sig' )
-        except Exception as err:
-            print("ERROR: Unable to open file %s - %s" % (filename, err))
-            return False
-
-        # Remove any records that are Unnamed. Note: This occurs when a 
-        # Pandas dataframe has a column without a name. In general, this 
-        # should not occur and it should probably be detected as an error or
-        # at least a warning given.
-        if (df.columns.str.contains('^Unnamed').any()):
-            print("Warning: column without a title detected in file ", filename)    
-        df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-
-        # Check the validity of the columns in the actual file being loaded.
-        for curation_file_column in df.columns:
-            if curation_file_column in columnMapping:
-                # If the file column is in the mapping, change the data frame column name
-                # to be the column name for the repository.
-                mongo_column = columnMapping[curation_file_column]
-                if self.context.verbose:
-                    print("Info: Mapping input file column " + curation_file_column + " -> " + mongo_column)
-                df.rename({curation_file_column:mongo_column}, axis='columns', inplace=True)
-            else:
-                # If we don't have a mapping, keep the name the same, as we want to
-                # still save the data even though we don't have a mapping.
-                if self.context.verbose:
-                    print("Info: No mapping for input file column " + curation_file_column + ", storing in repository as is")
-        # Check to see which desired Curation mappings we don't have... We check this
-        # against the "mongo_column" from the repository in the data frame, because
-        # we have already mapped the columns from the file columns to the repository columns.
-        for curation_column, mongo_column in columnMapping.items():
-            if not mongo_column in df.columns:
-                if self.context.verbose:
-                    print("Warning: Missing data in input file for " + curation_column)
-
-        # Get the mapping for the sequence count field for the repository and 
-        # initialize the sequeunce count to 0. If we can't find a mapping for this
-        # field then we can't do anything. 
-        count_field = self.context.airr_map.getMapping("ir_sequence_count", "ir_id", repository_tag)
-        if count_field is None:
-            print("Warning: Could not find ir_sequence_count tag in repository " + repository_tag + ", field not initialized")
-        else:
-            df[count_field] = 0
-
-        # Ensure that we have a correct file name to link fields. If not return.
-        # This is a fatal error as we can not link any data to this set of samples,
-        # so there is no point adding the samples...
-        repository_file_field = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
-        # If we can't find a mapping for this field in the repository mapping, then
-        # we might still be OK if the metadata spreadsheet has the field. If the fails, 
-        # then we should exit.
-        if repository_file_field is None or len(repository_file_field) == 0:
-            print("Warning: Could not find a valid repository mapping for the rearrangement file name (ir_rearrangement_file_name)")
-            repository_file_field = "ir_rearrangement_file_name"
-
-        # If we can't find the file field for the rearrangement field in the repository, then
-        # abort, as we won't be able to link the repertoire to the rearrangement.
-        if not repository_file_field in df.columns:
-            print("ERROR: Could not find a rearrangement file field in the metadata (ir_rearrangement_file_name)")
-            print("ERROR: Will not be able to link repertoire to rearrangement annotations")
-            df["ir_rearrangment_file_name"] = ""
-            return False
-
-        # Add a created_at and updated_at field in the repository.
-        now_str = Parser.getDateTimeNowUTC()
-        df["ir_created_at"] = now_str
-        df["ir_updated_at"] = now_str
-
-        # Conver to JSON
-        records = json.loads(df.T.to_json()).values()
-        record_list = list(records)
-        
         # Iterate over the list and load records. Note that this code inserts all data
-        # that was read in the CSV file. That is, all of the non MiAIRR fileds that exist
-        # are stored in the repository. So if the provided CSV file has lots of extra fields
+        # that was read in. That is, all of the non MiAIRR fileds that exist
+        # are stored in the repository. So if the provided file has lots of extra fields
         # they will exist in the repository.
-        for r in record_list:
+        for r in repertoire_list:
             self.insertDocument( r )
     
         return True
