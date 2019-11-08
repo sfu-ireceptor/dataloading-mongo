@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from datetime import timezone
 from repertoire import Repertoire
+import airr
 
 class AIRRRepertoire(Repertoire):
     
@@ -13,14 +14,101 @@ class AIRRRepertoire(Repertoire):
         self.context = context
         Repertoire.__init__(self, context)
         
+
+    def ir_flatten(self, key, value, dictionary):
+        # If it is an integer, float, or bool we just use the key value pair.
+        if isinstance(value, (int, float, bool)):
+            print("'"+key+"':"+str(value))
+            dictionary[key] = value
+        # If it is a string we just use the key value pair.
+        elif isinstance(value, str):
+            print("'"+key+"':'"+value+"'")
+            dictionary[key] = value
+        elif isinstance(value, dict):
+            # We need to handle the AIRR ontology terms. If we get one we want 
+            # to use the value of the ontology term in our repository for now.
+            if key == "organism" or key == "study_type" or key == "cell_subset":
+                print("'"+key+"':'"+value['value']+"'")
+                dictionary[key] = value['value']
+            else:
+                for sub_key, sub_value in value.items():
+                    self.ir_flatten(sub_key, sub_value, dictionary)
+        # There are currently three possible array situations in the spec. 
+        # - keywords_study: This is an array of strings that should be concatenated
+        # - diagnosis: We only support one per repertoire. Warn and continue with 1st
+        # - pcr_target: We only support one per repertoire. Warn and continue with 1st
+        # - data_processing: We only support one per repertoire. Warn and continue with 1st
+        elif isinstance(value, list):
+            # We flatten this explicitly as a special case.
+            if key == "keywords_study":
+                print("'"+key+"':'"+str(value)+"'")
+                dictionary[key] = value
+            else:
+                # If we are handling a data processing element list, we have a hint as 
+                # to which element is the most important, as we can use the "primary_annotation"
+                # field to determine which one to use.
+                if key == "data_processing":
+                    # Look for the primary annotation
+                    if len(value) > 1:
+                        print("Warning: Found more than one %s element (found %d)."%(key, len(value)))
+                    got_primary = False
+                    for element in value:
+                        if element['primary_annotation']:
+                            # If we found it, flatten it and the break out of the loop
+                            for sub_key, sub_value in element.items():
+                                self.ir_flatten(sub_key, sub_value, dictionary)
+                            got_primary = True
+                            print("Warning: Found a primary annotation, using it.")
+                            break
+                    # If we didn't find the primary, then use the first one as a best guess.
+                    if not got_primary:
+                        print("Warning: Could not find a primary annotation, using the first one.")
+                        for sub_key, sub_value in value[0].items():
+                            self.ir_flatten(sub_key, sub_value, dictionary)
+                else:
+                    # In the general case, iReceptor only supports a single instance in 
+                    # array subtypes. If this occurs, we print a warning and use the first
+                    # element in the array and ignore the rest. This is a fairly substantial
+                    # issue and MAYBE it should be a FATAL ERROR???
+                    if len(value) > 1:
+                        print("Warning: Found a repertoire list for %s > 1 (%d)."%(key, len(value)))
+                        print("Warning: iReceptor only supports a single array, using first instance.")
+                    for sub_key, sub_value in value[0].items():
+                        self.ir_flatten(sub_key, sub_value, dictionary)
+        return dictionary
+
     def process(self, filename):
-        print("AIRRRepertoire: Not yet implemented!")
-        return False
 
         # Check to see if we have a file    
         if not os.path.isfile(filename):
             print("ERROR: input file " + filename + " is not a file")
             return False
+
+        # Check for a valid repertoire file
+        #if not airr.validate_repertoire(filename):
+        #    print("ERROR: AIRR repertoire validation failed")
+        #    return False
+
+        # Load the repertoires
+        try:
+            data = airr.load_repertoire(filename, validate=True)
+        except airr.ValidationError as err:
+            print("ERROR: AIRR repertoire validation failed for file %s - %s" % (filename, err))
+
+        data = airr.load_repertoire(filename)
+        # The 'Repertoire' contains a dictionary for each repertoire.
+        repertoire_list = []
+        for repertoire in data['Repertoire']:
+            repertoire_dict = dict()
+            for key, value in repertoire.items():
+                self.ir_flatten(key, value, repertoire_dict)
+
+            repertoire_list.append(repertoire_dict)
+                
+        #print(repertoire_list)
+
+        print("AIRRRepertoire: Not yet implemented!")
+        return False
 
         # Set the tag for the repository that we are using.
         repository_tag = self.context.repository_tag
