@@ -263,17 +263,14 @@ class IMGT(Rearrangement):
         ir_vgene_family = self.getMapping("ir_vgene_family", "ir_id", repository_tag)
         ir_dgene_family = self.getMapping("ir_dgene_family", "ir_id", repository_tag)
         ir_jgene_family = self.getMapping("ir_jgene_family", "ir_id", repository_tag)
-        ir_vgene_string = self.getMapping("ir_vgene_string", "ir_id", repository_tag)
-        ir_dgene_string = self.getMapping("ir_dgene_string", "ir_id", repository_tag)
-        ir_jgene_string = self.getMapping("ir_jgene_string", "ir_id", repository_tag)
-        mongo_concat[ir_vgene_string] = mongo_concat[v_call]
-        mongo_concat[ir_jgene_string] = mongo_concat[j_call]
-        mongo_concat[ir_dgene_string] = mongo_concat[d_call]
+        mongo_concat["imgt_vgene_string"] = mongo_concat[v_call]
+        mongo_concat["imgt_jgene_string"] = mongo_concat[j_call]
+        mongo_concat["imgt_dgene_string"] = mongo_concat[d_call]
         # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
         # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
-        Rearrangement.processGene(self.context, mongo_concat, ir_vgene_string, v_call, ir_vgene_gene, ir_vgene_family)
-        Rearrangement.processGene(self.context, mongo_concat, ir_jgene_string, j_call, ir_jgene_gene, ir_jgene_family)
-        Rearrangement.processGene(self.context, mongo_concat, ir_dgene_string, d_call, ir_dgene_gene, ir_dgene_family)
+        self.processGene(mongo_concat, v_call, v_call, ir_vgene_gene, ir_vgene_family)
+        self.processGene(mongo_concat, j_call, j_call, ir_jgene_gene, ir_jgene_family)
+        self.processGene(mongo_concat, d_call, d_call, ir_dgene_gene, ir_dgene_family)
         # If we don't already have a locus (that is the data file didn't provide one) then
         # calculate the locus based on the v_call array.
         locus = self.getMapping("locus", "ir_id", repository_tag)
