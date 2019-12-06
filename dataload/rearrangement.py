@@ -192,16 +192,7 @@ class Rearrangement(Parser):
             print("Warning: locus with non IG and non TR found in " + str(v_call_array))
         return final_locus
 
-    @staticmethod
-    def getSampleIDs(context, file_field, file_name):
-        # Given a context (which knows about the MongoDB), look for the file_name given
-        # in the Samples collection in the file_field field in the repository. Return an
-        # array of integers which are the sample IDs where the file_name was found in the
-        # field field_name.
-        samples_cursor = context.samples.find( {file_field: { '$regex': file_name }}, {'_id': 1})
-        idarray = [sample['_id'] for sample in samples_cursor]
-        return idarray
-
+    # Hide the use of the scratch directory for temporary files from the subclasses.
     def getScratchPath(self, fileName):
         return join(self.getScratchFolder(), fileName)
 
@@ -210,3 +201,43 @@ class Rearrangement(Parser):
 
     def readScratchDfNoHeader(self, fileName, sep=','):
         return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False, header=None)
+
+    #####################################################################################
+    # Hide the Mongo database implementation from the Rearrangement subclasses.
+    #####################################################################################
+
+    # Look for the file_name given
+    # in the samples collection in the file_field field in the repository. Return an
+    # array of integers which are the sample IDs where the file_name was found in the
+    # field field_name.
+    def repositoryGetSampleIDs(self, file_field, file_name):
+        samples_cursor = self.context.samples.find( {file_field: { '$regex': file_name }}, {'_id': 1})
+        idarray = [sample['_id'] for sample in samples_cursor]
+        return idarray
+
+    # Write the set of JSON records provided to the "rearrangements" collection.
+    # This is hiding the Mongo implementation. Probably should refactor the 
+    # repository implementation completely.
+    def repositoryWriteRearrangements(self, json_records):
+        self.context.sequences.insert(json_records)
+
+    # Count the number of rearrangements that belong to a specific repertoire. Note: In our
+    # early implementations, we had an internal field name called ir_project_sample_id. We
+    # want to hide this and just talk about reperotire IDs, so this is hidden in the 
+    # Rearrangement class...
+    def repositoryCountRearrangements(self, repertoire_id):
+        repertoire_field = self.context.airr_map.getMapping("ir_project_sample_id",
+                                                            "ir_id",
+                                                            self.context.repository_tag)
+        rearrangement_count = self.context.sequences.find(
+                {repertoire_field:{'$eq':repertoire_id}}
+            ).count()
+        return rearrangement_count
+
+    # Update the cached sequence count for the given reperotire to be the given count.
+    def repositoryUpdateCount(self, repertoire_id, count):
+        self.context.samples.update(
+            {"_id":repertoire_id}, {"$set": {"ir_sequence_count":count}}
+        )
+
+
