@@ -57,7 +57,7 @@ class IMGT(Rearrangement):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
-        repository_tag = self.context.repository_tag 
+        repository_tag = self.getRepositoryTag()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using.
@@ -90,7 +90,6 @@ class IMGT(Rearrangement):
         else:
             if self.verbose():
                 print("Info: Retrieving associated sample for file " + fileName + " from repository field " + value)
-            #idarray = Rearrangement.getSampleIDs(self.context, value, fileName)
             idarray = self.repositoryGetSampleIDs(value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
@@ -224,18 +223,18 @@ class IMGT(Rearrangement):
         # IMGT annotates a rearrangement's functionality  with a string. We have a function
         # that takes the string and changes it to an integer 1/0 which the repository
         # expects. We want to keep the original data in case we need further interpretation,
-        productive = self.context.airr_map.getMapping("productive", "ir_id", repository_tag)
+        productive = self.getMapping("productive", "ir_id", repository_tag)
         if productive in mongo_concat:
             mongo_concat["imgt_productive"] = mongo_concat[productive]
             mongo_concat[productive] = mongo_concat[productive].apply(functional_boolean)
 
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
-        ir_project_sample_id_field = self.context.airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
+        ir_project_sample_id_field = self.getMapping("ir_project_sample_id", "ir_id", repository_tag)
         mongo_concat[ir_project_sample_id_field] = ir_project_sample_id
 
         # The annotation tool used
-        ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
+        ir_annotation_tool = self.getMapping("ir_annotation_tool", "ir_id", repository_tag)
         mongo_concat[ir_annotation_tool] = self.getAnnotationTool()
 
         # Generate the substring field, which we use to heavily optmiize junction AA
@@ -244,8 +243,8 @@ class IMGT(Rearrangement):
         # now.
         if self.verbose():
             print("Info: Computing substring from junction", flush=True) 
-        junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        ir_substring = self.context.airr_map.getMapping("ir_substring", "ir_id", repository_tag)
+        junction_aa = self.getMapping("junction_aa", "ir_id", repository_tag)
+        ir_substring = self.getMapping("ir_substring", "ir_id", repository_tag)
         
         if junction_aa in mongo_concat:
             mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Rearrangement.get_substring)
@@ -255,18 +254,18 @@ class IMGT(Rearrangement):
         # We need to look up the "known parameter" from an iReceptor perspective (the field
         # name in the "ir_id" column mapping and map that to the correct field name for the
         # repository we are writing to.
-        v_call = self.context.airr_map.getMapping("v_call", "ir_id", repository_tag)
-        d_call = self.context.airr_map.getMapping("d_call", "ir_id", repository_tag)
-        j_call = self.context.airr_map.getMapping("j_call", "ir_id", repository_tag)
-        ir_vgene_gene = self.context.airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
-        ir_dgene_gene = self.context.airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
-        ir_jgene_gene = self.context.airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
-        ir_vgene_family = self.context.airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
-        ir_dgene_family = self.context.airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
-        ir_jgene_family = self.context.airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
-        ir_vgene_string = self.context.airr_map.getMapping("ir_vgene_string", "ir_id", repository_tag)
-        ir_dgene_string = self.context.airr_map.getMapping("ir_dgene_string", "ir_id", repository_tag)
-        ir_jgene_string = self.context.airr_map.getMapping("ir_jgene_string", "ir_id", repository_tag)
+        v_call = self.getMapping("v_call", "ir_id", repository_tag)
+        d_call = self.getMapping("d_call", "ir_id", repository_tag)
+        j_call = self.getMapping("j_call", "ir_id", repository_tag)
+        ir_vgene_gene = self.getMapping("ir_vgene_gene", "ir_id", repository_tag)
+        ir_dgene_gene = self.getMapping("ir_dgene_gene", "ir_id", repository_tag)
+        ir_jgene_gene = self.getMapping("ir_jgene_gene", "ir_id", repository_tag)
+        ir_vgene_family = self.getMapping("ir_vgene_family", "ir_id", repository_tag)
+        ir_dgene_family = self.getMapping("ir_dgene_family", "ir_id", repository_tag)
+        ir_jgene_family = self.getMapping("ir_jgene_family", "ir_id", repository_tag)
+        ir_vgene_string = self.getMapping("ir_vgene_string", "ir_id", repository_tag)
+        ir_dgene_string = self.getMapping("ir_dgene_string", "ir_id", repository_tag)
+        ir_jgene_string = self.getMapping("ir_jgene_string", "ir_id", repository_tag)
         mongo_concat[ir_vgene_string] = mongo_concat[v_call]
         mongo_concat[ir_jgene_string] = mongo_concat[j_call]
         mongo_concat[ir_dgene_string] = mongo_concat[d_call]
@@ -277,7 +276,7 @@ class IMGT(Rearrangement):
         Rearrangement.processGene(self.context, mongo_concat, ir_dgene_string, d_call, ir_dgene_gene, ir_dgene_family)
         # If we don't already have a locus (that is the data file didn't provide one) then
         # calculate the locus based on the v_call array.
-        locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
+        locus = self.getMapping("locus", "ir_id", repository_tag)
         if not locus in mongo_concat:
             if self.verbose():
                 print("Info: Computing locus from v_call", flush=True) 
@@ -286,22 +285,22 @@ class IMGT(Rearrangement):
         # Generate the junction length values as required.
         if self.verbose():
             print("Info: Computing junction lengths", flush=True) 
-        junction = self.context.airr_map.getMapping("junction", "ir_id", repository_tag)
-        junction_length = self.context.airr_map.getMapping("junction_length", "ir_id", repository_tag)
+        junction = self.getMapping("junction", "ir_id", repository_tag)
+        junction_length = self.getMapping("junction_length", "ir_id", repository_tag)
         if junction in mongo_concat and not junction_length in mongo_concat:
             mongo_concat[junction_length] = mongo_concat[junction].apply(len)
         # Special case for junction_aa_length. This does not exist in the AIRR standard,
         # so we have to check to see if the mapping returned None as well. 
-        junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        ir_junction_aa_length = self.context.airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
+        junction_aa = self.getMapping("junction_aa", "ir_id", repository_tag)
+        ir_junction_aa_length = self.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
         if junction_aa in mongo_concat and (ir_junction_aa_length is None or not ir_junction_aa_length in mongo_concat):
             mongo_concat[ir_junction_aa_length] = mongo_concat[junction_aa].apply(len)
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
         now_str = Rearrangement.getDateTimeNowUTC()
-        ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
-        ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
+        ir_created_at = self.getMapping("ir_created_at", "ir_id", repository_tag)
+        ir_updated_at = self.getMapping("ir_updated_at", "ir_id", repository_tag)
         mongo_concat[ir_created_at] = now_str
         mongo_concat[ir_updated_at] = now_str
 
