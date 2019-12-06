@@ -69,7 +69,6 @@ class Rearrangement(Parser):
     # Process a gene call to generate the appropriate call, gene, and family
     # fields in teh data frame.
     # Inputs:
-    #    - context: the context for the processing to take place
     #    - dataframe: the dataframe to process. The call_tage should exist
     #                 within this dataframe, and the gene_tag, family_tag
     #                 columns will be created within this data frame based
@@ -79,22 +78,21 @@ class Rearrangement(Parser):
     #                 to be created
     #    - family_tag: a string that represents the column name of the gene tag
     #                 to be created
-    @staticmethod
-    def processGene(context, dataframe, base_tag, call_tag, gene_tag, family_tag):
+    def processGene(self, dataframe, base_tag, call_tag, gene_tag, family_tag):
         # Build the gene call field, as an array if there is more than one gene
         # assignment made by the annotator.
             if base_tag in dataframe:
-                if context.verbose:
+                if self.verbose():
                     print("Info: Constructing %s array from %s"%(call_tag, base_tag), flush=True)
                 dataframe[call_tag] = dataframe[base_tag].apply(Rearrangement.setGene)
 
                 # Build the vgene_gene field (with no allele)
-                if context.verbose:
+                if self.verbose():
                     print("Info: Constructing %s from %s"%(gene_tag, base_tag), flush=True)
                 dataframe[gene_tag] = dataframe[call_tag].apply(Rearrangement.setGeneGene)
 
                 # Build the vgene_family field (with no allele and no gene)
-                if context.verbose:
+                if self.verbose():
                     print("Info: Constructing %s from %s"%(family_tag, base_tag), flush=True)
                 dataframe[family_tag] = dataframe[call_tag].apply(Rearrangement.setGeneFamily)
 
