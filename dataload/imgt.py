@@ -75,20 +75,20 @@ class IMGT(Rearrangement):
         # data in a safe way.
         self.setScratchFolder(filewithpath, fileName)
 
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Extracting IMGT file: ", fileName)
             print("Info: Path: ", filewithpath)
             print("Info: Scratch folder: ", self.getScratchFolder())
 
         # Get the sample ID of the data we are processing. We use the IMGT file name for
         # this at the moment, but this may not be the most robust method.
-        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        value = self.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
         idarray = []
         if value is None:
             print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
             return False
         else:
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Retrieving associated sample for file " + fileName + " from repository field " + value)
             #idarray = Rearrangement.getSampleIDs(self.context, value, fileName)
             idarray = self.repositoryGetSampleIDs(value, fileName)
@@ -126,7 +126,7 @@ class IMGT(Rearrangement):
         filedict = {}
         first_dataframe = True
         for vquest_file in vquest_files:
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Processing file ", vquest_file, flush=True)
             # Read in the data frame for the file.
             vquest_dataframe = self.readScratchDf(vquest_file, sep='\t')
@@ -146,12 +146,12 @@ class IMGT(Rearrangement):
                 # If the repository column has a value for the IMGT field, track the field
                 # from both the IMGT and repository side.
                 if not pd.isnull(row[repository_tag]):
-                    if self.context.verbose:
+                    if self.verbose():
                         print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]), flush=True)
                     vquest_fields.append(row[filemap_tag])
                     mongo_fields.append(row[repository_tag])
                 else:
-                    if self.context.verbose:
+                    if self.verbose():
                         print("Info:    Repository does not support " + vquest_file + "/" + 
                               str(row[filemap_tag]) + ", not inserting into repository", flush=True)
             # Use the vquest column in our mapping to select the columns we want from the 
@@ -181,7 +181,7 @@ class IMGT(Rearrangement):
         # We now have the data in a data frame with the correct headers mapped from the
         # IMGT data fields to the correct repository field names. Now we have to perform
         # any specific mappings that are specific to IMGT.
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Done building the initial data frame", flush=True) 
 
         # First, we want to keep track of some of the data from the IMGT Parameters file.
@@ -208,17 +208,17 @@ class IMGT(Rearrangement):
             "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
         mongo_concat['imgt_no_nucleotide_to_exclude'] = parameter_dictionary[
             "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Done processing IMGT Parameter file", flush=True) 
 
         # Get rid of columns where the column is null.
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Cleaning up NULL columns", flush=True) 
         mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
 
         # Critical iReceptor specific fields that need to be built from existing IMGT
         # generated fields.
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Setting up iReceptor specific fields", flush=True) 
 
         # IMGT annotates a rearrangement's functionality  with a string. We have a function
@@ -311,25 +311,25 @@ class IMGT(Rearrangement):
         t_start = time.perf_counter()
         records = json.loads(mongo_concat.T.to_json()).values()
         t_end = time.perf_counter()
-        if self.context.verbose:
+        if self.verbose():
             print("Info: JSON created, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
         # The climax: insert the records into the MongoDb collection!
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
         t_start = time.perf_counter()
         self.repositoryWriteRearrangements(records)
         t_end = time.perf_counter()
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Inserted records, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
         annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
         t_end = time.perf_counter()
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Annotation count = %d, time = %f" % (annotation_count, (t_end - t_start)), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
@@ -338,7 +338,7 @@ class IMGT(Rearrangement):
         # Inform on what we added and the total count for the this record.
         print("Info: Inserted %d records, total annotation count = %d" % (len(records), annotation_count), flush=True)
         # Clean up annotation files and scratch folder
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Cleaning up scratch folder: ", self.getScratchFolder())
         rmtree(self.getScratchFolder())
 
