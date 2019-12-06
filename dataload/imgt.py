@@ -20,9 +20,9 @@ from rearrangement import Rearrangement
 # check to ensure that the string starts with "productive".
 def functional_boolean(functionality):
     if functionality.startswith("productive"):
-        return 1
+        return True
     else:
-        return 0
+        return False
 
 class IMGT(Rearrangement):
     def __init__(self, context):
@@ -37,6 +37,10 @@ class IMGT(Rearrangement):
         # which IMGT file to use. IMGT V-Quest annotations come in a set of 11 Annotation
         # files so the parser needs to know which field is in which file.
         self.imgt_filename_map = "vquest_file"
+        # IMGT also sometimes required computation to map an IMGT term to an AIRR term.
+        # The mapping file has a boolean flag column that denotes whether a given AIRR
+        # term requires computation. The column name to use for the mapping is below. 
+        self.imgt_calculate_map = "vquest_calculate"
 
 
     def process(self, filewithpath):
@@ -58,6 +62,10 @@ class IMGT(Rearrangement):
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using.
         filemap_tag = self.getFileMapping()
+
+        # Set the tag for the calculation flag mapping that we are using. Ths is essentially
+        # the look up into the columns of the AIRR Mapping that we are using for this.
+        calculate_tag = self.imgt_calculate_map
 
         # Get root filename from the path, should be a file if the path
         # is file, so not checking again 8-)
@@ -82,7 +90,8 @@ class IMGT(Rearrangement):
         else:
             if self.context.verbose:
                 print("Info: Retrieving associated sample for file " + fileName + " from repository field " + value)
-            idarray = Rearrangement.getSampleIDs(self.context, value, fileName)
+            #idarray = Rearrangement.getSampleIDs(self.context, value, fileName)
+            idarray = self.repositoryGetSampleIDs(value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
@@ -181,20 +190,23 @@ class IMGT(Rearrangement):
         Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt', sep='\t')
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
-        # Need to grab some data out of the parameters dictionary.
-        mongo_concat['annotation_date'] = parameter_dictionary['Date']
-        mongo_concat['tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
-        mongo_concat['reference_version'] = parameter_dictionary[
+        # Need to grab some data out of the parameters dictionary. This is not really necessary
+        # as this information should be stored in the repertoire metadata, but for completeness
+        # we err on the side of having more information. Note that this is quite redundant as 
+        # it is storing the same information for each rearrangement...
+        mongo_concat['imgt_annotation_date'] = parameter_dictionary['Date']
+        mongo_concat['imgt_tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
+        mongo_concat['imgt_reference_version'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory release']
-        mongo_concat['species'] = parameter_dictionary['Species']
-        mongo_concat['receptor_type'] = parameter_dictionary['Receptor type or locus']
-        mongo_concat['reference_directory_set'] = parameter_dictionary[
+        mongo_concat['imgt_species'] = parameter_dictionary['Species']
+        mongo_concat['imgt_receptor_type'] = parameter_dictionary['Receptor type or locus']
+        mongo_concat['imgt_reference_directory_set'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory set']
-        mongo_concat['search_insert_delete'] = parameter_dictionary[
+        mongo_concat['imgt_search_insert_delete'] = parameter_dictionary[
             'Search for insertions and deletions']
-        mongo_concat['no_nucleotide_to_add'] = parameter_dictionary[
+        mongo_concat['imgt_no_nucleotide_to_add'] = parameter_dictionary[
             "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
-        mongo_concat['no_nucleotide_to_exclude'] = parameter_dictionary[
+        mongo_concat['imgt_no_nucleotide_to_exclude'] = parameter_dictionary[
             "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
         if self.context.verbose:
             print("Info: Done processing IMGT Parameter file", flush=True) 
@@ -213,9 +225,8 @@ class IMGT(Rearrangement):
         # that takes the string and changes it to an integer 1/0 which the repository
         # expects. We want to keep the original data in case we need further interpretation,
         productive = self.context.airr_map.getMapping("productive", "ir_id", repository_tag)
-        ir_productive = self.context.airr_map.getMapping("ir_productive", "ir_id", repository_tag)
         if productive in mongo_concat:
-            mongo_concat[ir_productive] = mongo_concat[productive]
+            mongo_concat["imgt_productive"] = mongo_concat[productive]
             mongo_concat[productive] = mongo_concat[productive].apply(functional_boolean)
 
         # The internal Mongo sample ID that links the sample to each sequence, constant
@@ -231,7 +242,7 @@ class IMGT(Rearrangement):
         # searches. Technically, this should probably be an ir_ field, but because
         # it is fundamental to the indexes that already exist, we won't change it for
         # now.
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Computing substring from junction", flush=True) 
         junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
         ir_substring = self.context.airr_map.getMapping("ir_substring", "ir_id", repository_tag)
@@ -268,12 +279,12 @@ class IMGT(Rearrangement):
         # calculate the locus based on the v_call array.
         locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
         if not locus in mongo_concat:
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Computing locus from v_call", flush=True) 
             mongo_concat[locus] = mongo_concat[v_call].apply(Rearrangement.getLocus)
 
         # Generate the junction length values as required.
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Computing junction lengths", flush=True) 
         junction = self.context.airr_map.getMapping("junction", "ir_id", repository_tag)
         junction_length = self.context.airr_map.getMapping("junction_length", "ir_id", repository_tag)
@@ -295,7 +306,7 @@ class IMGT(Rearrangement):
         mongo_concat[ir_updated_at] = now_str
 
         # Convert the mongo data frame dats int JSON.
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Creating JSON from Dataframe", flush=True) 
         t_start = time.perf_counter()
         records = json.loads(mongo_concat.T.to_json()).values()
@@ -307,7 +318,7 @@ class IMGT(Rearrangement):
         if self.context.verbose:
             print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
         t_start = time.perf_counter()
-        self.context.sequences.insert(records)
+        self.repositoryWriteRearrangements(records)
         t_end = time.perf_counter()
         if self.context.verbose:
             print("Info: Inserted records, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
@@ -316,17 +327,13 @@ class IMGT(Rearrangement):
         if self.context.verbose:
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
-        annotation_count = self.context.sequences.find(
-                {ir_project_sample_id_field:{'$eq':ir_project_sample_id}}
-            ).count()
+        annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
         t_end = time.perf_counter()
         if self.context.verbose:
             print("Info: Annotation count = %d, time = %f" % (annotation_count, (t_end - t_start)), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
-        self.context.samples.update(
-            {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
-        )
+        self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
 
         # Inform on what we added and the total count for the this record.
         print("Info: Inserted %d records, total annotation count = %d" % (len(records), annotation_count), flush=True)
