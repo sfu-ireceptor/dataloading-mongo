@@ -26,6 +26,9 @@ class Parser:
     def getDateTimeNowUTC():
         return datetime.now(timezone.utc).strftime("%a %b %d %Y %H:%M:%S %Z")
 
+    def verbose(self):
+        return self.context.verbose
+
     def getDataFolder(self, fileWithPath):
         # Data folder is based on the path to the file.
         data_dir = os.path.dirname(fileWithPath)
