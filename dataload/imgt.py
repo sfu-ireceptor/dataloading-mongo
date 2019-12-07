@@ -304,6 +304,7 @@ class IMGT(Rearrangement):
         # Convert the mongo data frame dats int JSON.
         if self.verbose():
             print("Info: Creating JSON from Dataframe", flush=True) 
+        t_start_full = time.perf_counter()
         t_start = time.perf_counter()
         records = json.loads(mongo_concat.T.to_json()).values()
         t_end = time.perf_counter()
@@ -314,7 +315,7 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
         t_start = time.perf_counter()
-        self.repositoryWriteRearrangements(records)
+        self.repositoryInsertRearrangements(records)
         t_end = time.perf_counter()
         if self.verbose():
             print("Info: Inserted records, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
@@ -326,13 +327,18 @@ class IMGT(Rearrangement):
         annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
         t_end = time.perf_counter()
         if self.verbose():
-            print("Info: Annotation count = %d, time = %f" % (annotation_count, (t_end - t_start)), flush=True)
+            print("Info: Annotation count = %d, time = %f" %
+                  (annotation_count, (t_end - t_start)), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
+        t_end_full = time.perf_counter()
 
         # Inform on what we added and the total count for the this record.
-        print("Info: Inserted %d records, total annotation count = %d" % (len(records), annotation_count), flush=True)
+        print("Info: Inserted %d records, total annotation count = %d, %f insertions/s" %
+              (len(records), annotation_count,
+              annotation_count/(t_end_full - t_start_full)), flush=True)
+
         # Clean up annotation files and scratch folder
         if self.verbose():
             print("Info: Cleaning up scratch folder: ", self.getScratchFolder())
