@@ -59,6 +59,9 @@ class AIRR_TSV(Rearrangement):
         return success
 
     def processAIRRTSVFile( self, file_handle, path ):
+        # Get the AIRR Map object for this class (for convenience).
+        airr_map = self.getAIRRMap()
+
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
@@ -95,7 +98,7 @@ class AIRR_TSV(Rearrangement):
 
         # Get the sample ID of the data we are processing. We use the ir_rearrangement_file_name 
         # field in the repository to mathc the file at the moment, but this may not be the most robust method.
-        value = self.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        value = airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
         idarray = []
         if value is None:
             print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
@@ -124,13 +127,14 @@ class AIRR_TSV(Rearrangement):
         # Extract the fields that are of interest for this file. Essentiall all non null fields
         # in the file. This is a boolean array that is T everywhere there is a notnull field in
         # the column of interest.
-        field_of_interest = self.context.airr_map.airr_rearrangement_map[filemap_tag].notnull()
+        map_column = airr_map.getRearrangementMapColumn(filemap_tag)
+        fields_of_interest = map_column.notnull()
 
         # We select the rows in the mapping that contain fields of interest from the file.
         # At this point, file_fields contains N columns that contain our mappings for the
         # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
         # only data that is relevant to the file format column of interest. 
-        file_fields = self.context.airr_map.airr_rearrangement_map.loc[field_of_interest]
+        file_fields = airr_map.getRearrangementRows(fields_of_interest)
 
         # We need to build the set of fields that the repository can store. We don't
         # want to extract fields that the repository doesn't want.
@@ -186,9 +190,9 @@ class AIRR_TSV(Rearrangement):
 
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings.
-            junction_aa = self.getMapping("junction_aa", "ir_id", repository_tag)
-            ir_substring = self.getMapping("ir_substring", "ir_id", repository_tag)
-            ir_junction_aa_length = self.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
+            junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
+            ir_substring = airr_map.getMapping("ir_substring", "ir_id", repository_tag)
+            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
             if junction_aa in airr_df:
                 if self.verbose():
                     print("Info: Retrieving junction amino acids and building substrings...", flush=True)
@@ -203,7 +207,7 @@ class AIRR_TSV(Rearrangement):
             # Check to see if we have a productive field (later versions of AIRR TSV). If
             # so conver to our repositories boolean storage mechanism. Similarly if the
             # older AIRR TSV version of the functional field is present, handle that as well.
-            productive = self.getMapping("productive", "ir_id", repository_tag)
+            productive = airr_map.getMapping("productive", "ir_id", repository_tag)
             if productive in airr_df:
                 airr_df[productive] = airr_df[productive].apply(self.functional_boolean)
             elif 'functional' in airr_df:
@@ -212,15 +216,15 @@ class AIRR_TSV(Rearrangement):
             # We need to look up the "known parameter" from an iReceptor perspective (the field
             # name in the "ir_id" column mapping and map that to the correct field name for the
             # repository we are writing to.
-            v_call = self.getMapping("v_call", "ir_id", repository_tag)
-            d_call = self.getMapping("d_call", "ir_id", repository_tag)
-            j_call = self.getMapping("j_call", "ir_id", repository_tag)
-            ir_vgene_gene = self.getMapping("ir_vgene_gene", "ir_id", repository_tag)
-            ir_dgene_gene = self.getMapping("ir_dgene_gene", "ir_id", repository_tag)
-            ir_jgene_gene = self.getMapping("ir_jgene_gene", "ir_id", repository_tag)
-            ir_vgene_family = self.getMapping("ir_vgene_family", "ir_id", repository_tag)
-            ir_dgene_family = self.getMapping("ir_dgene_family", "ir_id", repository_tag)
-            ir_jgene_family = self.getMapping("ir_jgene_family", "ir_id", repository_tag)
+            v_call = airr_map.getMapping("v_call", "ir_id", repository_tag)
+            d_call = airr_map.getMapping("d_call", "ir_id", repository_tag)
+            j_call = airr_map.getMapping("j_call", "ir_id", repository_tag)
+            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
+            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
+            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
+            ir_vgene_family = airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
+            ir_dgene_family = airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
+            ir_jgene_family = airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
@@ -229,7 +233,7 @@ class AIRR_TSV(Rearrangement):
             self.processGene(airr_df, d_call, d_call, ir_dgene_gene, ir_dgene_family)
             # If we don't already have a locus (that is the data file didn't provide one) then
             # calculate the locus based on the v_call array.
-            locus = self.getMapping("locus", "ir_id", repository_tag)
+            locus = airr_map.getMapping("locus", "ir_id", repository_tag)
             if not locus in airr_df:
                 airr_df[locus] = airr_df[v_call].apply(Rearrangement.getLocus)
 
@@ -238,18 +242,18 @@ class AIRR_TSV(Rearrangement):
             # script we assume this to be the case.
             if self.verbose():
                 print("Info: Setting annotation tool to be " + self.getAnnotationTool(), flush=True)
-            ir_annotation_tool = self.getMapping("ir_annotation_tool", "ir_id", repository_tag)
+            ir_annotation_tool = airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
             airr_df[ir_annotation_tool] = self.getAnnotationTool() 
 
             # Keep track of the sample id so can link each rearrangement to a repertoire
-            ir_project_sample_id_field = self.getMapping("ir_project_sample_id", "ir_id", repository_tag)
+            ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
             airr_df[ir_project_sample_id_field]=ir_project_sample_id
 
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
-            ir_created_at = self.getMapping("ir_created_at", "ir_id", repository_tag)
-            ir_updated_at = self.getMapping("ir_updated_at", "ir_id", repository_tag)
+            ir_created_at = airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
+            ir_updated_at = airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
             airr_df[ir_created_at] = now_str
             airr_df[ir_updated_at] = now_str
 
