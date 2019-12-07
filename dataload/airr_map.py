@@ -99,4 +99,16 @@ class AIRRMap:
             return None
 
 
+    # Return a full column of the Rearrangment mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getRearrangementMapColumn(self, column_name):
+        if column_name in self.airr_rearrangement_map:
+            return self.airr_rearrangement_map[column_name]
+        else:
+            return None
 
+    # Return the rows in the rearrangement table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Rearrangement table size.
+    def getRearrangementRows(self, extract_flags):
+        return self.airr_rearrangement_map.loc[extract_flags]
