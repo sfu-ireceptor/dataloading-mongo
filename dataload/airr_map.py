@@ -6,14 +6,14 @@ class AIRRMap:
     def __init__(self, verbose):
         # Set up initial class mappings from the file. These are defined in the MiAIRR Standard.
         # Repertoire metadata spans a number of MiAIRR data class types.
-        self.airr_repertoire_classes = ["study", "subject", "diagnosis", "sample",
-                                        "cell_processing", "nucleic_acid_processing",
-                                        "sequencing_run", "software_processing"]
+        #self.airr_repertoire_classes = ["study", "subject", "diagnosis", "sample",
+        #                                "cell_processing", "nucleic_acid_processing",
+        #                                "sequencing_run", "software_processing"]
         # Rearrangement data has one or two classes, rearrangement defines the
         # the fields in the MiAIRR standard. ir_rearrangement defines the 
         # rearrangement fields that are specific to iReceptor outside of the
         # MiAIRR standard.
-        self.airr_rearrangement_classes = ["rearrangement", "ir_rearrangement"]
+        #self.airr_rearrangement_classes = ["rearrangement", "ir_rearrangement"]
         #self.airr_rearrangement_classes = ["rearrangement"]
         # Keep track of the mapfile being used.
         self.mapfile = ""
@@ -53,11 +53,13 @@ class AIRRMap:
                   (len(self.airr_mappings.columns), mapfile))
 
         # Get the labels for all of the fields that are in the airr rearrangements class.
-        labels = self.airr_mappings['ir_subclass'].isin(self.airr_rearrangement_classes)
+        #labels = self.airr_mappings['ir_subclass'].isin(self.airr_rearrangement_classes)
+        labels = self.airr_mappings['ir_class'].isin(['Rearrangement'])
         # Get all of the rows that have the rearrangement class labels.
         self.airr_rearrangement_map = self.airr_mappings.loc[labels]
         # Get the labels for all of the fields that are in the airr repertoire class.
-        labels = self.airr_mappings['ir_subclass'].isin(self.airr_repertoire_classes)
+        #labels = self.airr_mappings['ir_subclass'].isin(self.airr_repertoire_classes)
+        labels = self.airr_mappings['ir_class'].isin(['Repertoire'])
         # Get all of the rows that have the repertoire class labels.
         self.airr_repertoire_map = self.airr_mappings.loc[labels]
 
