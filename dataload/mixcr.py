@@ -232,7 +232,7 @@ class MiXCR(Rearrangement):
             print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
             records = json.loads(df_chunk.T.to_json()).values()
-            self.repositoryWriteRearrangements(records)
+            self.repositoryInsertRearrangements(records)
             t_end = time.perf_counter()
             print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
 
