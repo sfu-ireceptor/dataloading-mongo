@@ -39,9 +39,9 @@ class Parser:
     def verbose(self):
         return self.context.verbose
 
-    # Utility method to perform the mapping - all parser's need this capability.
-    def getMapping(self, field, from_column, to_column):
-        return self.context.airr_map.getMapping(field, from_column, to_column)
+    # Utility method to get the AIRR Map class associated with this object.
+    def getAIRRMap(self):
+       return self.context.airr_map
 
     # Utility methods to deal with data and scratch folders that all Parsers need.
     def getDataFolder(self, fileWithPath):
