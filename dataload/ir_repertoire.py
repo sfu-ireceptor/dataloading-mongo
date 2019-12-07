@@ -99,7 +99,7 @@ class IRRepertoire(Repertoire):
         # Get the mapping for the sequence count field for the repository and 
         # initialize the sequeunce count to 0. If we can't find a mapping for this
         # field then we can't do anything. 
-        count_field = self.getMapping("ir_sequence_count", "ir_id", repository_tag)
+        count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id", repository_tag)
         if count_field is None:
             print("Warning: Could not find ir_sequence_count tag in repository " + repository_tag + ", field not initialized")
         else:
@@ -108,7 +108,7 @@ class IRRepertoire(Repertoire):
         # Ensure that we have a correct file name to link fields. If not return.
         # This is a fatal error as we can not link any data to this set of samples,
         # so there is no point adding the samples...
-        repository_file_field = self.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        repository_file_field = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
         # If we can't find a mapping for this field in the repository mapping, then
         # we might still be OK if the metadata spreadsheet has the field. If the fails, 
         # then we should exit.

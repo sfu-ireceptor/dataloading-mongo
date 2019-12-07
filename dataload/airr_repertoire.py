@@ -18,12 +18,12 @@ class AIRRRepertoire(Repertoire):
 
     def ir_maptorepository(self, field):
         # Check to see if the field is in the AIRR mapping, if not warn.
-        airr_field = self.getMapping(field, "airr", "airr")
+        airr_field = self.getAIRRMap().getMapping(field, "airr", "airr")
         if airr_field is None:
             print("Warning: Could not find %s in AIRR mapping"%(field))
 
         # Check to see if the field can be mapped to a field in the repository, if not warn.
-        repo_field = self.getMapping(field, "airr", self.getRepositoryTag())
+        repo_field = self.getAIRRMap().getMapping(field, "airr", self.getRepositoryTag())
         if repo_field is None:
             repo_field = field
             print("Warning: Could not find repository mapping for %s, storing as is"%(field))
@@ -136,7 +136,7 @@ class AIRRRepertoire(Repertoire):
             # Get the mapping for the sequence count field for the repository and 
             # initialize the sequeunce count to 0. If we can't find a mapping for this
             # field then we can't do anything. 
-            count_field = self.getMapping("ir_sequence_count", "ir_id",
+            count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id",
                                           self.getRepositoryTag() )
             if count_field is None:
                 print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
@@ -147,7 +147,7 @@ class AIRRRepertoire(Repertoire):
             # Ensure that we have a correct file name to link fields. If we can't find it 
             # this is a fatal error as we can not link any data to this set repertoire,
             # so there is no point adding the repertoire...
-            repository_file_field = self.getMapping("ir_rearrangement_file_name",
+            repository_file_field = self.getAIRRMap().getMapping("ir_rearrangement_file_name",
                                                     "ir_id", self.getRepositoryTag())
             # If we can't find a mapping for this field in the repository mapping, then
             # we might still be OK if the metadata spreadsheet has the field. If the fails, 
