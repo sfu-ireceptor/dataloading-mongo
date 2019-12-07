@@ -12,8 +12,8 @@ from rearrangement import Rearrangement
 
 class MiXCR(Rearrangement):
     
-    def __init__( self, context ):
-        Rearrangement.__init__(self,context)
+    def __init__( self, verbose, repository_tag, repository_chunk, airr_map, repository):
+        Rearrangement.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         # The annotation tool used for the MiXCR parser is of course MiXCR
         self.setAnnotationTool("MiXCR")
         # The default column in the AIRR Mapping file is mixcr. This can be 

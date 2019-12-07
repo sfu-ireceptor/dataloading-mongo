@@ -10,11 +10,9 @@ import airr
 
 class AIRRRepertoire(Repertoire):
     
-    # Constructor - keep track of the context (although it is in the parent class)
-    # and call the parent class constructor.
-    def __init__(self,context):
-        self.context = context
-        Repertoire.__init__(self, context)
+    # Constructor - call the parent class constructor.
+    def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
+        Repertoire.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository) 
 
     def ir_maptorepository(self, field):
         # Check to see if the field is in the AIRR mapping, if not warn.

@@ -10,9 +10,8 @@ from parser import Parser
 
 class IRRepertoire(Repertoire):
     
-    def __init__(self,context):
-        self.context = context
-        Repertoire.__init__(self, context)
+    def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
+        Repertoire.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         
     def process(self, filename):
         # Check to see if we have a file    
@@ -26,17 +25,17 @@ class IRRepertoire(Repertoire):
         # Extract the fields that are of interest for this file. Essentiall all
         # non null curator fields
         curation_tag = "ir_curator"
-        if not curation_tag in self.context.airr_map.airr_repertoire_map:
+        if not curation_tag in self.getAIRRMap().airr_repertoire_map:
             print("ERROR: Could not find Curation mapping (" + curation_tag + ") in mapping file")
             return False
-
-        field_of_interest = self.context.airr_map.airr_repertoire_map[curation_tag].notnull()
+        map_column = self.getAIRRMap().getRearrangementMapColumn(curation_tag)
+        fields_of_interest = map_column.notnull()
         
         # We select the rows in the mapping that contain fields of interest for curataion.
         # At this point, file_fields contains N columns that contain our mappings for the
         # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
         # only data that is relevant to curataion
-        airr_fields = self.context.airr_map.airr_repertoire_map.loc[field_of_interest]
+        airr_fields = self.getAIRRMap().getRearrangementRows(fields_of_interest)
         
         # We need to build the set of fields that the repository can store. We don't
         # want to extract fields that the repository doesn't want.

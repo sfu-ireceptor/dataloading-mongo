@@ -13,12 +13,9 @@ from parser import Parser
 class Rearrangement(Parser):
 
     # Class constructor
-    def __init__(self, context):
-        # Keep track of the global context for this parser.
-        # The context should probably be refactored...
-        self.context = context
+    def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         # Initialize the base class
-        Parser.__init__(self, context)
+        Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         # Each rearrangement parser is used to parse data from an annotation tool.
         # This keeps track of the annotation tool being used and is used
         # to insert annotation tool information into the repository.
@@ -209,7 +206,7 @@ class Rearrangement(Parser):
     # array of integers which are the sample IDs where the file_name was found in the
     # field field_name.
     def repositoryGetSampleIDs(self, file_field, file_name):
-        samples_cursor = self.context.samples.find( {file_field: { '$regex': file_name }}, {'_id': 1})
+        samples_cursor = self.repository.repertoire.find( {file_field: { '$regex': file_name }}, {'_id': 1})
         idarray = [sample['_id'] for sample in samples_cursor]
         return idarray
 
@@ -217,24 +214,24 @@ class Rearrangement(Parser):
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.
     def repositoryInsertRearrangements(self, json_records):
-        self.context.sequences.insert(json_records)
+        self.repository.rearrangement.insert(json_records)
 
     # Count the number of rearrangements that belong to a specific repertoire. Note: In our
     # early implementations, we had an internal field name called ir_project_sample_id. We
     # want to hide this and just talk about reperotire IDs, so this is hidden in the 
     # Rearrangement class...
     def repositoryCountRearrangements(self, repertoire_id):
-        repertoire_field = self.context.airr_map.getMapping("ir_project_sample_id",
-                                                            "ir_id",
-                                                            self.context.repository_tag)
-        rearrangement_count = self.context.sequences.find(
+        repertoire_field = self.airr_map.getMapping("ir_project_sample_id",
+                                                    "ir_id",
+                                                    self.repository_tag)
+        rearrangement_count = self.repository.rearrangement.find(
                 {repertoire_field:{'$eq':repertoire_id}}
             ).count()
         return rearrangement_count
 
     # Update the cached sequence count for the given reperotire to be the given count.
     def repositoryUpdateCount(self, repertoire_id, count):
-        self.context.samples.update(
+        self.repository.repertoire.update(
             {"_id":repertoire_id}, {"$set": {"ir_sequence_count":count}}
         )
 

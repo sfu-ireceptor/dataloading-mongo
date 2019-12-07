@@ -19,8 +19,8 @@ from airr.schema import ValidationError
 
 class AIRR_TSV(Rearrangement):
     
-    def __init__( self, context ):
-        Rearrangement.__init__(self,context)
+    def __init__( self, verbose, repository_tag, repository_chunk, airr_map, repository):
+        Rearrangement.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         # The default annotation tool used for the AIRR parser is IgBLAST
         self.setAnnotationTool("IgBLAST")
         # The default column in the AIRR Mapping file is igblast. This can be

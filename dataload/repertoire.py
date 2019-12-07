@@ -9,13 +9,12 @@ from parser import Parser
 
 class Repertoire(Parser):
     
-    def __init__(self,context):
-        self.context = context
-        Parser.__init__(self, context)
+    def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
+        Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         
     def repositoryInsertRepertoire( self, doc ):
     
-        cursor = self.context.samples.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
+        cursor = self.repository.repertoire.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
         
         empty = False
         
@@ -38,7 +37,7 @@ class Repertoire(Parser):
                 seq = seq+1
             
         doc["_id"] = seq
-        if self.context.verbose:
+        if self.verbose:
             # If we are in verbose mode, print out a summary of the record we are inserting.
             study_tag = self.getAIRRMap().getMapping("study_id", "ir_id", self.getRepositoryTag())
             study = "NULL" if not study_tag in doc else doc[study_tag]
@@ -49,4 +48,4 @@ class Repertoire(Parser):
             print("Info: Writing repertoire record <%s, %s, %s (ID: %d)>" % (study, sample, filestr, seq))
 
         
-        results = self.context.samples.insert(doc)
+        results = self.repository.repertoire.insert(doc)

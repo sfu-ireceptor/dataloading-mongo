@@ -25,8 +25,8 @@ def functional_boolean(functionality):
         return False
 
 class IMGT(Rearrangement):
-    def __init__(self, context):
-        Rearrangement.__init__(self, context)
+    def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
+        Rearrangement.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         # The annotation tool used for the IMGT parser is V-Quest
         self.setAnnotationTool("V-Quest")
         # The default column in the AIRR Mapping file is mixcr. This can be
