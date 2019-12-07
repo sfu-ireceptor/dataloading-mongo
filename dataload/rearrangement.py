@@ -216,7 +216,7 @@ class Rearrangement(Parser):
     # Write the set of JSON records provided to the "rearrangements" collection.
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.
-    def repositoryWriteRearrangements(self, json_records):
+    def repositoryInsertRearrangements(self, json_records):
         self.context.sequences.insert(json_records)
 
     # Count the number of rearrangements that belong to a specific repertoire. Note: In our
