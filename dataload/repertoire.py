@@ -13,7 +13,7 @@ class Repertoire(Parser):
         self.context = context
         Parser.__init__(self, context)
         
-    def insertDocument( self, doc ):
+    def repositoryInsertRepertoire( self, doc ):
     
         cursor = self.context.samples.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
         
@@ -40,11 +40,11 @@ class Repertoire(Parser):
         doc["_id"] = seq
         if self.context.verbose:
             # If we are in verbose mode, print out a summary of the record we are inserting.
-            study_tag = self.context.airr_map.getMapping("study_id", "ir_id", self.context.repository_tag)
+            study_tag = self.getMapping("study_id", "ir_id", self.getRepositoryTag())
             study = "NULL" if not study_tag in doc else doc[study_tag]
-            sample_tag = self.context.airr_map.getMapping("sample_id", "ir_id", self.context.repository_tag)
+            sample_tag = self.getMapping("sample_id", "ir_id", self.getRepositoryTag())
             sample = "NULL" if not sample_tag in doc else doc[sample_tag]
-            file_tag = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", self.context.repository_tag)
+            file_tag = self.getMapping("ir_rearrangement_file_name", "ir_id", self.getRepositoryTag())
             filestr = "NULL" if not file_tag in doc else doc[file_tag]
             print("Info: Writing repertoire record <%s, %s, %s (ID: %d)>" % (study, sample, filestr, seq))
 
