@@ -31,8 +31,6 @@ class Parser:
 
         # Manage the repository 
         self.repository = repository
-        #self.samples = samples
-        #self.sequences = sequences
 
         # Save the AIRR Mapping object
         self.airr_map = airr_map

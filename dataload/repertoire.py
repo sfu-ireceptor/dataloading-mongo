@@ -12,40 +12,17 @@ class Repertoire(Parser):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         
-    def repositoryInsertRepertoire( self, doc ):
+    # Hide the impementation of the repository from the Repertoire subclasses. The subclasses
+    # don't ask much of the repository, just insert a single JSON document at a time.
+    def repositoryInsertRepertoire( self, json_document ):
     
-        cursor = self.repository.repertoire.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
-        
-        empty = False
-        
-        try:
-            record = cursor.next()
-            
-        except StopIteration:
-            print("Info: No previous record, this is the first insertion")
-            empty = True
-            
-        if empty:
-            seq = 1
-        else:
-            seq = record["_id"]
-            if not type(seq) is int:
-                print("ERROR: Invalid ID for samples found, expecting an integer, got " + str(seq))
-                print("ERROR: DB may be corrupt")
-                return False
-            else:
-                seq = seq+1
-            
-        doc["_id"] = seq
+        self.repository.insertRepertoire(json_document)
         if self.verbose:
             # If we are in verbose mode, print out a summary of the record we are inserting.
             study_tag = self.getAIRRMap().getMapping("study_id", "ir_id", self.getRepositoryTag())
-            study = "NULL" if not study_tag in doc else doc[study_tag]
+            study = "NULL" if not study_tag in json_document else json_document[study_tag]
             sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id", self.getRepositoryTag())
-            sample = "NULL" if not sample_tag in doc else doc[sample_tag]
+            sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
             file_tag = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id", self.getRepositoryTag())
-            filestr = "NULL" if not file_tag in doc else doc[file_tag]
-            print("Info: Writing repertoire record <%s, %s, %s (ID: %d)>" % (study, sample, filestr, seq))
-
-        
-        results = self.repository.repertoire.insert(doc)
+            filestr = "NULL" if not file_tag in json_document else json_document[file_tag]
+            print("Info: Writing repertoire record <%s, %s, %s>" % (study, sample, filestr))

@@ -92,8 +92,8 @@ class IMGT(Rearrangement):
             return False
         else:
             if self.verbose():
-                print("Info: Retrieving associated sample for file " + fileName + " from repository field " + value)
-            idarray = self.repositoryGetSampleIDs(value, fileName)
+                print("Info: Retrieving associated repertoire for file " + fileName + " from repository field " + value)
+            idarray = self.repositoryGetRepertoireIDs(value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)

@@ -82,8 +82,8 @@ class MiXCR(Rearrangement):
             return False
         else:
             if self.verbose():
-                print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
-            idarray = self.repositoryGetSampleIDs(value, filename)
+                print("Info: Retrieving associated repertoire for file " + filename + " from repository field " + value)
+            idarray = self.repositoryGetRepertoireIDs(value, filename)
 
 
         # Check to see that we found it and that we only found one. Fail if not.

@@ -107,8 +107,8 @@ class AIRR_TSV(Rearrangement):
             # Look up the filename in the repository field and get an array of sample ids
             # where the file name was found.
             if self.verbose():
-                print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
-            idarray = self.repositoryGetSampleIDs(value, filename)
+                print("Info: Retrieving associated repertoire for file " + filename + " from repository field " + value)
+            idarray = self.repositoryGetRepertoireIDs(value, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)

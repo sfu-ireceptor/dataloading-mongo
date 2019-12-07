@@ -198,23 +198,20 @@ class Rearrangement(Parser):
         return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False, header=None)
 
     #####################################################################################
-    # Hide the Mongo database implementation from the Rearrangement subclasses.
+    # Hide the repository implementation from the Rearrangement subclasses.
     #####################################################################################
 
-    # Look for the file_name given
-    # in the samples collection in the file_field field in the repository. Return an
-    # array of integers which are the sample IDs where the file_name was found in the
-    # field field_name.
-    def repositoryGetSampleIDs(self, file_field, file_name):
-        samples_cursor = self.repository.repertoire.find( {file_field: { '$regex': file_name }}, {'_id': 1})
-        idarray = [sample['_id'] for sample in samples_cursor]
-        return idarray
+    # Look for the file_name given in the repertoire collection in the file_field field
+    # in the repository. Return an array of integers which are the sample IDs where the
+    # file_name was found in the field field_name.
+    def repositoryGetRepertoireIDs(self, file_field, file_name):
+        return self.repository.getRepertoireIDs(file_field, file_name)
 
     # Write the set of JSON records provided to the "rearrangements" collection.
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.
     def repositoryInsertRearrangements(self, json_records):
-        self.repository.rearrangement.insert(json_records)
+        self.repository.insertRearrangements(json_records)
 
     # Count the number of rearrangements that belong to a specific repertoire. Note: In our
     # early implementations, we had an internal field name called ir_project_sample_id. We
@@ -224,15 +221,9 @@ class Rearrangement(Parser):
         repertoire_field = self.airr_map.getMapping("ir_project_sample_id",
                                                     "ir_id",
                                                     self.repository_tag)
-        rearrangement_count = self.repository.rearrangement.find(
-                {repertoire_field:{'$eq':repertoire_id}}
-            ).count()
-        return rearrangement_count
+        return self.repository.countRearrangements(repertoire_field, repertoire_id)
 
     # Update the cached sequence count for the given reperotire to be the given count.
     def repositoryUpdateCount(self, repertoire_id, count):
-        self.repository.repertoire.update(
-            {"_id":repertoire_id}, {"$set": {"ir_sequence_count":count}}
-        )
-
+        self.repository.updateCount(repertoire_id, "ir_sequence_count", count)
 
