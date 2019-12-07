@@ -40,11 +40,11 @@ class Repertoire(Parser):
         doc["_id"] = seq
         if self.context.verbose:
             # If we are in verbose mode, print out a summary of the record we are inserting.
-            study_tag = self.getMapping("study_id", "ir_id", self.getRepositoryTag())
+            study_tag = self.getAIRRMap().getMapping("study_id", "ir_id", self.getRepositoryTag())
             study = "NULL" if not study_tag in doc else doc[study_tag]
-            sample_tag = self.getMapping("sample_id", "ir_id", self.getRepositoryTag())
+            sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id", self.getRepositoryTag())
             sample = "NULL" if not sample_tag in doc else doc[sample_tag]
-            file_tag = self.getMapping("ir_rearrangement_file_name", "ir_id", self.getRepositoryTag())
+            file_tag = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id", self.getRepositoryTag())
             filestr = "NULL" if not file_tag in doc else doc[file_tag]
             print("Info: Writing repertoire record <%s, %s, %s (ID: %d)>" % (study, sample, filestr, seq))
 
