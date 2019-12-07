@@ -5,26 +5,17 @@
  
 """
 import os
-import pandas as pd
-import urllib.parse
-import pymongo
-import json
 import argparse
 import time
 import sys
 
+from repository import Repository
 from ir_repertoire import IRRepertoire
 from airr_repertoire import AIRRRepertoire
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
 from airr_map import AIRRMap
-
-_type2ext = {
-    "sample": "csv",
-    "imgt": "zip",  # assume a zip archive
-    "mixcr": "zip",  # assume a zip archive
-}
 
 def getArguments():
     parser = argparse.ArgumentParser(
@@ -193,8 +184,6 @@ def getArguments():
 
     options = parser.parse_args()
 
-    validate_filename(options.filename)
-
     if options.verbose:
         print('HOST         :', options.host)
         print('PORT         :', options.port)
@@ -208,179 +197,84 @@ def getArguments():
 
     return options
 
-def validate_filename(filename_path):
-    if filename_path:
-        if os.path.isdir(filename_path):
-            print("ERROR: file '{0}' is not a file?".format(filename_path))
-            raise SystemExit(1)
+if __name__ == "__main__":
+    # Get the command line arguments.
+    options = getArguments()
 
-class Context:
-    def __init__(self, mapfile, type, filename, samples, sequences, database_map, database_chunk, verbose):
-        """Create an execution context with various info.
+    # Create the repository object, which establishes the repository connection.
+    repository = Repository(options.user, options.password,
+                            options.host, options.port,
+                            options.database,
+                            options.repertoire_collection,
+                            options.rearrangement_collection)
+    # Check on the successful creation of the context and its validity.
+    if repository is None or not repository:
+        sys.exit(1)
 
-        Keyword arguments:
-        
-        type -- the type of data file. e.g. imgt
+    # Create the AIRR mapping object, which has the mapping of fields between
+    # the various components. This is essentially a mapping between the AIRR
+    # standard fields, the fields in the input file being parsed, and the fields
+    # that are stored in the repository.
+    airr_map = AIRRMap(options.verbose)
+    airr_map.readMapFile(options.mapfile)
+    if airr_map.getRearrangementMapColumn(options.database_map) is None:
+        print("ERROR: Could not find repository mapping " + options.database_map + " in AIRR Mappings")
+        sys.exit(1)
 
-        filename -- name of the data file including path
-
-        samples -- the mongo collection named 'sample'
-
-        sequences -- the mongo collection named 'sequence'
-
-        verbose -- make output verbose
-        """
-
-        # Keep track of the data for this instance.
-        self.mapfile = mapfile
-        self.type = type
-        self.filename = filename
-        self.samples = samples
-        self.sequences = sequences
-        self.verbose = verbose
-        # Create the AIRR Mapping object from the mapfile.
-        self.airr_map = AIRRMap(self.verbose)
-        self.airr_map.readMapFile(self.mapfile)
-        # Keep track of the repository map key from the mapping file.
-        self.repository_tag = database_map
-        # Keep track of the repository chunk size for loading datasets.
-        self.repository_chunk = database_chunk
-
-    @classmethod
-    def getContext(cls, options):
-
-        # Connect with Mongo db
-        username = urllib.parse.quote_plus(options.user)
-        password = urllib.parse.quote_plus(options.password)
-        if len(username) == 0 and len(password) == 0:
-            uri = 'mongodb://%s:%s' % (options.host, options.port)
-            print("Info: Connecting to Mongo with no username/password on '%s:%s'" %
-                (options.host, options.port))
-        else:
-            uri = 'mongodb://%s:%s@%s:%s' % (username, password, options.host, options.port)
-            print("Info: Connecting to Mongo as user '%s' on '%s:%s'" %
-                (username, options.host, options.port))
-
-        # Connect to the Mongo server and return if not able to connect.
-        try:
-            mng_client = pymongo.MongoClient(uri)
-        except pymongo.errors.ConfigurationError as err:
-            print("ERROR: Unable to connect to %s:%s - %s"
-                    % (options.host, options.port, err))
-            return None
-
-        # Constructor doesn't block - need to check to see if the connection works.
-        try:
-            # We need to check that we can perform a real operation on the collection
-            # at this time. We want to check for connection errors, authentication
-            # errors. We want to let through the case that there is an empty repository
-            # and the cursor comes back empty.
-            mng_db = mng_client[options.database]
-            mng_sample = mng_db[options.repertoire_collection]
-
-            cursor = mng_sample.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
-            record = cursor.next()
-        except pymongo.errors.ConnectionFailure:
-            print("ERROR: Unable to connect to %s:%s, Mongo server not available"
-                    % (options.host, options.port))
-            return None
-        except pymongo.errors.OperationFailure as err:
-            print("ERROR: Operation failed on %s:%s, %s"
-                    % (options.host, options.port, str(err)))
-            return None
-        except StopIteration:
-            # This exception is not an error. The cursor.next() raises this exception when it has no more
-            # data in the cursor. In this case, this would mean that the database is empty,
-            # but the database was opened and the query worked. So this is not an error case as it
-            # OK to have an empty database.
-            pass
-
-
-        # Set Mongo db name
-        mng_db = mng_client[options.database]
-
-        return cls(options.mapfile, options.type, options.filename, 
-                    mng_db[options.repertoire_collection], mng_db[options.rearrangement_collection], 
-                    options.database_map, options.database_chunk,
-                    options.verbose)
-
-    @staticmethod
-    def checkValidity(context):
-        # Check any runtime consistency issues for the context, and return False if
-        # something is not valid.
-
-        # Check to see if the AIRR mappings are valid.
-        if not context.repository_tag in context.airr_map.airr_mappings:
-            print("ERROR: Could not find repository mapping " + context.repository_tag + " in AIRR Mappings")
-            return False
-        return True
-
-def load_file(context):
-    # time start
+    # Start timing the file loading
     t_start = time.perf_counter()
 
-    if context.type == "sample":
+    if options.type == "sample":
         # process iReceptor Repertoire metadata 
-        print("Info: Processing iReceptor repertoire metadata file: {}".format(context.filename))
-        parser = IRRepertoire(context)
-    elif context.type == "repertoire":
+        print("Info: Processing iReceptor repertoire metadata file: {}".format(options.filename))
+        parser = IRRepertoire(options.verbose, options.database_map, options.database_chunk,
+                              airr_map, repository)
+    elif options.type == "repertoire":
         # process AIRR Repertoire metadata
-        print("Info: Processing AIRR repertoire metadata file: {}".format(context.filename))
-        parser = AIRRRepertoire(context)
-    elif context.type == "imgt":
+        print("Info: Processing AIRR repertoire metadata file: {}".format(options.filename))
+        parser = AIRRRepertoire(options.verbose, options.database_map, options.database_chunk,
+                                airr_map, repository)
+    elif options.type == "imgt":
         # process imgt
-        print("Info: Processing IMGT data file: {}".format(context.filename))
-        parser = IMGT(context)
-    elif context.type == "mixcr":
+        print("Info: Processing IMGT data file: {}".format(options.filename))
+        parser = IMGT(options.verbose, options.database_map, options.database_chunk,
+                      airr_map, repository)
+    elif options.type == "mixcr":
         # process mixcr
-        print("Info: Processing MiXCR data file: {}".format(context.filename))
-        parser = MiXCR(context)
+        print("Info: Processing MiXCR data file: {}".format(options.filename))
+        parser = MiXCR(options.verbose, options.database_map, options.database_chunk,
+                       airr_map, repository)
     elif options.type == "airr":
         # process AIRR TSV
-        print("Info: Processing AIRR TSV annotation data file: ", context.filename)
-        parser = AIRR_TSV(context)
+        print("Info: Processing AIRR TSV annotation data file: ", options.filename)
+        parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
+                          airr_map, repository)
     elif options.type == "ir_general":
         # process a general file (non annotation tool specific)
-        print("Info: Processing a general TSV annotation data file: ", context.filename)
-        parser = AIRR_TSV(context)
+        print("Info: Processing a general TSV annotation data file: ", options.filename)
+        parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
+                          airr_map, repository)
         # Override the default file mapping that the parser subclass sets. This allows us
         # to map an arbitrary set of fields in a file to the repository. This requires that
         # an ir_general column exists in the AIRR Mapping file.
         parser.setFileMapping(options.type)
     else:
-        print("ERROR: unknown data type '{}'".format(context.type))
-        return False
+        print("ERROR: unknown data type '{}'".format(options.type))
+        sys.exit(4)
 
     # Override what the default annotation tool that the Parser subclass set by default.
     if not options.annotation_tool == "":
         parser.setAnnotationTool(options.annotation_tool)
 
-    parse_ok = parser.process(context.filename)
+    parse_ok = parser.process(options.filename)
     if parse_ok:
-        print("Info: " + options.type + " file " + context.filename + " loaded successfully")
+        print("Info: " + options.type + " file " + options.filename + " loaded successfully")
     else:
-        print("ERROR: " + options.type + " file " + context.filename + " not loaded correctly")
+        print("ERROR: " + options.type + " file " + options.filename + " not loaded correctly")
 
     # time end
     t_end = time.perf_counter()
     print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
-    return parse_ok
-
-if __name__ == "__main__":
-    # Get the command line arguments.
-    options = getArguments()
-    # Create the context given the options.
-    context = Context.getContext(options)
-
-    # Check on the successful creation of the context and its validity.
-    if not context:
-        sys.exit(1)
-    if not Context.checkValidity(context):
-        sys.exit(1)
-
-    # Try to load the file, return an error if not...
-    if not load_file(context):
-        sys.exit(4)
 
     # Return success
     sys.exit(0)
