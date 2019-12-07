@@ -32,9 +32,9 @@ class AIRR_TSV(Rearrangement):
     # which is 1/0 
     def functional_boolean(self, functionality):
         if functionality or functionality == "T":
-            return 1
+            return True
         else:
-            return 0
+            return False
 
     def process(self, filewithpath):
 
@@ -45,13 +45,13 @@ class AIRR_TSV(Rearrangement):
         
         # Open, decompress then read(), if it is a gz archive
         if filewithpath.endswith(".gz"):
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Reading gzip file: "+filewithpath)
             with gzip.open(filewithpath, 'rt') as file_handle:
                 # Use gzip to get a file handle in text mode. 
                 success = self.processAIRRTSVFile(file_handle, filewithpath)
         else: # or get a normal file handle for the file directly.
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Reading text file: "+filewithpath)
             file_handle = open(filewithpath, "r")
             success = self.processAIRRTSVFile(file_handle, filewithpath)
@@ -62,7 +62,7 @@ class AIRR_TSV(Rearrangement):
         # Set the tag for the repository that we are using. Note this should
         # be refactored so that it is a parameter provided so that we can use
         # multiple repositories.
-        repository_tag = self.context.repository_tag
+        repository_tag = self.getRepositoryTag()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using. For the IgBLAST
@@ -71,7 +71,7 @@ class AIRR_TSV(Rearrangement):
         filemap_tag = self.getFileMapping()
 
         # Set the size of each chunk of data that is inserted.
-        chunk_size = self.context.repository_chunk
+        chunk_size = self.getRepositoryChunkSize()
 
         # Validate the AIRR TSV file header. We do not validate the entire
         # file becasue that is too expensive of an operation.
@@ -95,7 +95,7 @@ class AIRR_TSV(Rearrangement):
 
         # Get the sample ID of the data we are processing. We use the ir_rearrangement_file_name 
         # field in the repository to mathc the file at the moment, but this may not be the most robust method.
-        value = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        value = self.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
         idarray = []
         if value is None:
             print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
@@ -103,9 +103,9 @@ class AIRR_TSV(Rearrangement):
         else:
             # Look up the filename in the repository field and get an array of sample ids
             # where the file name was found.
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Retrieving associated sample for file " + filename + " from repository field " + value)
-            idarray = Rearrangement.getSampleIDs(self.context, value, filename)
+            idarray = self.repositoryGetSampleIDs(value, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
@@ -136,11 +136,11 @@ class AIRR_TSV(Rearrangement):
         # want to extract fields that the repository doesn't want.
         igblastColumns = []
         columnMapping = {}
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Dumping expected " + self.getAnnotationTool() + "(" + filemap_tag +
                   ") to repository mapping")
         for index, row in file_fields.iterrows():
-            if self.context.verbose:
+            if self.verbose():
                 print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the field in the file, track the field
             # from both the file and repository side.
@@ -156,24 +156,24 @@ class AIRR_TSV(Rearrangement):
         finalMapping = {}
         for airr_field in airr_reader.fields:
             if airr_field in columnMapping:
-                if self.context.verbose:
+                if self.verbose():
                     print("Info: Mapping " + self.getAnnotationTool() + " field in file: " +
                           airr_field + " -> " + columnMapping[airr_field])
                 finalMapping[airr_field] = columnMapping[airr_field]
             else:
-                if self.context.verbose:
+                if self.verbose():
                     print("Info: No mapping for input " + self.getAnnotationTool() + " field "
                           + airr_field + ", adding to repository without mapping.")
 
         # Determine if we are missing any repository columns from the input data.
         for igblast_column, mongo_column in columnMapping.items():
             if not igblast_column in airr_reader.fields:
-                if self.context.verbose:
+                if self.verbose():
                     print("Info: Missing data in input " + self.getAnnotationTool() +
                           " file for " + igblast_column)
 
         # Create a reader for the data frame with step size "chunk_size"
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Processing raw data frame...")
         airr_df_reader = pd.read_csv(path, sep='\t', chunksize=chunk_size)
 
@@ -186,24 +186,24 @@ class AIRR_TSV(Rearrangement):
 
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings.
-            junction_aa = self.context.airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-            ir_substring = self.context.airr_map.getMapping("ir_substring", "ir_id", repository_tag)
-            ir_junction_aa_length = self.context.airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
+            junction_aa = self.getMapping("junction_aa", "ir_id", repository_tag)
+            ir_substring = self.getMapping("ir_substring", "ir_id", repository_tag)
+            ir_junction_aa_length = self.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
             if junction_aa in airr_df:
-                if self.context.verbose:
+                if self.verbose():
                     print("Info: Retrieving junction amino acids and building substrings...", flush=True)
                 airr_df[ir_substring] = airr_df[junction_aa].apply(Rearrangement.get_substring)
 
                 # The AIRR TSV format doesn't have AA length, we want it in our repository.
                 if not (ir_junction_aa_length in airr_df):
-                    if self.context.verbose:
+                    if self.verbose():
                         print("Info: Computing junction amino acids length...", flush=True)
                     airr_df[ir_junction_aa_length] = airr_df[junction_aa].apply(str).apply(len)
 
             # Check to see if we have a productive field (later versions of AIRR TSV). If
             # so conver to our repositories boolean storage mechanism. Similarly if the
             # older AIRR TSV version of the functional field is present, handle that as well.
-            productive = self.context.airr_map.getMapping("productive", "ir_id", repository_tag)
+            productive = self.getMapping("productive", "ir_id", repository_tag)
             if productive in airr_df:
                 airr_df[productive] = airr_df[productive].apply(self.functional_boolean)
             elif 'functional' in airr_df:
@@ -212,44 +212,44 @@ class AIRR_TSV(Rearrangement):
             # We need to look up the "known parameter" from an iReceptor perspective (the field
             # name in the "ir_id" column mapping and map that to the correct field name for the
             # repository we are writing to.
-            v_call = self.context.airr_map.getMapping("v_call", "ir_id", repository_tag)
-            d_call = self.context.airr_map.getMapping("d_call", "ir_id", repository_tag)
-            j_call = self.context.airr_map.getMapping("j_call", "ir_id", repository_tag)
-            ir_vgene_gene = self.context.airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
-            ir_dgene_gene = self.context.airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
-            ir_jgene_gene = self.context.airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
-            ir_vgene_family = self.context.airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
-            ir_dgene_family = self.context.airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
-            ir_jgene_family = self.context.airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
+            v_call = self.getMapping("v_call", "ir_id", repository_tag)
+            d_call = self.getMapping("d_call", "ir_id", repository_tag)
+            j_call = self.getMapping("j_call", "ir_id", repository_tag)
+            ir_vgene_gene = self.getMapping("ir_vgene_gene", "ir_id", repository_tag)
+            ir_dgene_gene = self.getMapping("ir_dgene_gene", "ir_id", repository_tag)
+            ir_jgene_gene = self.getMapping("ir_jgene_gene", "ir_id", repository_tag)
+            ir_vgene_family = self.getMapping("ir_vgene_family", "ir_id", repository_tag)
+            ir_dgene_family = self.getMapping("ir_dgene_family", "ir_id", repository_tag)
+            ir_jgene_family = self.getMapping("ir_jgene_family", "ir_id", repository_tag)
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
-            Rearrangement.processGene(self.context, airr_df, v_call, v_call, ir_vgene_gene, ir_vgene_family)
-            Rearrangement.processGene(self.context, airr_df, j_call, j_call, ir_jgene_gene, ir_jgene_family)
-            Rearrangement.processGene(self.context, airr_df, d_call, d_call, ir_dgene_gene, ir_dgene_family)
+            self.processGene(airr_df, v_call, v_call, ir_vgene_gene, ir_vgene_family)
+            self.processGene(airr_df, j_call, j_call, ir_jgene_gene, ir_jgene_family)
+            self.processGene(airr_df, d_call, d_call, ir_dgene_gene, ir_dgene_family)
             # If we don't already have a locus (that is the data file didn't provide one) then
             # calculate the locus based on the v_call array.
-            locus = self.context.airr_map.getMapping("locus", "ir_id", repository_tag)
+            locus = self.getMapping("locus", "ir_id", repository_tag)
             if not locus in airr_df:
                 airr_df[locus] = airr_df[v_call].apply(Rearrangement.getLocus)
 
             # For now we assume that an AIRR TSV file, when loaded into iReceptor, has
             # been produced by igblast. This in general is not the case, but as a loader
             # script we assume this to be the case.
-            if self.context.verbose:
+            if self.verbose():
                 print("Info: Setting annotation tool to be " + self.getAnnotationTool(), flush=True)
-            ir_annotation_tool = self.context.airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
+            ir_annotation_tool = self.getMapping("ir_annotation_tool", "ir_id", repository_tag)
             airr_df[ir_annotation_tool] = self.getAnnotationTool() 
 
             # Keep track of the sample id so can link each rearrangement to a repertoire
-            ir_project_sample_id_field = self.context.airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
+            ir_project_sample_id_field = self.getMapping("ir_project_sample_id", "ir_id", repository_tag)
             airr_df[ir_project_sample_id_field]=ir_project_sample_id
 
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
-            ir_created_at = self.context.airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
-            ir_updated_at = self.context.airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
+            ir_created_at = self.getMapping("ir_created_at", "ir_id", repository_tag)
+            ir_updated_at = self.getMapping("ir_updated_at", "ir_id", repository_tag)
             airr_df[ir_created_at] = now_str
             airr_df[ir_updated_at] = now_str
 
@@ -258,7 +258,7 @@ class AIRR_TSV(Rearrangement):
             print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
             records = json.loads(airr_df.T.to_json()).values()
-            self.context.sequences.insert_many(records)
+            self.repositoryWriteRearrangements(records)
             t_end = time.perf_counter()
             print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
 
@@ -267,18 +267,14 @@ class AIRR_TSV(Rearrangement):
             print("Info: Total records so far =", total_records, flush=True)
  
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Getting the number of annotations for this repertoire")
-        annotation_count = self.context.sequences.find(
-                {ir_project_sample_id_field:{'$eq':ir_project_sample_id}}
-            ).count()
-        if self.context.verbose:
+        annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
+        if self.verbose():
             print("Info: Annotation count = %d" % (annotation_count), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
-        self.context.samples.update(
-            {"_id":ir_project_sample_id}, {"$set": {"ir_sequence_count":annotation_count}}
-        )
+        self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
 
         # Inform on what we added and the total count for the this record.
         print("Info: Inserted %d records, total annotation count = %d" % (total_records, annotation_count))
