@@ -18,18 +18,18 @@ class AIRRRepertoire(Repertoire):
 
     def ir_maptorepository(self, field):
         # Check to see if the field is in the AIRR mapping, if not warn.
-        airr_field = self.context.airr_map.getMapping(field, "airr", "airr")
+        airr_field = self.getMapping(field, "airr", "airr")
         if airr_field is None:
             print("Warning: Could not find %s in AIRR mapping"%(field))
 
         # Check to see if the field can be mapped to a field in the repository, if not warn.
-        repo_field = self.context.airr_map.getMapping(field, "airr", self.context.repository_tag)
+        repo_field = self.getMapping(field, "airr", self.getRepositoryTag())
         if repo_field is None:
             repo_field = field
             print("Warning: Could not find repository mapping for %s, storing as is"%(field))
 
         # If we are verbose, tell about the mapping...
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Mapping %s => %s" % (field, repo_field))
 
         # Return the mapping.
@@ -136,19 +136,19 @@ class AIRRRepertoire(Repertoire):
             # Get the mapping for the sequence count field for the repository and 
             # initialize the sequeunce count to 0. If we can't find a mapping for this
             # field then we can't do anything. 
-            count_field = self.context.airr_map.getMapping("ir_sequence_count", "ir_id",
-                                                           self.context.repository_tag )
+            count_field = self.getMapping("ir_sequence_count", "ir_id",
+                                          self.getRepositoryTag() )
             if count_field is None:
                 print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
-                      % ( self.context.repository_tag))
+                      % ( self.getRepositoryTag() ))
             else:
                 repertoire_dict[count_field] = 0
 
             # Ensure that we have a correct file name to link fields. If we can't find it 
             # this is a fatal error as we can not link any data to this set repertoire,
             # so there is no point adding the repertoire...
-            repository_file_field = self.context.airr_map.getMapping("ir_rearrangement_file_name",
-                                                               "ir_id",  self.context.repository_tag)
+            repository_file_field = self.getMapping("ir_rearrangement_file_name",
+                                                    "ir_id", self.getRepositoryTag())
             # If we can't find a mapping for this field in the repository mapping, then
             # we might still be OK if the metadata spreadsheet has the field. If the fails, 
             # then we should exit.
@@ -171,6 +171,6 @@ class AIRRRepertoire(Repertoire):
         # are stored in the repository. So if the provided file has lots of extra fields
         # they will exist in the repository.
         for r in repertoire_list:
-            self.insertDocument( r )
+            self.repositoryInsertRepertoire( r )
     
         return True

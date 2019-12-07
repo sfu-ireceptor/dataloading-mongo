@@ -21,7 +21,7 @@ class IRRepertoire(Repertoire):
             return False
 
         # Set the tag for the repository that we are using.
-        repository_tag = self.context.repository_tag
+        repository_tag = self.getRepositoryTag()
 
         # Extract the fields that are of interest for this file. Essentiall all
         # non null curator fields
@@ -43,10 +43,10 @@ class IRRepertoire(Repertoire):
         curationColumns = []
         columnMapping = {}
 
-        if self.context.verbose:
+        if self.verbose():
             print("Info: Dumping AIRR repertoire mapping")
         for index, row in airr_fields.iterrows():
-            if self.context.verbose:
+            if self.verbose():
                 print("    " + str(row[curation_tag]) + " -> " + str(row[repository_tag]))
             # If the repository column has a value for the curator field, track the field
             # from both the curator and repository side.
@@ -80,26 +80,26 @@ class IRRepertoire(Repertoire):
                 # If the file column is in the mapping, change the data frame column name
                 # to be the column name for the repository.
                 mongo_column = columnMapping[curation_file_column]
-                if self.context.verbose:
+                if self.verbose():
                     print("Info: Mapping input file column " + curation_file_column + " -> " + mongo_column)
                 df.rename({curation_file_column:mongo_column}, axis='columns', inplace=True)
             else:
                 # If we don't have a mapping, keep the name the same, as we want to
                 # still save the data even though we don't have a mapping.
-                if self.context.verbose:
+                if self.verbose():
                     print("Info: No mapping for input file column " + curation_file_column + ", storing in repository as is")
         # Check to see which desired Curation mappings we don't have... We check this
         # against the "mongo_column" from the repository in the data frame, because
         # we have already mapped the columns from the file columns to the repository columns.
         for curation_column, mongo_column in columnMapping.items():
             if not mongo_column in df.columns:
-                if self.context.verbose:
+                if self.verbose():
                     print("Warning: Missing data in input file for " + curation_column)
 
         # Get the mapping for the sequence count field for the repository and 
         # initialize the sequeunce count to 0. If we can't find a mapping for this
         # field then we can't do anything. 
-        count_field = self.context.airr_map.getMapping("ir_sequence_count", "ir_id", repository_tag)
+        count_field = self.getMapping("ir_sequence_count", "ir_id", repository_tag)
         if count_field is None:
             print("Warning: Could not find ir_sequence_count tag in repository " + repository_tag + ", field not initialized")
         else:
@@ -108,7 +108,7 @@ class IRRepertoire(Repertoire):
         # Ensure that we have a correct file name to link fields. If not return.
         # This is a fatal error as we can not link any data to this set of samples,
         # so there is no point adding the samples...
-        repository_file_field = self.context.airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        repository_file_field = self.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
         # If we can't find a mapping for this field in the repository mapping, then
         # we might still be OK if the metadata spreadsheet has the field. If the fails, 
         # then we should exit.
@@ -138,6 +138,6 @@ class IRRepertoire(Repertoire):
         # are stored in the repository. So if the provided CSV file has lots of extra fields
         # they will exist in the repository.
         for r in record_list:
-            self.insertDocument( r )
+            self.repositoryInsertRepertoire( r )
     
         return True
