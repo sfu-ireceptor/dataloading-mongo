@@ -150,14 +150,30 @@ class IMGT(Rearrangement):
                 # If the repository column has a value for the IMGT field, track the field
                 # from both the IMGT and repository side.
                 if not pd.isnull(row[repository_tag]):
-                    if self.verbose():
-                        print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]), flush=True)
-                    vquest_fields.append(row[filemap_tag])
-                    mongo_fields.append(row[repository_tag])
+                    if row[calculate_tag] == 'FALSE':
+                        if self.verbose():
+                            print("Info:    %s  -> %s"%
+                                  (str(row[filemap_tag]),
+                                   str(row[repository_tag])),
+                                  flush=True)
+                        vquest_fields.append(row[filemap_tag])
+                        mongo_fields.append(row[repository_tag])
+                    else:
+                        if pd.isnull(row[filemap_tag]):
+                            print("Warning: calculation required to generate %s - NOT IMPLEMENTED "%
+                                  (str(row[repository_tag])),
+                                  flush=True)
+                        else:
+                            print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
+                                  (str(row[filemap_tag]),
+                                   str(row[repository_tag])),
+                                  flush=True)
+                        
                 else:
                     if self.verbose():
                         print("Info:    Repository does not support " + vquest_file + "/" + 
                               str(row[filemap_tag]) + ", not inserting into repository", flush=True)
+
             # Use the vquest column in our mapping to select the columns we want from the 
             # possibly quite large vquest data frame.
             mongo_dataframe = vquest_dataframe[vquest_fields]
@@ -225,6 +241,12 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Setting up iReceptor specific fields", flush=True) 
 
+#        for field in mongo_concat:
+#            print(field)
+#            calculate = airr_map.getMapping(field, 'airr', calculate_tag)
+#            if calculate == 'TRUE':
+#                print("Info: Need to calculate %s"%(field))
+        
         # IMGT annotates a rearrangement's functionality  with a string. We have a function
         # that takes the string and changes it to an integer 1/0 which the repository
         # expects. We want to keep the original data in case we need further interpretation,
