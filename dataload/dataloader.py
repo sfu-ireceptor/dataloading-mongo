@@ -150,8 +150,8 @@ def getArguments():
     db_group.add_argument(
         "--database_map",
         dest="database_map",
-        default="ir_turnkey",
-        help="Mapping to use to map data terms into repository terms. Defaults to ir_turnkey, which is the mapping for the iReceptor Turnkey repository. This mapping keyword MUST be in the term mapping file as specified by --mapfile"
+        default="ir_repository",
+        help="Mapping to use to map data terms into repository terms. Defaults to ir_repository, which is the mapping for the iReceptor Turnkey repository. This mapping keyword MUST be in the term mapping file as specified by --mapfile"
     )
     db_group.add_argument(
         "--database_chunk",
