@@ -18,11 +18,21 @@ from rearrangement import Rearrangement
 # a functional annotation with the string "productive". Note that the 
 # string sometimes contains "productinge (see comment..." so we need to
 # check to ensure that the string starts with "productive".
-def functional_boolean(functionality):
+def productive_boolean(functionality):
     if functionality.startswith("productive"):
         return True
     else:
         return False
+
+# IMGT has a "rev_comp" equivalent field called orientation that
+# maps the string "+" with "False" and "-" with "True". 
+def rev_comp_boolean(orientation):
+    if orientation == "+":
+        return False
+    elif orientation == "-":
+        return True
+    else:
+        return None
 
 class IMGT(Rearrangement):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
@@ -127,6 +137,10 @@ class IMGT(Rearrangement):
         # for each IMGT file that we need to process.
         filedict = {}
         first_dataframe = True
+        # Arrays to keep track of the vquest fields we need to calculate on.
+        vquest_calc_fields = []
+        vquest_calc_file = []
+        mongo_calc_fields = []
         for vquest_file in vquest_files:
             if self.verbose():
                 print("Info: Processing file ", vquest_file, flush=True)
@@ -150,6 +164,9 @@ class IMGT(Rearrangement):
                 # If the repository column has a value for the IMGT field, track the field
                 # from both the IMGT and repository side.
                 if not pd.isnull(row[repository_tag]):
+                    # If no calculation is required, then it is a direct mapping.
+                    # If there is calculation required, we perform those calculations
+                    # later...
                     if row[calculate_tag] == 'FALSE':
                         if self.verbose():
                             print("Info:    %s  -> %s"%
@@ -159,16 +176,19 @@ class IMGT(Rearrangement):
                         vquest_fields.append(row[filemap_tag])
                         mongo_fields.append(row[repository_tag])
                     else:
+                        # The ones we need to calculate later we need to track...
+                        vquest_calc_file.append(vquest_file)
+                        vquest_calc_fields.append(row[filemap_tag])
+                        mongo_calc_fields.append(row[repository_tag])
                         if pd.isnull(row[filemap_tag]):
-                            print("Warning: calculation required to generate %s - NOT IMPLEMENTED "%
+                            print("Info:    COMBINED IMGT fields -> %s (Derived)"%
                                   (str(row[repository_tag])),
                                   flush=True)
                         else:
-                            print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
+                            print("Info:    %s  -> %s (Derived)"%
                                   (str(row[filemap_tag]),
                                    str(row[repository_tag])),
                                   flush=True)
-                        
                 else:
                     if self.verbose():
                         print("Info:    Repository does not support " + vquest_file + "/" + 
@@ -241,28 +261,34 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Setting up iReceptor specific fields", flush=True) 
 
-#        for field in mongo_concat:
-#            print(field)
-#            calculate = airr_map.getMapping(field, 'airr', calculate_tag)
-#            if calculate == 'TRUE':
-#                print("Info: Need to calculate %s"%(field))
+        for index, value in enumerate(mongo_calc_fields):
+            if value == "productive":
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                imgt_name = "imgt_" + mongo_calc_fields[index]
+                mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
+                mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(productive_boolean)
+            elif value == "rev_comp":
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                imgt_name = "imgt_" + mongo_calc_fields[index]
+                mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
+                mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(rev_comp_boolean)
+            else:
+                if pd.isnull(vquest_calc_fields[index]):
+                    print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
+                          (mongo_calc_fields[index]),
+                          flush=True)
+                else:
+                    print("Info: Warning - calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
+                          (vquest_calc_fields[index],
+                           mongo_calc_fields[index]),
+                          flush=True)
         
-        # IMGT annotates a rearrangement's functionality  with a string. We have a function
-        # that takes the string and changes it to an integer 1/0 which the repository
-        # expects. We want to keep the original data in case we need further interpretation,
-        productive = airr_map.getMapping("productive", "ir_id", repository_tag)
-        if productive in mongo_concat:
-            mongo_concat["imgt_productive"] = mongo_concat[productive]
-            mongo_concat[productive] = mongo_concat[productive].apply(functional_boolean)
-
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
         ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
         mongo_concat[ir_project_sample_id_field] = ir_project_sample_id
-
-        # The annotation tool used
-        ir_annotation_tool = airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
-        mongo_concat[ir_annotation_tool] = self.getAnnotationTool()
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
@@ -316,9 +342,9 @@ class IMGT(Rearrangement):
         # Special case for junction_aa_length. This does not exist in the AIRR standard,
         # so we have to check to see if the mapping returned None as well. 
         junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
-        if junction_aa in mongo_concat and (ir_junction_aa_length is None or not ir_junction_aa_length in mongo_concat):
-            mongo_concat[ir_junction_aa_length] = mongo_concat[junction_aa].apply(len)
+        junction_aa_length = airr_map.getMapping("junction_aa_length", "ir_id", repository_tag)
+        if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
+            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
