@@ -34,6 +34,17 @@ def rev_comp_boolean(orientation):
     else:
         return None
 
+# IMGT has a "vj_inframe" equivalent field called "Junction frame" that
+# maps the string "in-frame" with "True" and "out-of-frame" with "False".
+def vj_in_frame_boolean(frame):
+    if frame == "out-of-frame":
+        return False
+    elif frame == "in-frame":
+        return True
+    else:
+        return None
+
+
 class IMGT(Rearrangement):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Rearrangement.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
@@ -274,6 +285,12 @@ class IMGT(Rearrangement):
                 imgt_name = "imgt_" + mongo_calc_fields[index]
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
                 mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(rev_comp_boolean)
+            elif value == "vj_in_frame":
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                imgt_name = "imgt_" + mongo_calc_fields[index]
+                mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
+                mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
             else:
                 if pd.isnull(vquest_calc_fields[index]):
                     print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
