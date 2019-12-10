@@ -44,6 +44,14 @@ def vj_in_frame_boolean(frame):
     else:
         return None
 
+# IMGT has a "sequence_alignment" equivalent field that is derived from
+# two fields depending on whether we have a D gene or not. This method
+# is called once per field, and combines the values of the two fields.
+def sequence_alignment_combine(sequence):
+    if not pd.isnull(sequence) and len(sequence) > 0:
+        return sequence
+    else:
+        return ""
 
 class IMGT(Rearrangement):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
@@ -291,6 +299,43 @@ class IMGT(Rearrangement):
                 imgt_name = "imgt_" + mongo_calc_fields[index]
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
                 mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
+            elif value == "sequence_alignment" or value == 'sequence_alignment_aa' or value == 'd_sequence_alignment': 
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                vquest_array = vquest_calc_fields[index].split(" or ")
+                if len(vquest_array) == 2:
+                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                              lambda x : '{}{}'.format(
+                                  x[0] if pd.notnull(x[0]) else "",
+                                  x[1] if pd.notnull(x[1]) else ""
+                              ), axis=1)
+            elif value == 'd_sequence_start' or value == 'd_sequence_end':
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                vquest_array = vquest_calc_fields[index].split(" or ")
+                if len(vquest_array) == 2:
+                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                              lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
+                    #mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    #          lambda x : '{}'.format(
+                    #              x[0] if pd.notnull(x[0]) else x[1]
+                    #          ), axis=1)
+            elif value == 'np1_length':
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                np1 = airr_map.getMapping("np1", "ir_id", repository_tag)
+                np1_length = airr_map.getMapping("np1_length", "ir_id", repository_tag)
+                if np1 in mongo_concat and not np1_length in mongo_concat:
+                    mongo_concat[np1_length] = mongo_concat[np1].apply(len)
+            elif value == 'np2_length':
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                np2 = airr_map.getMapping("np2", "ir_id", repository_tag)
+                np2_length = airr_map.getMapping("np2_length", "ir_id", repository_tag)
+                if np2 in mongo_concat and not np2_length in mongo_concat:
+                    mongo_concat[np2_length] = mongo_concat[np2].apply(len)
             else:
                 if pd.isnull(vquest_calc_fields[index]):
                     print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
@@ -362,6 +407,7 @@ class IMGT(Rearrangement):
         junction_aa_length = airr_map.getMapping("junction_aa_length", "ir_id", repository_tag)
         if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
             mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
+
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
