@@ -310,6 +310,27 @@ class IMGT(Rearrangement):
                                   x[0] if pd.notnull(x[0]) else "",
                                   x[1] if pd.notnull(x[1]) else ""
                               ), axis=1)
+            elif value == "np1" or value == "np2":
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                vquest_array = vquest_calc_fields[index].split(" or ")
+
+                for imgt_index, imgt_value in enumerate(vquest_array):
+                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    # If this is the first index, we want to just assign the value
+                    # of the first field.
+                    if imgt_index == 0:
+                        df[mongo_calc_fields[index]] = df[[imgt_value]].apply(
+                              lambda x : '{}'.format(
+                                  x[0] if pd.notnull(x[0]) else ""
+                              ), axis=1)
+                    else:
+                        df[mongo_calc_fields[index]] = df[[mongo_calc_fields[index],imgt_value]].apply(
+                              lambda x : '{}{}'.format(
+                                  x[0] if pd.notnull(x[0]) else "",
+                                  x[1] if pd.notnull(x[1]) else ""
+                              ), axis=1)
+                    mongo_concat[mongo_calc_fields[index]] = df[mongo_calc_fields[index]]
             elif value == 'd_sequence_start' or value == 'd_sequence_end':
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
