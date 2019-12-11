@@ -53,6 +53,17 @@ def sequence_alignment_combine(sequence):
     else:
         return ""
 
+# Check for one of the three stop codons in the the regions provided.
+# Check for null regions 
+def check_stop_codon(region1, region2):
+    if pd.notnull(region1):
+        if 'UAA' in region1 or 'UAG' in region1 or 'UGA' in region1:
+            return True
+    if pd.notnull(region2):
+        if 'UAA' in region1 or 'UAG' in region1 or 'UGA' in region1:
+            return True
+    return False
+
 class IMGT(Rearrangement):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Rearrangement.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
@@ -305,6 +316,20 @@ class IMGT(Rearrangement):
                 imgt_name = "vquest_" + mongo_calc_fields[index]
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
                 mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
+            elif value == "stop_codon":
+                # This fields is determined by checking whther or not there is
+                # a stop codon in the two regions in the mapping.
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                vquest_array = vquest_calc_fields[index].split(" or ")
+                if len(vquest_array) == 2:
+                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    # We use the Pandas apply method to iterate over the rows and at each
+                    # row we use the lamda function to process the fields in the row. We 
+                    # know we have two columns and we call the check_stop_codon function
+                    # for each row.
+                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                              lambda x : check_stop_codon(x[0], x[1]), axis=1)
             elif value == "sequence_alignment" or value == 'sequence_alignment_aa' or value == 'd_sequence_alignment': 
                 # These fields are built from one out of two fields that come from
                 # the mapping. They are string fields, one of which we assume has
