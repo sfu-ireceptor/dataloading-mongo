@@ -253,19 +253,19 @@ class IMGT(Rearrangement):
         # as this information should be stored in the repertoire metadata, but for completeness
         # we err on the side of having more information. Note that this is quite redundant as 
         # it is storing the same information for each rearrangement...
-        mongo_concat['imgt_annotation_date'] = parameter_dictionary['Date']
-        mongo_concat['imgt_tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
-        mongo_concat['imgt_reference_version'] = parameter_dictionary[
+        mongo_concat['vquest_annotation_date'] = parameter_dictionary['Date']
+        mongo_concat['vquest_tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
+        mongo_concat['vquest_reference_version'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory release']
-        mongo_concat['imgt_species'] = parameter_dictionary['Species']
-        mongo_concat['imgt_receptor_type'] = parameter_dictionary['Receptor type or locus']
-        mongo_concat['imgt_reference_directory_set'] = parameter_dictionary[
+        mongo_concat['vquest_species'] = parameter_dictionary['Species']
+        mongo_concat['vquest_receptor_type'] = parameter_dictionary['Receptor type or locus']
+        mongo_concat['vquest_reference_directory_set'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory set']
-        mongo_concat['imgt_search_insert_delete'] = parameter_dictionary[
+        mongo_concat['vquest_search_insert_delete'] = parameter_dictionary[
             'Search for insertions and deletions']
-        mongo_concat['imgt_no_nucleotide_to_add'] = parameter_dictionary[
+        mongo_concat['vquest_no_nucleotide_to_add'] = parameter_dictionary[
             "Nb of nucleotides to add (or exclude) in 3' of the V-REGION for the evaluation of the alignment score"]
-        mongo_concat['imgt_no_nucleotide_to_exclude'] = parameter_dictionary[
+        mongo_concat['vquest_no_nucleotide_to_exclude'] = parameter_dictionary[
             "Nb of nucleotides to exclude in 5' of the V-REGION for the evaluation of the nb of mutations"]
         if self.verbose():
             print("Info: Done processing IMGT Parameter file", flush=True) 
@@ -275,42 +275,62 @@ class IMGT(Rearrangement):
             print("Info: Cleaning up NULL columns", flush=True) 
         mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
 
-        # Critical iReceptor specific fields that need to be built from existing IMGT
-        # generated fields.
+        # AIRR fields that need to be built from existing IMGT
+        # generated fields. These fields are calculated based on
+        # the specification here: http://www.imgt.org/IMGT_vquest/vquest_airr
+        # with the IMGT fields the values are build from in the 
+        # AIRR mapping.
         if self.verbose():
-            print("Info: Setting up iReceptor specific fields", flush=True) 
+            print("Info: Setting up AIRR specific fields", flush=True) 
 
         for index, value in enumerate(mongo_calc_fields):
             if value == "productive":
+                # Calculate the productive field.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
-                imgt_name = "imgt_" + mongo_calc_fields[index]
+                imgt_name = "vquest_" + mongo_calc_fields[index]
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
                 mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(productive_boolean)
             elif value == "rev_comp":
+                # Rev comp...
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
-                imgt_name = "imgt_" + mongo_calc_fields[index]
+                imgt_name = "vquest_" + mongo_calc_fields[index]
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
                 mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(rev_comp_boolean)
             elif value == "vj_in_frame":
+                # VJ in frame...
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
-                imgt_name = "imgt_" + mongo_calc_fields[index]
+                imgt_name = "vquest_" + mongo_calc_fields[index]
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
                 mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
             elif value == "sequence_alignment" or value == 'sequence_alignment_aa' or value == 'd_sequence_alignment': 
+                # These fields are built from one out of two fields that come from
+                # the mapping. They are string fields, one of which we assume has
+                # data and one won't - so we are safe to concatenate the strings.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
                     df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    # We use the Pandas apply method to iterate over the rows and at each
+                    # row we use the lamda function to process the fields in the row. We 
+                    # know we have two columns in each row and we contatenate the strings
+                    # handling null values if they exist.
                     mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : '{}{}'.format(
                                   x[0] if pd.notnull(x[0]) else "",
                                   x[1] if pd.notnull(x[1]) else ""
                               ), axis=1)
             elif value == "np1" or value == "np2":
+                # These fields are built from a complex combination of fieldes
+                # depending on the type of locus and the number of D genes. 
+                # The fields to transform from are in the mapping file.
+                # We assume that when there is choice of region (e.g N-REGION or
+                # N1-REGION) that only one of these regions will have data for
+                # a specific row. As such, it is OK to concatenate all the fields
+                # together and only data from one of N/N1 will exist.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
@@ -332,6 +352,9 @@ class IMGT(Rearrangement):
                               ), axis=1)
                     mongo_concat[mongo_calc_fields[index]] = df[mongo_calc_fields[index]]
             elif value == 'd_sequence_start' or value == 'd_sequence_end':
+                # These are numerical start/end fields, built from one of two possible
+                # source fields. Again, we assume that either field, but not
+                # both fields contain data and we use the one that contains data.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
@@ -339,11 +362,19 @@ class IMGT(Rearrangement):
                     df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
                     mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
-                    #mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
-                    #          lambda x : '{}'.format(
-                    #              x[0] if pd.notnull(x[0]) else x[1]
-                    #          ), axis=1)
+            elif value == 'p5d_length' or value == 'p3d_length' or value == 'n1_length':
+                # These are numerical length fields, built from one of two possible
+                # source fields. Again, we assume that either field, but not
+                # both fields contain data and we use the one that contains data.
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                vquest_array = vquest_calc_fields[index].split(" or ")
+                if len(vquest_array) == 2:
+                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                              lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
             elif value == 'np1_length':
+                # Compute the length of the np1 field
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 np1 = airr_map.getMapping("np1", "ir_id", repository_tag)
@@ -351,6 +382,7 @@ class IMGT(Rearrangement):
                 if np1 in mongo_concat and not np1_length in mongo_concat:
                     mongo_concat[np1_length] = mongo_concat[np1].apply(len)
             elif value == 'np2_length':
+                # Compute the length of the np2 field
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 np2 = airr_map.getMapping("np2", "ir_id", repository_tag)
@@ -358,6 +390,8 @@ class IMGT(Rearrangement):
                 if np2 in mongo_concat and not np2_length in mongo_concat:
                     mongo_concat[np2_length] = mongo_concat[np2].apply(len)
             else:
+                # If we get here we found a field that we don't yet compute, so we 
+                # warn about the situation.
                 if pd.isnull(vquest_calc_fields[index]):
                     print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
                           (mongo_calc_fields[index]),
@@ -399,9 +433,9 @@ class IMGT(Rearrangement):
         ir_vgene_family = airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
         ir_dgene_family = airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
         ir_jgene_family = airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
-        mongo_concat["imgt_vgene_string"] = mongo_concat[v_call]
-        mongo_concat["imgt_jgene_string"] = mongo_concat[j_call]
-        mongo_concat["imgt_dgene_string"] = mongo_concat[d_call]
+        mongo_concat["vquest_vgene_string"] = mongo_concat[v_call]
+        mongo_concat["vquest_jgene_string"] = mongo_concat[j_call]
+        mongo_concat["vquest_dgene_string"] = mongo_concat[d_call]
         # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
         # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
         self.processGene(mongo_concat, v_call, v_call, ir_vgene_gene, ir_vgene_family)
