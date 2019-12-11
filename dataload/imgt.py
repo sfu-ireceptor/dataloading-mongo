@@ -304,27 +304,29 @@ class IMGT(Rearrangement):
             print("Info: Setting up AIRR specific fields", flush=True) 
 
         for index, value in enumerate(mongo_calc_fields):
+            
+            repository_field = airr_map.getMapping(value, "ir_id", repository_tag)
             if value == "productive":
                 # Calculate the productive field.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
-                imgt_name = "vquest_" + mongo_calc_fields[index]
+                imgt_name = "vquest_" + repository_field
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
-                mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(productive_boolean)
+                mongo_concat[repository_field] = mongo_concat[imgt_name].apply(productive_boolean)
             elif value == "rev_comp":
                 # Rev comp...
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
-                imgt_name = "vquest_" + mongo_calc_fields[index]
+                imgt_name = "vquest_" + repository_field
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
-                mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(rev_comp_boolean)
+                mongo_concat[repository_field] = mongo_concat[imgt_name].apply(rev_comp_boolean)
             elif value == "vj_in_frame":
                 # VJ in frame...
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
-                imgt_name = "vquest_" + mongo_calc_fields[index]
+                imgt_name = "vquest_" + repository_field
                 mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
-                mongo_concat[mongo_calc_fields[index]] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
+                mongo_concat[repository_field] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
             elif value == "stop_codon":
                 # This fields is determined by checking whther or not there is
                 # a stop codon in the two regions in the mapping.
@@ -337,7 +339,7 @@ class IMGT(Rearrangement):
                     # row we use the lamda function to process the fields in the row. We 
                     # know we have two columns and we call the check_stop_codon function
                     # for each row.
-                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : check_stop_codon(x[0], x[1]), axis=1)
             elif value == "sequence_alignment" or value == 'sequence_alignment_aa' or value == 'd_sequence_alignment': 
                 # These fields are built from one out of two fields that come from
@@ -352,7 +354,7 @@ class IMGT(Rearrangement):
                     # row we use the lamda function to process the fields in the row. We 
                     # know we have two columns in each row and we contatenate the strings
                     # handling null values if they exist.
-                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : '{}{}'.format(
                                   x[0] if pd.notnull(x[0]) else "",
                                   x[1] if pd.notnull(x[1]) else ""
@@ -374,7 +376,7 @@ class IMGT(Rearrangement):
                     # If this is the first index, we want to just assign the value
                     # of the first field.
                     if imgt_index == 0:
-                        df[mongo_calc_fields[index]] = df[[imgt_value]].apply(
+                        df[repository_field] = df[[imgt_value]].apply(
                               lambda x : '{}'.format(
                                   x[0] if pd.notnull(x[0]) else ""
                               ), axis=1)
@@ -384,7 +386,7 @@ class IMGT(Rearrangement):
                                   x[0] if pd.notnull(x[0]) else "",
                                   x[1] if pd.notnull(x[1]) else ""
                               ), axis=1)
-                    mongo_concat[mongo_calc_fields[index]] = df[mongo_calc_fields[index]]
+                    mongo_concat[repository_field] = df[mongo_calc_fields[index]]
             elif value == 'd_sequence_start' or value == 'd_sequence_end':
                 # These are numerical start/end fields, built from one of two possible
                 # source fields. Again, we assume that either field, but not
@@ -394,7 +396,7 @@ class IMGT(Rearrangement):
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
                     df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
             elif value == 'p5d_length' or value == 'p3d_length' or value == 'n1_length':
                 # These are numerical length fields, built from one of two possible
@@ -405,7 +407,7 @@ class IMGT(Rearrangement):
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
                     df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
         
         # We need to iterate over the compuation list again, as some of the 
@@ -413,46 +415,42 @@ class IMGT(Rearrangement):
         # example, computing d_sequence_alignment_aa relies on the computation
         # of d_sequence_alignment first. So we need two passes over the list.
         for index, value in enumerate(mongo_calc_fields):
+            repository_field = airr_map.getMapping(value, "ir_id", repository_tag)
             if value == 'd_sequence_alignment_aa':
                 # Covert nt d_sequence_alignment to and AA field.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 seq_nt = airr_map.getMapping("d_sequence_alignment", "ir_id", repository_tag)
-                seq_aa = airr_map.getMapping(value, "ir_id", repository_tag)
-                if seq_nt in mongo_concat and not seq_aa in mongo_concat:
-                    mongo_concat[seq_aa] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
+                if seq_nt in mongo_concat and not repository_field in mongo_concat:
+                    mongo_concat[repository_field] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
             elif value == 'np1_aa':
                 # Covert nt d_sequence_alignment to and AA field.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 seq_nt = airr_map.getMapping("np1", "ir_id", repository_tag)
-                seq_aa = airr_map.getMapping(value, "ir_id", repository_tag)
-                if seq_nt in mongo_concat and not seq_aa in mongo_concat:
-                    mongo_concat[seq_aa] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
+                if seq_nt in mongo_concat and not repository_field in mongo_concat:
+                    mongo_concat[repository_field] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
             elif value == 'np2_aa':
                 # Covert nt d_sequence_alignment to and AA field.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 seq_nt = airr_map.getMapping("np2", "ir_id", repository_tag)
-                seq_aa = airr_map.getMapping(value, "ir_id", repository_tag)
-                if seq_nt in mongo_concat and not seq_aa in mongo_concat:
-                    mongo_concat[seq_aa] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
+                if seq_nt in mongo_concat and not repository_field in mongo_concat:
+                    mongo_concat[repository_field] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
             elif value == 'np1_length':
                 # Compute the length of the np1 field
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 np1 = airr_map.getMapping("np1", "ir_id", repository_tag)
-                np1_length = airr_map.getMapping("np1_length", "ir_id", repository_tag)
-                if np1 in mongo_concat and not np1_length in mongo_concat:
-                    mongo_concat[np1_length] = mongo_concat[np1].apply(len)
+                if np1 in mongo_concat and not repository_field in mongo_concat:
+                    mongo_concat[repository_field] = mongo_concat[np1].apply(len)
             elif value == 'np2_length':
                 # Compute the length of the np2 field
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 np2 = airr_map.getMapping("np2", "ir_id", repository_tag)
-                np2_length = airr_map.getMapping("np2_length", "ir_id", repository_tag)
-                if np2 in mongo_concat and not np2_length in mongo_concat:
-                    mongo_concat[np2_length] = mongo_concat[np2].apply(len)
+                if np2 in mongo_concat and not repository_field in mongo_concat:
+                    mongo_concat[repository_field] = mongo_concat[np2].apply(len)
             else:
                 # If we get here we need to check if the field is in mongo_concat. If
                 # it isn't then we found a field that we don't yet compute, so we 
@@ -460,13 +458,10 @@ class IMGT(Rearrangement):
                 if not value in mongo_concat:
                     if pd.isnull(vquest_calc_fields[index]):
                         print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
-                              (mongo_calc_fields[index]),
-                              flush=True)
+                              (value), flush=True)
                     else:
                         print("Info: Warning - calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
-                              (vquest_calc_fields[index],
-                               mongo_calc_fields[index]),
-                              flush=True)
+                              (vquest_calc_fields[index], value), flush=True)
 
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
