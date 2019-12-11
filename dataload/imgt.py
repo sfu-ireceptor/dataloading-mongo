@@ -11,8 +11,17 @@ import zipfile
 import tarfile
 import json
 import pandas as pd
+from Bio.Seq import translate
 
 from rearrangement import Rearrangement
+
+# IMGT has a number of nt based fields that need to be converted to AA
+# fields. This takes an nt sequence and returns an AA equivalent using
+# biopython's converter.
+def seq_nt_to_aa(seq_nt):
+    if len(seq_nt) % 3 > 0:  seq_nt = seq_nt[:len(seq_nt)- len(seq_nt)%3]
+    seq_aa = translate(seq_nt)
+    return seq_aa
 
 # IMGT has a "functionality" field which has a text string that indcates
 # a functional annotation with the string "productive". Note that the 
@@ -398,6 +407,36 @@ class IMGT(Rearrangement):
                     df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
                     mongo_concat[mongo_calc_fields[index]] = df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
+        
+        # We need to iterate over the compuation list again, as some of the 
+        # computed values needed values compute in the first pass above. For
+        # example, computing d_sequence_alignment_aa relies on the computation
+        # of d_sequence_alignment first. So we need two passes over the list.
+        for index, value in enumerate(mongo_calc_fields):
+            if value == 'd_sequence_alignment_aa':
+                # Covert nt d_sequence_alignment to and AA field.
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                seq_nt = airr_map.getMapping("d_sequence_alignment", "ir_id", repository_tag)
+                seq_aa = airr_map.getMapping(value, "ir_id", repository_tag)
+                if seq_nt in mongo_concat and not seq_aa in mongo_concat:
+                    mongo_concat[seq_aa] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
+            elif value == 'np1_aa':
+                # Covert nt d_sequence_alignment to and AA field.
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                seq_nt = airr_map.getMapping("np1", "ir_id", repository_tag)
+                seq_aa = airr_map.getMapping(value, "ir_id", repository_tag)
+                if seq_nt in mongo_concat and not seq_aa in mongo_concat:
+                    mongo_concat[seq_aa] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
+            elif value == 'np2_aa':
+                # Covert nt d_sequence_alignment to and AA field.
+                if self.verbose():
+                    print("Info: Computing AIRR field %s"%(value), flush=True) 
+                seq_nt = airr_map.getMapping("np2", "ir_id", repository_tag)
+                seq_aa = airr_map.getMapping(value, "ir_id", repository_tag)
+                if seq_nt in mongo_concat and not seq_aa in mongo_concat:
+                    mongo_concat[seq_aa] = mongo_concat[seq_nt].apply(seq_nt_to_aa)
             elif value == 'np1_length':
                 # Compute the length of the np1 field
                 if self.verbose():
@@ -415,18 +454,20 @@ class IMGT(Rearrangement):
                 if np2 in mongo_concat and not np2_length in mongo_concat:
                     mongo_concat[np2_length] = mongo_concat[np2].apply(len)
             else:
-                # If we get here we found a field that we don't yet compute, so we 
+                # If we get here we need to check if the field is in mongo_concat. If
+                # it isn't then we found a field that we don't yet compute, so we 
                 # warn about the situation.
-                if pd.isnull(vquest_calc_fields[index]):
-                    print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
-                          (mongo_calc_fields[index]),
-                          flush=True)
-                else:
-                    print("Info: Warning - calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
-                          (vquest_calc_fields[index],
-                           mongo_calc_fields[index]),
-                          flush=True)
-        
+                if not value in mongo_concat:
+                    if pd.isnull(vquest_calc_fields[index]):
+                        print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
+                              (mongo_calc_fields[index]),
+                              flush=True)
+                    else:
+                        print("Info: Warning - calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
+                              (vquest_calc_fields[index],
+                               mongo_calc_fields[index]),
+                              flush=True)
+
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
         ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
