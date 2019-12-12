@@ -17,7 +17,8 @@ from rearrangement import Rearrangement
 
 # IMGT has a number of nt based fields that need to be converted to AA
 # fields. This takes an nt sequence and returns an AA equivalent using
-# biopython's converter.
+# biopython's converter. For now we are truncating the sequence if the
+# sequence is not a length that is divisible by 3.
 def seq_nt_to_aa(seq_nt):
     if len(seq_nt) % 3 > 0:  seq_nt = seq_nt[:len(seq_nt)- len(seq_nt)%3]
     seq_aa = translate(seq_nt)
@@ -52,15 +53,6 @@ def vj_in_frame_boolean(frame):
         return True
     else:
         return None
-
-# IMGT has a "sequence_alignment" equivalent field that is derived from
-# two fields depending on whether we have a D gene or not. This method
-# is called once per field, and combines the values of the two fields.
-def sequence_alignment_combine(sequence):
-    if not pd.isnull(sequence) and len(sequence) > 0:
-        return sequence
-    else:
-        return ""
 
 # Check for one of the three stop codons in the the regions provided.
 # Check for null regions 
@@ -303,9 +295,13 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Setting up AIRR specific fields", flush=True) 
 
+        # Iterate over the fields that require calculation
         for index, value in enumerate(mongo_calc_fields):
             
+            # For the field we are processing, look up the field name for the repository.
             repository_field = airr_map.getMapping(value, "ir_id", repository_tag)
+
+            # Perform the calculations required based on the ir_id based field name.
             if value == "productive":
                 # Calculate the productive field.
                 if self.verbose():
@@ -411,9 +407,10 @@ class IMGT(Rearrangement):
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
         
         # We need to iterate over the compuation list again, as some of the 
-        # computed values needed values compute in the first pass above. For
+        # computed values needed values computed in the first pass above. For
         # example, computing d_sequence_alignment_aa relies on the computation
-        # of d_sequence_alignment first. So we need two passes over the list.
+        # of d_sequence_alignment first. So we need two passes over the list 
+        # as we are not guaranteed of the order.
         for index, value in enumerate(mongo_calc_fields):
             repository_field = airr_map.getMapping(value, "ir_id", repository_tag)
             if value == 'd_sequence_alignment_aa':
@@ -476,7 +473,6 @@ class IMGT(Rearrangement):
             print("Info: Computing substring from junction", flush=True) 
         junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
         ir_substring = airr_map.getMapping("ir_substring", "ir_id", repository_tag)
-        
         if junction_aa in mongo_concat:
             mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Rearrangement.get_substring)
 
@@ -541,7 +537,8 @@ class IMGT(Rearrangement):
         records = json.loads(mongo_concat.T.to_json()).values()
         t_end = time.perf_counter()
         if self.verbose():
-            print("Info: JSON created, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
+            print("Info: JSON created, time = %f seconds (%f records/s)" %
+                  ((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
         # The climax: insert the records into the MongoDb collection!
         if self.verbose():
@@ -550,7 +547,8 @@ class IMGT(Rearrangement):
         self.repositoryInsertRearrangements(records)
         t_end = time.perf_counter()
         if self.verbose():
-            print("Info: Inserted records, time = %f seconds (%f records/s)" %((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
+            print("Info: Inserted records, time = %f seconds (%f records/s)" %
+                  ((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
         # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
         if self.verbose():
