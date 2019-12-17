@@ -3,7 +3,7 @@ import urllib.parse
 import pymongo
 
 class Repository:
-    def __init__(self, user, password, host, port, database, repertoire_collection, rearrangement_collection):
+    def __init__(self, user, password, host, port, database, repertoire_collection, rearrangement_collection, skipload):
         """Create an interface to the Mongo repository
 
         Keyword arguments:
@@ -14,6 +14,7 @@ class Repository:
           - database: name of the database to use in the repository
           - repertoire_collection: name of the repertoire collection in the database
           - rearrangement_collection: name of the rearrangement collection in the database
+          - skipload: flag to determine if we skip the data load operation.
 
         """
 
@@ -24,6 +25,7 @@ class Repository:
         self.database = database
         self.repertoire_collection = repertoire_collection
         self.rearrangement_collection = rearrangement_collection
+        self.skipload = skipload
 
         self.repertoire = None
         self.rearrangement = None
@@ -92,7 +94,8 @@ class Repository:
     # This is hiding the Mongo implementation. Probably should refactor the
     # repository implementation completely.
     def insertRearrangements(self, json_records):
-        self.rearrangement.insert(json_records)
+        if not self.skipload:
+            self.rearrangement.insert(json_records)
 
     # Count the number of rearrangements that belong to a specific repertoire. Note: In our
     # early implementations, we had an internal field name called ir_project_sample_id. We
@@ -108,9 +111,10 @@ class Repository:
 
     # Update the count for the given reperotire and count field. 
     def updateCount(self, repertoire_id, count_field, count):
-        self.repertoire.update(
-            {"_id":repertoire_id}, {"$set": {count_field:count}}
-        )
+        if not self.skipload:
+            self.repertoire.update(
+                {"_id":repertoire_id}, {"$set": {count_field:count}}
+            )
 
     # Insert a repertoire document into the repertoire collection
     def insertRepertoire( self, doc ):
@@ -145,7 +149,8 @@ class Repository:
 
         # Write the record and return
         try:
-            results = self.repertoire.insert(doc)
+            if not self.skipload:
+                results = self.repertoire.insert(doc)
         except:
             print("ERROR: Repository insertion failed")
             return False
