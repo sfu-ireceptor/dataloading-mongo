@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 import pandas as pd
 import json
@@ -28,14 +27,14 @@ class IRRepertoire(Repertoire):
         if not curation_tag in self.getAIRRMap().airr_repertoire_map:
             print("ERROR: Could not find Curation mapping (" + curation_tag + ") in mapping file")
             return False
-        map_column = self.getAIRRMap().getRearrangementMapColumn(curation_tag)
+        map_column = self.getAIRRMap().getRepertoireMapColumn(curation_tag)
         fields_of_interest = map_column.notnull()
         
         # We select the rows in the mapping that contain fields of interest for curataion.
         # At this point, file_fields contains N columns that contain our mappings for the
         # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
         # only data that is relevant to curataion
-        airr_fields = self.getAIRRMap().getRearrangementRows(fields_of_interest)
+        airr_fields = self.getAIRRMap().getRepertoireRows(fields_of_interest)
         
         # We need to build the set of fields that the repository can store. We don't
         # want to extract fields that the repository doesn't want.
@@ -73,6 +72,7 @@ class IRRepertoire(Repertoire):
             print("Warning: column without a title detected in file ", filename)    
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
+        
         # Check the validity of the columns in the actual file being loaded.
         for curation_file_column in df.columns:
             if curation_file_column in columnMapping:
@@ -128,6 +128,29 @@ class IRRepertoire(Repertoire):
         df["ir_created_at"] = now_str
         df["ir_updated_at"] = now_str
 
+        # Check to make sure all AIRR required columns exist
+        for index, row in airr_fields.iterrows():
+            # If the repository column exists for this AIRR term...
+            if not pd.isnull(row[repository_tag]):
+                # If the row is required by the AIRR standard
+                if row["airr_required"] == "TRUE":
+                    mongo_field = row[repository_tag]
+                    # If the repository representation of the AIRR column is not
+                    # in the data we are going to write to the repository, then
+                    # we have an error.
+                    if not mongo_field in df.columns:
+                        print("ERROR: Required field %s (%s) missing"%(row["airr"],mongo_field))
+                        return False
+
+        # Check to make sure all of our columns are unique.
+        if len(df.columns) != len(df.columns.unique()):
+            print("ERROR: Duplicate column name in data to be written")
+            for column in df.columns:
+                count = list(df.columns.values).count(column)
+                if count > 1:
+                    print("ERROR: found %d occurences of column %s"%(count, column))
+            return False
+        
         # Conver to JSON
         records = json.loads(df.T.to_json()).values()
         record_list = list(records)
