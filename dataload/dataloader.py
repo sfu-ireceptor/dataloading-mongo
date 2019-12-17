@@ -30,6 +30,10 @@ def getArguments():
         "--verbose",
         action="store_true",
         help="Run the program in verbose mode. This option will generate a lot of output, but is recommended from a data provenance perspective as it will inform you of how it mapped input data columns into repository columns.")
+    parser.add_argument(
+        "--skipload",
+        action="store_true",
+        help="Run the program without actually lodaing data into the repository. This option will allow testing of the entire load process without changing the repository.")
 
     # Add configuration options 
     config_group = parser.add_argument_group("Configuration file options", "")
@@ -206,7 +210,8 @@ if __name__ == "__main__":
                             options.host, options.port,
                             options.database,
                             options.repertoire_collection,
-                            options.rearrangement_collection)
+                            options.rearrangement_collection,
+                            options.skipload)
     # Check on the successful creation of the context and its validity.
     if repository is None or not repository:
         sys.exit(1)
