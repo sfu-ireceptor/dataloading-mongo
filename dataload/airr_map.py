@@ -121,3 +121,17 @@ class AIRRMap:
     # Rearrangement table size.
     def getRearrangementRows(self, extract_flags):
         return self.airr_rearrangement_map.loc[extract_flags]
+
+    # Return a full column of the Repertoire mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getRepertoireMapColumn(self, column_name):
+        if column_name in self.airr_repertoire_map:
+            return self.airr_repertoire_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the repertoire table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # repertoire table size.
+    def getRepertoireRows(self, extract_flags):
+        return self.airr_repertoire_map.loc[extract_flags]
