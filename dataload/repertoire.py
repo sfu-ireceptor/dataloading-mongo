@@ -19,10 +19,13 @@ class Repertoire(Parser):
         self.repository.insertRepertoire(json_document)
         if self.verbose:
             # If we are in verbose mode, print out a summary of the record we are inserting.
-            study_tag = self.getAIRRMap().getMapping("study_id", "ir_id", self.getRepositoryTag())
+            study_tag = self.getAIRRMap().getMapping("study_id", "ir_id",
+                                                     self.getRepositoryTag())
             study = "NULL" if not study_tag in json_document else json_document[study_tag]
-            sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id", self.getRepositoryTag())
+            sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id",
+                                                      self.getRepositoryTag())
             sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
-            file_tag = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id", self.getRepositoryTag())
+            file_tag = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id",
+                                                    self.getRepositoryTag())
             filestr = "NULL" if not file_tag in json_document else json_document[file_tag]
             print("Info: Writing repertoire record <%s, %s, %s>" % (study, sample, filestr))
