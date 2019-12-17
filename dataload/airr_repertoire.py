@@ -50,8 +50,12 @@ class AIRRRepertoire(Repertoire):
         elif isinstance(value, dict):
             # We need to handle the AIRR ontology terms. If we get one we want 
             # to use the value of the ontology term in our repository for now.
-            if key == "organism" or key == "study_type" or key == "cell_subset":
+            # We also store the id and value separately as two non AIRR keywords.
+            type_info = self.getAIRRMap().getMapping(key, "ir_id", "airr_type")
+            if type_info == "ontology":
                 dictionary[self.ir_maptorepository(key)] = value['value']
+                dictionary[self.ir_maptorepository(key+"_value")] = value['value']
+                dictionary[self.ir_maptorepository(key+"_id")] = value['id']
             else:
                 for sub_key, sub_value in value.items():
                     self.ir_flatten(sub_key, sub_value, dictionary)
@@ -114,9 +118,7 @@ class AIRRRepertoire(Repertoire):
             data = airr.load_repertoire(filename, validate=True)
         except airr.ValidationError as err:
             print("ERROR: AIRR repertoire validation failed for file %s - %s" % (filename, err))
-            # If we failed, we still want to load and process the file, so reload
-            # with validation turned off.
-            data = airr.load_repertoire(filename)
+            return False
 
         # The 'Repertoire' contains a dictionary for each repertoire.
         repertoire_list = []
