@@ -15,6 +15,62 @@ from Bio.Seq import translate
 
 from rearrangement import Rearrangement
 
+# Compute the np1 value from its components parts based on IMGT specification.
+# Assumes that one of the key value pairs is the locus of the row being processed
+def compute_np2(vquest_object):
+    # Get the length
+    length = len(vquest_object)
+    # Get the locus value. We assume this exists.
+    locus = vquest_object["locus"]
+    print(locus)
+    # Initialize the return string
+    np2_str = ""
+    for key, value in vquest_object.items():
+       if key == "P5'D2" and locus in ["IGH", "TRB" ,"TRD"]:
+           # According to the IMGT spec we contatenate all the fields except
+           # P5'J when the locus is either IGH/TRB/TRD
+           continue
+       elif key == "locus":
+           # We want to skip locus.
+           continue
+       else:
+           # We contaenate other fields.
+           print(key)
+           if pd.notnull(value):  
+               print(value)
+               np2_str = np2_str + value
+    print("np2 return = " + np2_str)
+    return np2_str
+
+# Compute the np1 value from its components parts based on IMGT specification.
+# Assumes that one of the key value pairs is the locus of the row being processed
+def compute_np1(vquest_object):
+    # Get the length
+    length = len(vquest_object)
+    # Get the locus value. We assume this exists.
+    locus = vquest_object["locus"]
+    print(locus)
+    # Initialize the return string
+    np1_str = ""
+    for key, value in vquest_object.items():
+       if key == "P5'J" and locus in ["IGH", "TRB" ,"TRD"]:
+           # According to the IMGT spec we contatenate all the fields except
+           # P5'J when the locus is either IGH/TRB/TRD
+           continue
+       elif key == "locus":
+           # We want to skip locus.
+           continue
+       else:
+           # We contaenate other fields.
+           print(key)
+           if pd.notnull(value):  
+               print(value)
+               np1_str = np1_str + value
+    print("np1 return = " + np1_str)
+    return np1_str
+       
+
+
 # IMGT has a number of nt based fields that need to be converted to AA
 # fields. This takes an nt sequence and returns an AA equivalent using
 # biopython's converter. For now we are truncating the sequence if the
@@ -287,6 +343,70 @@ class IMGT(Rearrangement):
             print("Info: Cleaning up NULL columns", flush=True) 
         mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
 
+        # The internal Mongo sample ID that links the sample to each sequence, constant
+        # for all sequences in this file.
+        ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id",
+                                                         "ir_id",
+                                                         repository_tag)
+        mongo_concat[ir_project_sample_id_field] = ir_project_sample_id
+
+        # Generate the substring field, which we use to heavily optmiize junction AA
+        # searches. Technically, this should probably be an ir_ field, but because
+        # it is fundamental to the indexes that already exist, we won't change it for
+        # now.
+        if self.verbose():
+            print("Info: Computing substring from junction", flush=True) 
+        junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
+        ir_substring = airr_map.getMapping("ir_substring", "ir_id", repository_tag)
+        if junction_aa in mongo_concat:
+            mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Rearrangement.get_substring)
+
+        # We want to keep the original vQuest vdj_string data, so we capture that in the
+        # ir_vdjgene_string variables.
+        # We need to look up the "known parameter" from an iReceptor perspective (the field
+        # name in the "ir_id" column mapping and map that to the correct field name for the
+        # repository we are writing to.
+        v_call = airr_map.getMapping("v_call", "ir_id", repository_tag)
+        d_call = airr_map.getMapping("d_call", "ir_id", repository_tag)
+        j_call = airr_map.getMapping("j_call", "ir_id", repository_tag)
+        ir_vgene_gene = airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
+        ir_dgene_gene = airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
+        ir_jgene_gene = airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
+        ir_vgene_family = airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
+        ir_dgene_family = airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
+        ir_jgene_family = airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
+        mongo_concat["vquest_vgene_string"] = mongo_concat[v_call]
+        mongo_concat["vquest_jgene_string"] = mongo_concat[j_call]
+        mongo_concat["vquest_dgene_string"] = mongo_concat[d_call]
+        # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
+        # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
+        self.processGene(mongo_concat, v_call, v_call, ir_vgene_gene, ir_vgene_family)
+        self.processGene(mongo_concat, j_call, j_call, ir_jgene_gene, ir_jgene_family)
+        self.processGene(mongo_concat, d_call, d_call, ir_dgene_gene, ir_dgene_family)
+        # If we don't already have a locus (that is the data file didn't provide one) then
+        # calculate the locus based on the v_call array.
+        locus = airr_map.getMapping("locus", "ir_id", repository_tag)
+        if not locus in mongo_concat:
+            if self.verbose():
+                print("Info: Computing locus from v_call", flush=True) 
+            mongo_concat[locus] = mongo_concat[v_call].apply(Rearrangement.getLocus)
+
+        # Generate the junction length values as required.
+        if self.verbose():
+            print("Info: Computing junction lengths", flush=True) 
+        junction = airr_map.getMapping("junction", "ir_id", repository_tag)
+        junction_length = airr_map.getMapping("junction_length", "ir_id", repository_tag)
+        if junction in mongo_concat and not junction_length in mongo_concat:
+            mongo_concat[junction_length] = mongo_concat[junction].apply(len)
+        # Special case for junction_aa_length. This does not exist in the AIRR standard,
+        # so we have to check to see if the mapping returned None as well. 
+        junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
+        junction_aa_length = airr_map.getMapping("junction_aa_length",
+                                                 "ir_id",
+                                                 repository_tag)
+        if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
+            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
+
         # AIRR fields that need to be built from existing IMGT
         # generated fields. These fields are calculated based on
         # the specification here: http://www.imgt.org/IMGT_vquest/vquest_airr
@@ -301,27 +421,30 @@ class IMGT(Rearrangement):
             # For the field we are processing, look up the field name for the repository.
             repository_field = airr_map.getMapping(value, "ir_id", repository_tag)
 
+            # Get the vquest data frame as we use it everywhere.
+            vquest_df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+
             # Perform the calculations required based on the ir_id based field name.
             if value == "productive":
                 # Calculate the productive field.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 imgt_name = "vquest_" + repository_field
-                mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
+                mongo_concat[imgt_name] = vquest_df[vquest_calc_fields[index]]
                 mongo_concat[repository_field] = mongo_concat[imgt_name].apply(productive_boolean)
             elif value == "rev_comp":
                 # Rev comp...
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 imgt_name = "vquest_" + repository_field
-                mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
+                mongo_concat[imgt_name] = vquest_df[vquest_calc_fields[index]]
                 mongo_concat[repository_field] = mongo_concat[imgt_name].apply(rev_comp_boolean)
             elif value == "vj_in_frame":
                 # VJ in frame...
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 imgt_name = "vquest_" + repository_field
-                mongo_concat[imgt_name] = filedict[vquest_calc_file[index]]["vquest_dataframe"][vquest_calc_fields[index]]
+                mongo_concat[imgt_name] = vquest_df[vquest_calc_fields[index]]
                 mongo_concat[repository_field] = mongo_concat[imgt_name].apply(vj_in_frame_boolean)
             elif value == "stop_codon":
                 # This fields is determined by checking whther or not there is
@@ -330,12 +453,11 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
-                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
                     # We use the Pandas apply method to iterate over the rows and at each
                     # row we use the lamda function to process the fields in the row. We 
                     # know we have two columns and we call the check_stop_codon function
                     # for each row.
-                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : check_stop_codon(x[0], x[1]), axis=1)
             elif value == "sequence_alignment" or value == 'sequence_alignment_aa' or value == 'd_sequence_alignment': 
                 # These fields are built from one out of two fields that come from
@@ -345,12 +467,11 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
-                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
                     # We use the Pandas apply method to iterate over the rows and at each
                     # row we use the lamda function to process the fields in the row. We 
                     # know we have two columns in each row and we contatenate the strings
                     # handling null values if they exist.
-                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : '{}{}'.format(
                                   x[0] if pd.notnull(x[0]) else "",
                                   x[1] if pd.notnull(x[1]) else ""
@@ -367,22 +488,43 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
 
-                for imgt_index, imgt_value in enumerate(vquest_array):
-                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    # If this is the first index, we want to just assign the value
-                    # of the first field.
-                    if imgt_index == 0:
-                        df[repository_field] = df[[imgt_value]].apply(
-                              lambda x : '{}'.format(
-                                  x[0] if pd.notnull(x[0]) else ""
-                              ), axis=1)
-                    else:
-                        df[mongo_calc_fields[index]] = df[[mongo_calc_fields[index],imgt_value]].apply(
-                              lambda x : '{}{}'.format(
-                                  x[0] if pd.notnull(x[0]) else "",
-                                  x[1] if pd.notnull(x[1]) else ""
-                              ), axis=1)
-                    mongo_concat[repository_field] = df[mongo_calc_fields[index]]
+                # We need locus to define np1 and np2
+                locus_field = airr_map.getMapping("locus", "ir_id", repository_tag)
+                vquest_df[locus_field] = mongo_concat[locus_field]
+                vquest_array.append(locus_field)
+
+                if value == "np1":
+                    mongo_concat[repository_field] = vquest_df[vquest_array].apply(
+                                      compute_np1,
+                                      axis=1)
+                elif value == "np2":
+                    mongo_concat[repository_field] = vquest_df[vquest_array].apply(
+                                      compute_np2,
+                                      axis=1)
+                #mongo_concat[repository_field] = vquest_df[vquest_array].apply(
+                #              lambda x : compute_np1(x),
+                #              axis=1)
+
+                #return False
+                #for imgt_index, imgt_value in enumerate(vquest_array):
+                #    #df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                #    # If this is the first index, we want to just assign the value
+                #    # of the first field.
+                #    if imgt_index == 0:
+                #        vquest_df[repository_field] = vquest_df[imgt_value]
+                #        #df[repository_field] = df[[imgt_value]].apply(
+                #        #      lambda x : '{}'.format(
+                #        #          x[0] if pd.notnull(x[0]) else ""
+                #        #      ), axis=1)
+                #    else:
+                #        #    [mongo_calc_fields[index],imgt_value,"V-GENE and allele"]].apply(
+                #        vquest_df[repository_field] = vquest_df[
+                #            [repository_field,imgt_value,locus_field]].apply(
+                #              lambda x : '{}{}'.format(
+                #                  x[0] if pd.notnull(x[0]) else "",
+                #                  x[1] if pd.notnull(x[1]) else ""
+                #              ), axis=1)
+                #    mongo_concat[repository_field] = vquest_df[repository_field]
             elif value == 'd_sequence_start' or value == 'd_sequence_end':
                 # These are numerical start/end fields, built from one of two possible
                 # source fields. Again, we assume that either field, but not
@@ -391,8 +533,8 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
-                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    #df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
             elif value == 'p5d_length' or value == 'p3d_length' or value == 'n1_length':
                 # These are numerical length fields, built from one of two possible
@@ -402,8 +544,8 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
-                    df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    mongo_concat[repository_field] = df[[vquest_array[0],vquest_array[1]]].apply(
+                    #df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
+                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
         
         # We need to iterate over the compuation list again, as some of the 
@@ -459,66 +601,6 @@ class IMGT(Rearrangement):
                     else:
                         print("Info: Warning - calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
                               (vquest_calc_fields[index], value), flush=True)
-
-        # The internal Mongo sample ID that links the sample to each sequence, constant
-        # for all sequences in this file.
-        ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
-        mongo_concat[ir_project_sample_id_field] = ir_project_sample_id
-
-        # Generate the substring field, which we use to heavily optmiize junction AA
-        # searches. Technically, this should probably be an ir_ field, but because
-        # it is fundamental to the indexes that already exist, we won't change it for
-        # now.
-        if self.verbose():
-            print("Info: Computing substring from junction", flush=True) 
-        junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        ir_substring = airr_map.getMapping("ir_substring", "ir_id", repository_tag)
-        if junction_aa in mongo_concat:
-            mongo_concat[ir_substring] = mongo_concat[junction_aa].apply(Rearrangement.get_substring)
-
-        # We want to keep the original vQuest vdj_string data, so we capture that in the
-        # ir_vdjgene_string variables.
-        # We need to look up the "known parameter" from an iReceptor perspective (the field
-        # name in the "ir_id" column mapping and map that to the correct field name for the
-        # repository we are writing to.
-        v_call = airr_map.getMapping("v_call", "ir_id", repository_tag)
-        d_call = airr_map.getMapping("d_call", "ir_id", repository_tag)
-        j_call = airr_map.getMapping("j_call", "ir_id", repository_tag)
-        ir_vgene_gene = airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
-        ir_dgene_gene = airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
-        ir_jgene_gene = airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
-        ir_vgene_family = airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
-        ir_dgene_family = airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
-        ir_jgene_family = airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
-        mongo_concat["vquest_vgene_string"] = mongo_concat[v_call]
-        mongo_concat["vquest_jgene_string"] = mongo_concat[j_call]
-        mongo_concat["vquest_dgene_string"] = mongo_concat[d_call]
-        # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
-        # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
-        self.processGene(mongo_concat, v_call, v_call, ir_vgene_gene, ir_vgene_family)
-        self.processGene(mongo_concat, j_call, j_call, ir_jgene_gene, ir_jgene_family)
-        self.processGene(mongo_concat, d_call, d_call, ir_dgene_gene, ir_dgene_family)
-        # If we don't already have a locus (that is the data file didn't provide one) then
-        # calculate the locus based on the v_call array.
-        locus = airr_map.getMapping("locus", "ir_id", repository_tag)
-        if not locus in mongo_concat:
-            if self.verbose():
-                print("Info: Computing locus from v_call", flush=True) 
-            mongo_concat[locus] = mongo_concat[v_call].apply(Rearrangement.getLocus)
-
-        # Generate the junction length values as required.
-        if self.verbose():
-            print("Info: Computing junction lengths", flush=True) 
-        junction = airr_map.getMapping("junction", "ir_id", repository_tag)
-        junction_length = airr_map.getMapping("junction_length", "ir_id", repository_tag)
-        if junction in mongo_concat and not junction_length in mongo_concat:
-            mongo_concat[junction_length] = mongo_concat[junction].apply(len)
-        # Special case for junction_aa_length. This does not exist in the AIRR standard,
-        # so we have to check to see if the mapping returned None as well. 
-        junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        junction_aa_length = airr_map.getMapping("junction_aa_length", "ir_id", repository_tag)
-        if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
-            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
 
 
         # Create the created and update values for this block of records. Note that this
