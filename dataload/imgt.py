@@ -15,58 +15,75 @@ from Bio.Seq import translate
 
 from rearrangement import Rearrangement
 
-# Compute the np1 value from its components parts based on IMGT specification.
+# Compute the np2 value from its components parts based on IMGT specification.
+# For IGH, TRB and TRD sequences with 1 D-REGION :concatenation of nt sequences
+# P3'D+N2-REGION+P5'J;
+# With 2 of 3 D-REGION: P3'D1+N2-REGION+P5'D2
 # Assumes that one of the key value pairs is the locus of the row being processed
 def compute_np2(vquest_object):
-    # Get the length
-    length = len(vquest_object)
     # Get the locus value. We assume this exists.
-    locus = vquest_object["locus"]
-    print(locus)
-    # Initialize the return string
-    np2_str = ""
-    for key, value in vquest_object.items():
-       if key == "P5'D2" and locus in ["IGH", "TRB" ,"TRD"]:
-           # According to the IMGT spec we contatenate all the fields except
-           # P5'J when the locus is either IGH/TRB/TRD
-           continue
-       elif key == "locus":
-           # We want to skip locus.
-           continue
-       else:
-           # We contaenate other fields.
-           print(key)
-           if pd.notnull(value):  
-               print(value)
-               np2_str = np2_str + value
-    print("np2 return = " + np2_str)
-    return np2_str
+    if "locus" in vquest_object:
+        locus = vquest_object["locus"]
 
+    # Determine how many D-REGIONs we have.
+    multiple_dregion = False
+    if "D1-REGION" in vquest_object:
+        if pd.notnull(vquest_object["D1-REGION"]):  
+            multiple_dregion = True
+    
+    # Depending on the locus type and the number of D-Regions calculate np1.
+    np2_str = ""
+    if locus in ["IGH", "TRB" ,"TRD"]:
+        if not multiple_dregion:
+            term1 = vquest_object["P3'D"] if pd.notnull(vquest_object["P3'D"]) else ""
+            term2 = vquest_object["N2-REGION"] if pd.notnull(vquest_object["N2-REGION"]) else ""
+            term3 = vquest_object["P5'J"] if pd.notnull(vquest_object["P5'J"]) else ""
+            np2_str = term1 + term2 + term3
+        else:
+            term1 = vquest_object["P3'D1"] if pd.notnull(vquest_object["P3'D1"]) else ""
+            term2 = vquest_object["N2-REGION"] if pd.notnull(vquest_object["N2-REGION"]) else ""
+            term3 = vquest_object["P5'D2"] if pd.notnull(vquest_object["P5'D2"]) else ""
+            np2_str = term1 + term2 + term3
+
+    return np2_str
+       
 # Compute the np1 value from its components parts based on IMGT specification.
+# For IGH, TRB, TRD sequences with 1 D-REGION: concatenation of nt sequences
+# for P3'V+N1-REGION+P5'D ;
+# For IGH, TRB, TRD sequences with 2 or 3 D-REGION: concatenation of nt sequences
+# for P3'V+N1-REGION+P5'D1 ;
+# For IGK, IGL, IGI, TRA, TRG sequences : P3'V+N-REGION+P5'J
 # Assumes that one of the key value pairs is the locus of the row being processed
 def compute_np1(vquest_object):
-    # Get the length
-    length = len(vquest_object)
     # Get the locus value. We assume this exists.
-    locus = vquest_object["locus"]
-    print(locus)
-    # Initialize the return string
+    if "locus" in vquest_object:
+        locus = vquest_object["locus"]
+
+    # Determine how many D-REGIONs we have.
+    multiple_dregion = False
+    if "D1-REGION" in vquest_object:
+        if pd.notnull(vquest_object["D1-REGION"]):  
+            multiple_dregion = True
+    
+    # Depending on the locus type and the number of D-Regions calculate np1.
     np1_str = ""
-    for key, value in vquest_object.items():
-       if key == "P5'J" and locus in ["IGH", "TRB" ,"TRD"]:
-           # According to the IMGT spec we contatenate all the fields except
-           # P5'J when the locus is either IGH/TRB/TRD
-           continue
-       elif key == "locus":
-           # We want to skip locus.
-           continue
-       else:
-           # We contaenate other fields.
-           print(key)
-           if pd.notnull(value):  
-               print(value)
-               np1_str = np1_str + value
-    print("np1 return = " + np1_str)
+    if locus in ["IGH", "TRB" ,"TRD"]:
+        if not multiple_dregion:
+            term1 = vquest_object["P3'V"] if pd.notnull(vquest_object["P3'V"]) else ""
+            term2 = vquest_object["N1-REGION"] if pd.notnull(vquest_object["N1-REGION"]) else ""
+            term3 = vquest_object["P5'D"] if pd.notnull(vquest_object["P5'D"]) else ""
+            np1_str = term1 + term2 + term3
+        else:
+            term1 = vquest_object["P3'V"] if pd.notnull(vquest_object["P3'V"]) else ""
+            term2 = vquest_object["N1-REGION"] if pd.notnull(vquest_object["N1-REGION"]) else ""
+            term3 = vquest_object["P5'D1"] if pd.notnull(vquest_object["P5'D1"]) else ""
+            np1_str = term1 + term2 + term3
+    elif locus in ["IGK", "IGL", "IGI", "TRA", "TRG"]:
+        term1 = vquest_object["P3'V"] if pd.notnull(vquest_object["P3'V"]) else ""
+        term2 = vquest_object["N-REGION"] if pd.notnull(vquest_object["N-REGION"]) else ""
+        term3 = vquest_object["P5'J"] if pd.notnull(vquest_object["P5'J"]) else ""
+        np1_str = term1 + term2 + term3
+
     return np1_str
        
 
@@ -457,9 +474,10 @@ class IMGT(Rearrangement):
                     # row we use the lamda function to process the fields in the row. We 
                     # know we have two columns and we call the check_stop_codon function
                     # for each row.
-                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
+                    process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
+                    mongo_concat[repository_field] = process_df.apply(
                               lambda x : check_stop_codon(x[0], x[1]), axis=1)
-            elif value == "sequence_alignment" or value == 'sequence_alignment_aa' or value == 'd_sequence_alignment': 
+            elif value in ["sequence_alignment","sequence_alignment_aa","d_sequence_alignment"]: 
                 # These fields are built from one out of two fields that come from
                 # the mapping. They are string fields, one of which we assume has
                 # data and one won't - so we are safe to concatenate the strings.
@@ -469,9 +487,10 @@ class IMGT(Rearrangement):
                 if len(vquest_array) == 2:
                     # We use the Pandas apply method to iterate over the rows and at each
                     # row we use the lamda function to process the fields in the row. We 
-                    # know we have two columns in each row and we contatenate the strings
+                    # extract two columns in each row and we contatenate the strings
                     # handling null values if they exist.
-                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
+                    process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
+                    mongo_concat[repository_field] = process_df.apply(
                               lambda x : '{}{}'.format(
                                   x[0] if pd.notnull(x[0]) else "",
                                   x[1] if pd.notnull(x[1]) else ""
@@ -479,11 +498,6 @@ class IMGT(Rearrangement):
             elif value == "np1" or value == "np2":
                 # These fields are built from a complex combination of fieldes
                 # depending on the type of locus and the number of D genes. 
-                # The fields to transform from are in the mapping file.
-                # We assume that when there is choice of region (e.g N-REGION or
-                # N1-REGION) that only one of these regions will have data for
-                # a specific row. As such, it is OK to concatenate all the fields
-                # together and only data from one of N/N1 will exist.
                 if self.verbose():
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
@@ -493,38 +507,11 @@ class IMGT(Rearrangement):
                 vquest_df[locus_field] = mongo_concat[locus_field]
                 vquest_array.append(locus_field)
 
+                # Call the correct conversion function
                 if value == "np1":
-                    mongo_concat[repository_field] = vquest_df[vquest_array].apply(
-                                      compute_np1,
-                                      axis=1)
+                    mongo_concat[repository_field] = vquest_df.apply(compute_np1, axis=1)
                 elif value == "np2":
-                    mongo_concat[repository_field] = vquest_df[vquest_array].apply(
-                                      compute_np2,
-                                      axis=1)
-                #mongo_concat[repository_field] = vquest_df[vquest_array].apply(
-                #              lambda x : compute_np1(x),
-                #              axis=1)
-
-                #return False
-                #for imgt_index, imgt_value in enumerate(vquest_array):
-                #    #df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                #    # If this is the first index, we want to just assign the value
-                #    # of the first field.
-                #    if imgt_index == 0:
-                #        vquest_df[repository_field] = vquest_df[imgt_value]
-                #        #df[repository_field] = df[[imgt_value]].apply(
-                #        #      lambda x : '{}'.format(
-                #        #          x[0] if pd.notnull(x[0]) else ""
-                #        #      ), axis=1)
-                #    else:
-                #        #    [mongo_calc_fields[index],imgt_value,"V-GENE and allele"]].apply(
-                #        vquest_df[repository_field] = vquest_df[
-                #            [repository_field,imgt_value,locus_field]].apply(
-                #              lambda x : '{}{}'.format(
-                #                  x[0] if pd.notnull(x[0]) else "",
-                #                  x[1] if pd.notnull(x[1]) else ""
-                #              ), axis=1)
-                #    mongo_concat[repository_field] = vquest_df[repository_field]
+                    mongo_concat[repository_field] = vquest_df.apply(compute_np2, axis=1)
             elif value == 'd_sequence_start' or value == 'd_sequence_end':
                 # These are numerical start/end fields, built from one of two possible
                 # source fields. Again, we assume that either field, but not
@@ -533,8 +520,8 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
-                    #df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
+                    process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
+                    mongo_concat[repository_field] = process_df.apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
             elif value == 'p5d_length' or value == 'p3d_length' or value == 'n1_length':
                 # These are numerical length fields, built from one of two possible
@@ -544,8 +531,8 @@ class IMGT(Rearrangement):
                     print("Info: Computing AIRR field %s"%(value), flush=True) 
                 vquest_array = vquest_calc_fields[index].split(" or ")
                 if len(vquest_array) == 2:
-                    #df = filedict[vquest_calc_file[index]]["vquest_dataframe"]
-                    mongo_concat[repository_field] = vquest_df[[vquest_array[0],vquest_array[1]]].apply(
+                    process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
+                    mongo_concat[repository_field] = process_df.apply(
                               lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
         
         # We need to iterate over the compuation list again, as some of the 
@@ -596,10 +583,10 @@ class IMGT(Rearrangement):
                 # warn about the situation.
                 if not value in mongo_concat:
                     if pd.isnull(vquest_calc_fields[index]):
-                        print("Info: Warning - calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
+                        print("Warning: calculation required to generate AIRR field %s - NOT IMPLEMENTED "%
                               (value), flush=True)
                     else:
-                        print("Info: Warning - calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
+                        print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
                               (vquest_calc_fields[index], value), flush=True)
 
 
