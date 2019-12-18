@@ -43,16 +43,27 @@ class AIRRRepertoire(Repertoire):
     def ir_flatten(self, key, value, dictionary):
         # If it is an integer, float, or bool we just use the key value pair.
         if isinstance(value, (int, float, bool)):
-            dictionary[self.ir_maptorepository(key)] = value
+            if self.validAIRRFieldType(key, value, False):
+                dictionary[self.ir_maptorepository(key)] = value
+            else:
+                raise TypeError("AIRR type error for " + key)
         # If it is a string we just use the key value pair.
         elif isinstance(value, str):
-            dictionary[self.ir_maptorepository(key)] = value
+            if self.validAIRRFieldType(key, value, False):
+                dictionary[self.ir_maptorepository(key)] = value
+            else:
+                raise TypeError("AIRR type error for " + key)
         elif isinstance(value, dict):
             # We need to handle the AIRR ontology terms. If we get one we want 
             # to use the value of the ontology term in our repository for now.
             # We also store the id and value separately as two non AIRR keywords.
             type_info = self.getAIRRMap().getMapping(key, "ir_id", "airr_type")
             if type_info == "ontology":
+                # TODO: need to implement type checking on ontology fields.
+                #if self.validAIRRFieldType(key, value, False):
+                #    dictionary[self.ir_maptorepository(key)] = value['value']
+                #else:
+                #    raise TypeError(key)
                 dictionary[self.ir_maptorepository(key)] = value['value']
                 dictionary[self.ir_maptorepository(key+"_value")] = value['value']
                 dictionary[self.ir_maptorepository(key+"_id")] = value['id']
@@ -68,6 +79,11 @@ class AIRRRepertoire(Repertoire):
 
             # We flatten this explicitly as a special case. We want to store the list of strings.
             if key == "keywords_study":
+                # TODO: Need to implement type checking on this field...
+                #if self.validAIRRFieldType(key, value, False):
+                #    dictionary[self.ir_maptorepository(key)] = value
+                #else:
+                #    raise TypeError(key)
                 dictionary[self.ir_maptorepository(key)] = value
             else:
                 # If we are handling a data processing element list, we have a hint as 
@@ -78,7 +94,8 @@ class AIRRRepertoire(Repertoire):
                     # you have more than one and want to store the rearrangements separately
                     # then you need to split this up into two repertoires.
                     if len(value) > 1:
-                        print("Warning: Found more than one %s element (found %d)."%(key, len(value)))
+                        print("Warning: Found more than one %s element (found %d)."%
+                              (key, len(value)))
                     # Look for the primary annotation
                     got_primary = False
                     for element in value:
@@ -125,7 +142,11 @@ class AIRRRepertoire(Repertoire):
         for repertoire in data['Repertoire']:
             repertoire_dict = dict()
             for key, value in repertoire.items():
-                self.ir_flatten(key, value, repertoire_dict)
+                try:
+                    self.ir_flatten(key, value, repertoire_dict)
+                except TypeError as error:
+                    print("ERROR: %s"%(error))
+                    return False
 
             # Add repository specific fields to each repertoire as required.
             # Add a created_at and updated_at field in the repository.
@@ -137,7 +158,7 @@ class AIRRRepertoire(Repertoire):
             # initialize the sequeunce count to 0. If we can't find a mapping for this
             # field then we can't do anything. 
             count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id",
-                                          self.getRepositoryTag() )
+                                                       self.getRepositoryTag() )
             if count_field is None:
                 print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
                       % ( self.getRepositoryTag() ))
