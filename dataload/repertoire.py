@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import pandas as pd
+import numpy as np
 import json
 import os
 from datetime import datetime
@@ -14,9 +15,7 @@ class Repertoire(Parser):
         
     def validAIRRFieldType(self, key, value, strict):
         field_type = self.getAIRRMap().getMapping(key, "airr", "airr_type")
-        #print(key)
-        #print(field_type)
-        #print(type(value))
+        field_nullable = self.getAIRRMap().getMapping(key, "airr", "airr_nullable")
         # If we are not doing strict typing, then if the key is not an AIRR
         # key (field_type == None) then we return True. This allows us to
         # check AIRR keys only and skip non-AIRR keys. If strict checking is
@@ -26,23 +25,38 @@ class Repertoire(Parser):
             if strict: return False
             else: return True
 
+        # If the value is null and the field is nullable or there is no nullable
+        # entry in the AIRR mapping (meaning NULL is OK) then return True.
+        if pd.isnull(value) and (field_nullable == None or field_nullable):
+            return True
+
         # If we get here, we have an AIRR field, so no matter what we 
         # return False if the type doesn't match.
         valid_type = False
         if isinstance(value, (str)) and field_type == "string":
             valid_type = True
-        elif isinstance(value, (bool)) and field_type == "boolean":
+        elif isinstance(value, (bool,np.bool_)) and field_type == "boolean":
             valid_type = True
-        elif isinstance(value, (int)) and field_type == "integer":
+        elif isinstance(value, (int,np.integer)) and field_type == "integer":
             valid_type = True
-        elif isinstance(value, (float,int)) and field_type == "number":
+        elif isinstance(value, (float,int,np.floating,np.integer)) and field_type == "number":
+            # We need to accept integers and floats as numbers.
             valid_type = True
+        elif isinstance(value, (str)) and field_type == "ontology":
+            # Ontology is a special case, as we store the ontology
+            # field value in the name directly as a string.
+            valid_type = True
+
         if self.verbose():
-            if valid_type:
-                print("Info: Field %s type OK"%(key))
-            else:
+            if not valid_type:
                 print("Warning: Field %s type ERROR, expected %s, got %s"%
                       (key, field_type, str(type(value))))
+                #print(key)
+                #print(field_type)
+                #print(field_nullable)
+                #print(value)
+                #print(type(value))
+
         return valid_type
 
     # Hide the impementation of the repository from the Repertoire subclasses. The subclasses
