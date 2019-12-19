@@ -284,15 +284,16 @@ class IMGT(Rearrangement):
                         vquest_calc_file.append(vquest_file)
                         vquest_calc_fields.append(row[filemap_tag])
                         mongo_calc_fields.append(row[repository_tag])
-                        if pd.isnull(row[filemap_tag]):
-                            print("Info:    COMBINED IMGT fields -> %s (Derived)"%
-                                  (str(row[repository_tag])),
-                                  flush=True)
-                        else:
-                            print("Info:    %s  -> %s (Derived)"%
-                                  (str(row[filemap_tag]),
-                                   str(row[repository_tag])),
-                                  flush=True)
+                        if self.verbose():
+                            if pd.isnull(row[filemap_tag]):
+                                print("Info:    COMBINED IMGT fields -> %s (Derived)"%
+                                      (str(row[repository_tag])),
+                                      flush=True)
+                            else:
+                                print("Info:    %s  -> %s (Derived)"%
+                                      (str(row[filemap_tag]),
+                                       str(row[repository_tag])),
+                                      flush=True)
                 else:
                     if self.verbose():
                         print("Info:    Repository does not support " + vquest_file + "/" + 
