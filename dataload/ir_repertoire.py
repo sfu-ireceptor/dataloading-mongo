@@ -1,5 +1,6 @@
 
 import pandas as pd
+import numpy as np 
 import json
 import os
 from datetime import datetime
@@ -43,23 +44,38 @@ class IRRepertoire(Repertoire):
 
         if self.verbose():
             print("Info: Dumping AIRR repertoire mapping")
+        type_dict = dict()
         for index, row in airr_fields.iterrows():
             if self.verbose():
-                print("    " + str(row[curation_tag]) + " -> " + str(row[repository_tag]))
+                print("Info:    " + str(row[curation_tag]) + " -> " + str(row[repository_tag]))
+
+            # For each column, get a type value and if it is integer or string set the
+            # type in the type dictionary. We use this later when we read the CSV file
+            # to make sure our column types are correct. NOTE: Int64 is the important
+            # type here, as it handles integer NaN values correctly. If an integer
+            # column is not Int64 then whenever it has a Nan in it it will be cast
+            # to a float column, which is bad...
+            field_type = self.getAIRRMap().getMapping(row[curation_tag], "airr", "airr_type")
+            if field_type == "integer":
+                type_dict[row[curation_tag]] = "Int64"
+            elif field_type == "string":
+                type_dict[row[curation_tag]] = str
+
             # If the repository column has a value for the curator field, track the field
             # from both the curator and repository side.
             if not pd.isnull(row[repository_tag]):
                 curationColumns.append(row[curation_tag])
                 columnMapping[row[curation_tag]] = row[repository_tag]
             else:
-                print("Repository does not map " +
+                print("Warning: Repository does not map " +
                     str(row[curation_tag]) + ", inserting into repository as is")
 
-                # Read in the CSV file. We need to read this with a utf-8-sig encoding,
+        # Read in the CSV file. We need to read this with a utf-8-sig encoding,
         # which means it is a UTF file with a BOM signature. Note that this has
         # been confirmed to work with a Non-UTF ASCII file fine...
         try:
-            df = pd.read_csv( filename, sep=None, engine='python', encoding='utf-8-sig' )
+            df = pd.read_csv(filename, sep=None, engine='python', encoding='utf-8-sig',
+                             dtype=type_dict)
         except Exception as err:
             print("ERROR: Unable to open file %s - %s" % (filename, err))
             return False
@@ -72,15 +88,45 @@ class IRRepertoire(Repertoire):
             print("Warning: column without a title detected in file ", filename)    
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-        
-        # Check the validity of the columns in the actual file being loaded.
-        for curation_file_column in df.columns:
+        # Check the validity of the columns in the actual file being loaded. Note that
+        # it is sufficient to test the type of the column by its first value because 
+        # Pandas data frames are stongly typed by column. So if the first value in
+        # the column is correct, then all values in the column are correct.
+        # This should typically not be a problem as we force the types of the columns
+        # to be the correct type when loading the CSV file.
+        bad_columns = []
+        for (curation_file_column, column_data) in df.iteritems():
+            # For each column, check the value of the data against the type expected
+            field_type = self.getAIRRMap().getMapping(curation_file_column,
+                                                      "airr", "airr_type")
+            # Skip ontology fields and array fields for now.
+            if not field_type in ["ontology", "array"]:
+                value = column_data[0]
+                if not self.validAIRRFieldType(curation_file_column, value, False):
+                    print("Warning: Found type mismatch in column %s"%(curation_file_column))
+                    bad_columns.append(curation_file_column)
+
+        # This probably shouldn't occur, given we force the types at data load.
+        for column in bad_columns:
+            # Get the field type
+            field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type")
+            if field_type == "string":
+                print("Warning: Trying to force column type to string for %s"%(column))
+                df[column] = df[column].apply(str)
+                #print(df[column])
+                value = df.at[0, column]
+                if not self.validAIRRFieldType(column, value, False):
+                    print("ERROR: Unable to force column type to string for %s"%(column))
+                    return False
+                print("Warning: Succesfully forced column type to string for %s"%(column))
+            
+        #for curation_file_column in df.columns:
+        for (curation_file_column, column_data) in df.iteritems():
             if curation_file_column in columnMapping:
-                # If the file column is in the mapping, change the data frame column name
-                # to be the column name for the repository.
                 mongo_column = columnMapping[curation_file_column]
                 if self.verbose():
-                    print("Info: Mapping input file column " + curation_file_column + " -> " + mongo_column)
+                    print("Info: Mapping input file column %s -> %s" %
+                          (curation_file_column, mongo_column))
                 df.rename({curation_file_column:mongo_column}, axis='columns', inplace=True)
             else:
                 # If we don't have a mapping, keep the name the same, as we want to
