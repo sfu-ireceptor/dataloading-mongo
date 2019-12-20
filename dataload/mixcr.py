@@ -217,12 +217,16 @@ class MiXCR(Rearrangement):
 
             # Assign each record the constant fields for all records in the chunk
             productive = airr_map.getMapping("productive", "ir_id", repository_tag)
-            df_chunk[productive] = 1
-            # Assign any iReceptor specific custom fields for the records in the chunk
-            ir_annotation_tool = airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
-            df_chunk[ir_annotation_tool] = self.getAnnotationTool()
-            ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
-            df_chunk[ir_project_sample_id_field] = ir_project_sample_id
+            df_chunk[productive] = True
+
+            ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id",
+                                                             "ir_id", repository_tag)
+            if not ir_project_sample_id_field is None:
+                df_chunk[ir_project_sample_id_field] = ir_project_sample_id
+            else:
+                print("ERROR: Could not get ir_project_sample_id field from AIRR mapping.")
+                return False
+
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
@@ -248,12 +252,16 @@ class MiXCR(Rearrangement):
         if self.verbose():
             print("Info: Getting the number of annotations for this repertoire")
         annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
+        if annotation_count == -1:
+            print("ERROR: invalid annotation count (%d), write failed." %
+                  (annotation_count))
+            return False
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
 
         # Inform on what we added and the total count for the this record.
-        print("Info: Inserted %d records, total annotation count = %d" % (total_records, annotation_count))
- 
+        print("Info: Inserted %d records, total annotation count = %d" %
+                  (total_records, annotation_count))
         return True
         
