@@ -16,12 +16,14 @@ class AIRRRepertoire(Repertoire):
 
     def ir_maptorepository(self, field):
         # Check to see if the field is in the AIRR mapping, if not warn.
-        airr_field = self.getAIRRMap().getMapping(field, "airr", "airr")
+        airr_field = self.getAIRRMap().getMapping(field, "airr", "airr",
+                                                  self.getAIRRMap().getRepertoireClass())
         if airr_field is None:
             print("Warning: Could not find %s in AIRR mapping"%(field))
 
         # Check to see if the field can be mapped to a field in the repository, if not warn.
-        repo_field = self.getAIRRMap().getMapping(field, "airr", self.getRepositoryTag())
+        repo_field = self.getAIRRMap().getMapping(field, "airr", self.getRepositoryTag(),
+                                                  self.getAIRRMap().getRepertoireClass())
         if repo_field is None:
             repo_field = field
             print("Warning: Could not find repository mapping for %s, storing as is"%(field))
@@ -57,7 +59,8 @@ class AIRRRepertoire(Repertoire):
             # We need to handle the AIRR ontology terms. If we get one we want 
             # to use the value of the ontology term in our repository for now.
             # We also store the id and value separately as two non AIRR keywords.
-            type_info = self.getAIRRMap().getMapping(key, "ir_id", "airr_type")
+            type_info = self.getAIRRMap().getMapping(key, "ir_id", "airr_type",
+                                                  self.getAIRRMap().getRepertoireClass())
             if type_info == "ontology":
                 # TODO: need to implement type checking on ontology fields.
                 #if self.validAIRRFieldType(key, value, False):
@@ -104,7 +107,7 @@ class AIRRRepertoire(Repertoire):
                             for sub_key, sub_value in element.items():
                                 self.ir_flatten(sub_key, sub_value, dictionary)
                             got_primary = True
-                            print("Warning: Found a primary annotation, using it.")
+                            print("Info: Found a primary annotation, using it.")
                             break
                     # If we didn't find the primary, then use the first one as a best guess.
                     if not got_primary:
@@ -158,7 +161,7 @@ class AIRRRepertoire(Repertoire):
             # initialize the sequeunce count to 0. If we can't find a mapping for this
             # field then we can't do anything. 
             count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id",
-                                                       self.getRepositoryTag() )
+                                                       self.getRepositoryTag())
             if count_field is None:
                 print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
                       % ( self.getRepositoryTag() ))
