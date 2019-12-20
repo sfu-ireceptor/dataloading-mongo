@@ -66,7 +66,8 @@ class AIRRMap:
     def checkValidity():
         # Check to see if the AIRR mappings are valid.
         if not context.repository_tag in context.airr_map.airr_mappings:
-            print("ERROR: Could not find repository mapping " + context.repository_tag + " in AIRR Mappings")
+            print("ERROR: Could not find repository mapping %s in AIRR Mappings"%
+                  (context.repository_tag))
             return False
         return True
 
