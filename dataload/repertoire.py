@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 
 import pandas as pd
 import numpy as np
@@ -14,8 +13,10 @@ class Repertoire(Parser):
         Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         
     def validAIRRFieldType(self, key, value, strict):
-        field_type = self.getAIRRMap().getMapping(key, "airr", "airr_type")
-        field_nullable = self.getAIRRMap().getMapping(key, "airr", "airr_nullable")
+        field_type = self.getAIRRMap().getMapping(key, "airr", "airr_type",
+                                  self.getAIRRMap().getRepertoireClass())
+        field_nullable = self.getAIRRMap().getMapping(key, "airr", "airr_nullable",
+                                  self.getAIRRMap().getRepertoireClass())
         # If we are not doing strict typing, then if the key is not an AIRR
         # key (field_type == None) then we return True. This allows us to
         # check AIRR keys only and skip non-AIRR keys. If strict checking is
@@ -59,13 +60,14 @@ class Repertoire(Parser):
 
         return valid_type
 
-    # Hide the impementation of the repository from the Repertoire subclasses. The subclasses
-    # don't ask much of the repository, just insert a single JSON document at a time.
+    # Hide the impementation of the repository from the Repertoire subclasses.
+    # The subclasses don't ask much of the repository, just insert a single
+    #JSON document at a time.
     def repositoryInsertRepertoire( self, json_document ):
     
         self.repository.insertRepertoire(json_document)
         if self.verbose:
-            # If we are in verbose mode, print out a summary of the record we are inserting.
+            # If we are in verbose mode, print out a summary of the record.
             study_tag = self.getAIRRMap().getMapping("study_id", "ir_id",
                                                      self.getRepositoryTag())
             study = "NULL" if not study_tag in json_document else json_document[study_tag]
@@ -75,4 +77,5 @@ class Repertoire(Parser):
             file_tag = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id",
                                                     self.getRepositoryTag())
             filestr = "NULL" if not file_tag in json_document else json_document[file_tag]
-            print("Info: Writing repertoire record <%s, %s, %s>" % (study, sample, filestr))
+            print("Info: Writing repertoire record <%s, %s, %s>" %
+                  (study, sample, filestr))
