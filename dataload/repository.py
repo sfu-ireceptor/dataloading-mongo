@@ -97,11 +97,17 @@ class Repository:
         if not self.skipload:
             self.rearrangement.insert(json_records)
 
-    # Count the number of rearrangements that belong to a specific repertoire. Note: In our
-    # early implementations, we had an internal field name called ir_project_sample_id. We
-    # want to hide this and just talk about reperotire IDs, so this is hidden in the
+    # Count the number of rearrangements that belong to a specific repertoire. 
+    # Return -1 on error. Note: In our early implementations, we had an
+    # internal field name called ir_project_sample_id. We want to hide
+    # this and just talk about reperotire IDs, so this is hidden in the
     # Rearrangement class...
     def countRearrangements(self, repertoire_field, repertoire_id):
+        if repertoire_field is None or repertoire_id is None:
+            print("ERROR: Invalid repertoire field (%s) or repertoire_id (%s)"%
+                  (repertoire_field, repertoire_id))
+            return -1
+
         rearrangement_count = self.rearrangement.find(
                 {repertoire_field:{'$eq':repertoire_id}}
             ).count()
