@@ -24,9 +24,10 @@ class IRRepertoire(Repertoire):
 
         # Extract the fields that are of interest for this file. Essentiall all
         # non null curator fields
-        curation_tag = "ir_curator"
+        #curation_tag = "ir_curator"
+        curation_tag = "airr"
         if not curation_tag in self.getAIRRMap().airr_repertoire_map:
-            print("ERROR: Could not find Curation mapping (" + curation_tag + ") in mapping file")
+            print("ERROR: Could not find Curation mapping (%s) in mapping file"%(curation_tag))
             return False
         map_column = self.getAIRRMap().getRepertoireMapColumn(curation_tag)
         fields_of_interest = map_column.notnull()
@@ -55,7 +56,9 @@ class IRRepertoire(Repertoire):
             # type here, as it handles integer NaN values correctly. If an integer
             # column is not Int64 then whenever it has a Nan in it it will be cast
             # to a float column, which is bad...
-            field_type = self.getAIRRMap().getMapping(row[curation_tag], "airr", "airr_type")
+            field_type = self.getAIRRMap().getMapping(row[curation_tag],
+                                                      "airr", "airr_type",
+                                                      self.getAIRRMap().getRepertoireClass())
             if field_type == "integer":
                 type_dict[row[curation_tag]] = "Int64"
             elif field_type == "string":
@@ -98,7 +101,8 @@ class IRRepertoire(Repertoire):
         for (curation_file_column, column_data) in df.iteritems():
             # For each column, check the value of the data against the type expected
             field_type = self.getAIRRMap().getMapping(curation_file_column,
-                                                      "airr", "airr_type")
+                                                      "airr", "airr_type",
+                                                      self.getAIRRMap().getRepertoireClass())
             # Skip ontology fields and array fields for now.
             if not field_type in ["ontology", "array"]:
                 value = column_data[0]
@@ -109,7 +113,8 @@ class IRRepertoire(Repertoire):
         # This probably shouldn't occur, given we force the types at data load.
         for column in bad_columns:
             # Get the field type
-            field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type")
+            field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type",
+                                                      self.getAIRRMap().getRepertoireClass())
             if field_type == "string":
                 print("Warning: Trying to force column type to string for %s"%(column))
                 df[column] = df[column].apply(str)
@@ -132,7 +137,9 @@ class IRRepertoire(Repertoire):
                 # If we don't have a mapping, keep the name the same, as we want to
                 # still save the data even though we don't have a mapping.
                 if self.verbose():
-                    print("Info: No mapping for input file column " + curation_file_column + ", storing in repository as is")
+                    print("Info: No mapping for input file column %s, storing in repository as is"
+                          %(curation_file_column))
+
         # Check to see which desired Curation mappings we don't have... We check this
         # against the "mongo_column" from the repository in the data frame, because
         # we have already mapped the columns from the file columns to the repository columns.
@@ -144,16 +151,19 @@ class IRRepertoire(Repertoire):
         # Get the mapping for the sequence count field for the repository and 
         # initialize the sequeunce count to 0. If we can't find a mapping for this
         # field then we can't do anything. 
-        count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id", repository_tag)
+        count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id",
+                                                   repository_tag)
         if count_field is None:
-            print("Warning: Could not find ir_sequence_count tag in repository " + repository_tag + ", field not initialized")
+            print("Warning: Could not find ir_sequence_count tag in repository, not initialized"
+                  %(repository_tag))
         else:
             df[count_field] = 0
 
         # Ensure that we have a correct file name to link fields. If not return.
         # This is a fatal error as we can not link any data to this set of samples,
         # so there is no point adding the samples...
-        repository_file_field = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        repository_file_field = self.getAIRRMap().getMapping("ir_rearrangement_file_name",
+                                                             "ir_id", repository_tag)
         # If we can't find a mapping for this field in the repository mapping, then
         # we might still be OK if the metadata spreadsheet has the field. If the fails, 
         # then we should exit.
@@ -185,7 +195,8 @@ class IRRepertoire(Repertoire):
                     # in the data we are going to write to the repository, then
                     # we have an error.
                     if not mongo_field in df.columns:
-                        print("ERROR: Required field %s (%s) missing"%(row["airr"],mongo_field))
+                        print("ERROR: Required AIRR field %s (%s) missing"%
+                              (row["airr"],mongo_field))
                         return False
 
         # Check to make sure all of our columns are unique.
