@@ -4,17 +4,10 @@ import pandas as pd
 
 class AIRRMap:
     def __init__(self, verbose):
-        # Set up initial class mappings from the file. These are defined in the MiAIRR Standard.
-        # Repertoire metadata spans a number of MiAIRR data class types.
-        #self.airr_repertoire_classes = ["study", "subject", "diagnosis", "sample",
-        #                                "cell_processing", "nucleic_acid_processing",
-        #                                "sequencing_run", "software_processing"]
-        # Rearrangement data has one or two classes, rearrangement defines the
-        # the fields in the MiAIRR standard. ir_rearrangement defines the 
-        # rearrangement fields that are specific to iReceptor outside of the
-        # MiAIRR standard.
-        #self.airr_rearrangement_classes = ["rearrangement", "ir_rearrangement"]
-        #self.airr_rearrangement_classes = ["rearrangement"]
+        # Set up initial class mappings from the file. These are defined in the
+        # MiAIRR Standard.
+        self.rearrangement_class = "Rearrangement"
+        self.repertoire_class = "Repertoire"
         # Keep track of the mapfile being used.
         self.mapfile = ""
         # Keep track of the verbosity flag.
@@ -54,12 +47,12 @@ class AIRRMap:
 
         # Get the labels for all of the fields that are in the airr rearrangements class.
         #labels = self.airr_mappings['ir_subclass'].isin(self.airr_rearrangement_classes)
-        labels = self.airr_mappings['ir_class'].isin(['Rearrangement'])
+        labels = self.airr_mappings['ir_class'].isin([self.rearrangement_class])
         # Get all of the rows that have the rearrangement class labels.
         self.airr_rearrangement_map = self.airr_mappings.loc[labels]
         # Get the labels for all of the fields that are in the airr repertoire class.
         #labels = self.airr_mappings['ir_subclass'].isin(self.airr_repertoire_classes)
-        labels = self.airr_mappings['ir_class'].isin(['Repertoire'])
+        labels = self.airr_mappings['ir_class'].isin([self.repertoire_class])
         # Get all of the rows that have the repertoire class labels.
         self.airr_repertoire_map = self.airr_mappings.loc[labels]
 
@@ -77,19 +70,36 @@ class AIRRMap:
             return False
         return True
 
+    # Abstract the class strings for Repertoire and Rearrangements.
+    def getRepertoireClass(self):
+        return self.repertoire_class
+
+    def getRearrangementClass(self):
+        return self.repertoire_class
 
     # Return the value for the row and column keys provided. If it can't be found
     # None is returned. 
-    def getMapping(self, field, from_column, to_column):
+    def getMapping(self, field, from_column, to_column, map_class=None):
+        # Get the mapping to use
+        if map_class is None:
+           mapping = self.airr_mappings
+        elif map_class == self.rearrangement_class: 
+           mapping = self.airr_rearrangement_map
+        elif map_class == self.repertoire_class: 
+           mapping = self.airr_repertoire_map
+        else:
+            print("Warning: Invalid maping class %s"%(map_class))
+            return None
+
         # Check to see if we have a valid from_column, if not return None
-        if not from_column in self.airr_mappings:
+        if not from_column in mapping:
             return None
         # Get the data in the from_column
-        from_column_data = self.airr_mappings[from_column]
+        from_column_data = mapping[from_column]
         # Get a boolean array that is true where we found the field of interest.
         from_boolean = from_column_data.isin([field])
         # And extract all rows that have the from key.
-        from_row = self.airr_mappings.loc[from_boolean]
+        from_row = mapping.loc[from_boolean]
         # If we can't find the to_column in the from_row then we couldn't find it
         # because the to_column doesn't exist in our mapping.
         if not to_column in from_row:
@@ -104,6 +114,10 @@ class AIRRMap:
                 return value.values[0]
             else:
                 return None
+        elif len(value.values) > 1:
+            print("Warning: Duplicate AIRR mapping for field %s (%s -> %s)"%
+                  (field, from_column, to_column))
+            return value.values[0]
         else:
             return None
 
