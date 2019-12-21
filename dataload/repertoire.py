@@ -74,8 +74,8 @@ class Repertoire(Parser):
             sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id",
                                                       self.getRepositoryTag())
             sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
-            file_tag = self.getAIRRMap().getMapping("ir_rearrangement_file_name", "ir_id",
-                                                    self.getRepositoryTag())
+            file_tag = self.getAIRRMap().getMapping(self.getRearrangementFileField(),
+                                                    "ir_id", self.getRepositoryTag())
             filestr = "NULL" if not file_tag in json_document else json_document[file_tag]
             print("Info: Writing repertoire record <%s, %s, %s>" %
                   (study, sample, filestr))

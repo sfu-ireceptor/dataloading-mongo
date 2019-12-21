@@ -140,6 +140,12 @@ class AIRRRepertoire(Repertoire):
             print("ERROR: AIRR repertoire validation failed for file %s - %s" % (filename, err))
             return False
 
+        # Get the fields to use for finding repertoire IDs, either using those IDs
+        # directly or by looking for a repertoire ID based on a rearrangement file
+        # name.
+        repertoire_id_field = self.getRepertoireLinkIDField()
+        rearrangement_file_field = self.getRearrangementFileField()
+
         # The 'Repertoire' contains a dictionary for each repertoire.
         repertoire_list = []
         for repertoire in data['Repertoire']:
@@ -171,21 +177,22 @@ class AIRRRepertoire(Repertoire):
             # Ensure that we have a correct file name to link fields. If we can't find it 
             # this is a fatal error as we can not link any data to this set repertoire,
             # so there is no point adding the repertoire...
-            repository_file_field = self.getAIRRMap().getMapping("ir_rearrangement_file_name",
+            repository_file_field = self.getAIRRMap().getMapping(rearrangement_file_field,
                                                     "ir_id", self.getRepositoryTag())
             # If we can't find a mapping for this field in the repository mapping, then
             # we might still be OK if the metadata spreadsheet has the field. If the fails, 
             # then we should exit.
             if repository_file_field is None or len(repository_file_field) == 0:
-                print("Warning: Could not find a valid repository mapping for the rearrangement file name (ir_rearrangement_file_name)")
-                repository_file_field = "ir_rearrangement_file_name"
+                print("Warning: No repository mapping for the rearrangement file field (%s)"
+                      %(rearrangement_file_field))
+                repository_file_field = rearrangement_file_field
     
             # If we can't find the file field for the rearrangement field in the repository, then
             # abort, as we won't be able to link the repertoire to the rearrangement.
             if not repository_file_field in repertoire_dict:
-                print("ERROR: Could not find a rearrangement file field in the metadata (ir_rearrangement_file_name)")
+                print("ERROR: Could not find a rearrangement file field in the metadata (%)"
+                      %(rearrangement_file_field))
                 print("ERROR: Will not be able to link repertoire to rearrangement annotations")
-                repertoire_dict['ir_rearrangement_file_name'] = ""
                 return False
 
             repertoire_list.append(repertoire_dict)
