@@ -67,6 +67,12 @@ class AIRR_TSV(Rearrangement):
         # multiple repositories.
         repository_tag = self.getRepositoryTag()
 
+        # Get the fields to use for finding repertoire IDs, either using those IDs
+        # directly or by looking for a repertoire ID based on a rearrangement file
+        # name.
+        repertoire_id_field = self.getRepertoireLinkIDField()
+        rearrangement_file_field = self.getRearrangementFileField()
+
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using. For the IgBLAST
         # parser it is normally the "igblast" column (which is essentially the same as 
@@ -96,12 +102,14 @@ class AIRR_TSV(Rearrangement):
         # May need to strip off any gzip 'archive' file extension
         filename = filename.replace(".gz","")
 
-        # Get the sample ID of the data we are processing. We use the ir_rearrangement_file_name 
-        # field in the repository to mathc the file at the moment, but this may not be the most robust method.
-        value = airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        # Get the repertoire ID of the data we are processing. We use the rearrangement
+        # file name field in the repository to match the file at the moment, but this
+        # may not be the most robust method.
+        value = airr_map.getMapping(rearrangement_file_field, "ir_id", repository_tag)
         idarray = []
         if value is None:
-            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            print("ERROR: Could not find field %s in repository %s"
+                  %(rerrangement_file_field, repository_tag))
             return False
         else:
             # Look up the filename in the repository field and get an array of sample ids

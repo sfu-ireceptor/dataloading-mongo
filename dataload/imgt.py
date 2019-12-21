@@ -176,6 +176,12 @@ class IMGT(Rearrangement):
         # multiple repositories.
         repository_tag = self.getRepositoryTag()
 
+        # Get the fields to use for finding repertoire IDs, either using those IDs
+        # directly or by looking for a repertoire ID based on a rearrangement file
+        # name.
+        repertoire_id_field = self.getRepertoireLinkIDField()
+        rearrangement_file_field = self.getRearrangementFileField()
+
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using.
         filemap_tag = self.getFileMapping()
@@ -199,14 +205,16 @@ class IMGT(Rearrangement):
 
         # Get the sample ID of the data we are processing. We use the IMGT file name for
         # this at the moment, but this may not be the most robust method.
-        value = airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        value = airr_map.getMapping(rearrangement_file_field, "ir_id", repository_tag)
         idarray = []
         if value is None:
-            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+            print("ERROR: Could not find field %s in repository %s" 
+                  %(rearrangement_file_field, repository_tag))
             return False
         else:
             if self.verbose():
-                print("Info: Retrieving associated repertoire for file " + fileName + " from repository field " + value)
+                print("Info: Retrieving repertoire for file %s from repository field %s"
+                      %(fileName, value))
             idarray = self.repositoryGetRepertoireIDs(value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.

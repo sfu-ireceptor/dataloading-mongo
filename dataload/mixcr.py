@@ -63,6 +63,12 @@ class MiXCR(Rearrangement):
         # multiple repositories.
         repository_tag = self.getRepositoryTag()
 
+        # Get the fields to use for finding repertoire IDs, either using those IDs
+        # directly or by looking for a repertoire ID based on a rearrangement file
+        # name.
+        repertoire_id_field = self.getRepertoireLinkIDField()
+        rearrangement_file_field = self.getRearrangementFileField()
+
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using. 
         filemap_tag = self.getFileMapping()
@@ -73,28 +79,31 @@ class MiXCR(Rearrangement):
         # Query for the sample and create an array of sample IDs
         filename = filename.replace(".gz", "")
 
-        # Get the sample ID of the data we are processing. We use the IMGT file name for
+        # Get the sample ID of the data we are processing. We use the file name for
         # this at the moment, but this may not be the most robust method.
-        value = airr_map.getMapping("ir_rearrangement_file_name", "ir_id", repository_tag)
+        file_field = airr_map.getMapping(rearrangement_file_field, "ir_id",
+                                         repository_tag)
         idarray = []
-        if value is None:
-            print("ERROR: Could not find ir_rearrangement_file_name in repository " + repository_tag)
+        if file_field is None:
+            print("ERROR: Could not find field %s in repository %s"%
+                  (rearrangement_file_field, repository_tag))
             return False
         else:
             if self.verbose():
-                print("Info: Retrieving associated repertoire for file " + filename + " from repository field " + value)
-            idarray = self.repositoryGetRepertoireIDs(value, filename)
-
+                print("Info: Retrieving repertoire for file %s from repository field %s"%
+                      (filename, file_field))
+            idarray = self.repositoryGetRepertoireIDs(file_field, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
         num_samples = len(idarray)
         if num_samples == 0:
-            print("ERROR: Could not find sample in repository with annotation file", filename)
-            print("ERROR: No sample could be associated with this annotation file.")
+            print("ERROR: Could not find repertoire in repository for file %s"%(filename))
+            print("ERROR: No repertoire could be associated with this annotation file.")
             return False
         elif num_samples > 1:
-            print("ERROR: Annotation file can not be associated with a unique sample in the repository, found", num_samples)
-            print("ERROR: Unique assignment of annotations to a single sample are required.")
+            print("ERROR: File can not be associated with a unique repertoire")
+            print("ERROR: Found %d repertoires for the file in the repository"%(num_samples))
+            print("ERROR: Unique assignment of annotations to a single repertoire are required.")
             return False
 
         # Get the sample ID and assign it to sample ID field
