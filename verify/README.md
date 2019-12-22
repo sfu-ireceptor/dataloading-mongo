@@ -27,10 +27,12 @@ And as output it generates a report covering points 1-4.
 ## Positional arguments:
 
 ```
-  metadata_file      The EXCEL or CSV file containing sample metadata for a
-                     study.
+positional arguments:
+  metadata_file      Full path to EXCEL or CSV file containing sample metadata
+                     for a study.
   API_url_address    The URL associated to your Turnkey, or the URL associated
                      to the API containing sample metadata.
+  mapping_file       Full path to mapping file.
   study_id           String value uniquely identifying study. Example:
                      PRJEB1234, PRJNA1234.
   annotation_dir     Full path to directory containing annotation files for
@@ -46,19 +48,18 @@ And as output it generates a report covering points 1-4.
 
 optional arguments:
   -h, --help         show this help message and exit
-
 ```
 ## Sample Usage
 
 An example with positional arguments
 
 ```
-python sanitychecking.py metadata_file API_url_address study_id annotation_dir sanity_level unique_identifier
+python sanitychecking.py metadata_file API_url_address mapping_file study_id annotation_dir sanity_level unique_identifier
 ```
 A working example using specific filename for sample metadata, Turnkey URL http://localhost/v2/samples, study ID PRJEB1234, generic path to annotation files, option LHF and unique identifier field name unique_sample_ID. 
 
 ```
-python sanitychecking.py /PATH_TO_METADATA_FILE/PRJEB1234_metadata_2019-05-31.xlsx http://localhost/v2/samples PRJEB1234 /PATH/TO/ANNOTATION/SUBDIRECTORIES/ LHF unique_sample_ID
+python sanitychecking.py /PATH_TO_METADATA_FILE/PRJEB1234_metadata_2019-05-31.xlsx http://localhost/v2/samples AIRR-Mapping_2019_12_20.csv PRJEB1234 /PATH/TO/ANNOTATION/SUBDIRECTORIES/ LHF unique_sample_ID
 ```
 
 ## Sample check report output
