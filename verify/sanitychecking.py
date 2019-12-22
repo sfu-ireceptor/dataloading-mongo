@@ -2,7 +2,7 @@
 ######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
 ######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 ######### CREATED ON: DECEMBER 20, 2018
-######### LAST MODIFIED ON: July 11, 2019
+######### LAST MODIFIED ON: December 21, 2019
 
 import pandas as pd
 import json
@@ -608,12 +608,19 @@ def getArguments():
     # Input file: excel or csv metadata file
     parser.add_argument(
         "metadata_file",
-        help="The EXCEL or CSV file containing sample metadata for a study."
+        help="Full path to EXCEL or CSV file containing sample metadata for a study."
     )
     # api address 
     parser.add_argument(
         "API_url_address",
         help="The URL associated to your Turnkey, or the URL associated to the API containing sample metadata."
+    )
+    
+    # mapping file
+     # api address 
+    parser.add_argument(
+        "mapping_file",
+        help="Full path to mapping file."
     )
     # Study_id used to identify a given study in sample metadata
     parser.add_argument(
@@ -652,6 +659,7 @@ if __name__ == "__main__":
     options = getArguments()
     input_f = options.metadata_file
     base_url = options.API_url_address
+    mapping_file = options.mapping_file
     study_id = options.study_id
     annotation_dir = options.annotation_dir
     given_option = options.sanity_level
@@ -670,6 +678,9 @@ if __name__ == "__main__":
     
     # Get the sample metadata for the query. We want to keep track of each sample
     DATA = getSamples(sample_url, header_dict)
+    
+    # Parse mapping file 
+    mapping_f = pd.read_csv(mapping_file)
 
     # Begin sanity checking 
     print("########################################################################################################")
@@ -717,6 +728,30 @@ if __name__ == "__main__":
         print("Study ID " + str(study_id) + "\n")    
 
         level_one(data_df,DATA,input_unique_field_id)
+        
+    if "M" in given_option: 
+        print("########################################################################################################")
+        print("------------------------------------------MAPPING FILE CHECK--------------------------------------------\n")
+
+        # Get column names
+        # API response columns
+        column_names_JSON = set([item for item in DATA[[0][0]].keys()])
+        # Metadata columns
+        metadata_cols = set(data_df.columns)
+        # Mapping file columns 
+        mapping_cols = set(mapping_f["ir_v2"].tolist()[0:112])
+        
+        
+        
+        print("Fields in mapping file NOT in metadata file\n")
+        for item in mapping_cols.difference(metadata_cols):
+            print(str(item) + "\n")
+        
+        print("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n")
+        print("Fields in metadata file NOT in mapping file\n")
+        for item in metadata_cols.difference(mapping_cols):
+            print(str(item) + "\n")
+        
 
     if "L" in given_option: 
         print("########################################################################################################")
