@@ -59,7 +59,7 @@ python sanitychecking.py metadata_file API_url_address mapping_file study_id ann
 A working example using specific filename for sample metadata, Turnkey URL http://localhost/v2/samples, study ID PRJEB1234, generic path to annotation files, option LHF and unique identifier field name unique_sample_ID. 
 
 ```
-python sanitychecking.py /PATH_TO_METADATA_FILE/PRJEB1234_metadata_2019-05-31.xlsx http://localhost/v2/samples AIRR-Mapping_2019_12_20.csv PRJEB1234 /PATH/TO/ANNOTATION/SUBDIRECTORIES/ LHF unique_sample_ID
+python sanitychecking.py /PATH_TO_METADATA_FILE/PRJEB1234_metadata_2019-05-31.xlsx http://localhost/v2/samples AIRR-/PATH_TO_MAPPING_FILE/Mapping_2019_12_20.csv PRJEB1234 /PATH/TO/ANNOTATION/SUBDIRECTORIES/ LHF unique_sample_ID
 ```
 
 ## Sample check report output
