@@ -20,6 +20,14 @@ class IRRepertoire(Repertoire):
             return False
 
         # Set the tag for the repository that we are using.
+        ireceptor_id_tag = "ir_id"
+        # Check to see if we have the columns needed in the mapping, if not exit.
+        if not self.getAIRRMap().hasColumn(ireceptor_id_tag):
+            print("ERROR: Could not find iReceptor mapping (%s) in mapping file"%
+                  (receptor_id_tag))
+            return False
+
+        # Set the tag for the repository that we are using.
         repository_tag = self.getRepositoryTag()
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(repository_tag):
@@ -60,6 +68,7 @@ class IRRepertoire(Repertoire):
         # name.
         repertoire_id_field = self.getRepertoireLinkIDField()
         rearrangement_file_field = self.getRearrangementFileField()
+        rearrangement_count_field = "ir_sequence_count"
 
         # Get the column of values from the AIRR tag. We only want the
         # Repertoire related fields.
@@ -118,10 +127,8 @@ class IRRepertoire(Repertoire):
                 #na_dict[curation_field] = None
             elif curation_field_type == "number":
                 type_dict[curation_field] = float
-            #elif curation_field_type == "boolean":
-            #    # We treat boolean as Int64 when we read them in so we can manage
-            #    # NULL boolean values.
-            #    type_dict[curation_field] = "Int64"
+            elif curation_field_type == "boolean":
+                type_dict[curation_field] = bool
 
             # If the repository column has a value for the curator field, track the field
             # from both the curator and repository side.
@@ -143,10 +150,10 @@ class IRRepertoire(Repertoire):
         # cause Pandas to complain if the typing is wrong.
         try:
             df = pd.read_csv(filename, sep=None, engine='python',
-                             encoding='utf-8-sig',
-                             dtype=type_dict)
+                             encoding='utf-8-sig')
+                             #encoding='utf-8-sig',
+                             #dtype=type_dict)
                              #dtype=type_dict, na_values=na_dict)
-                             #encoding='utf-8-sig')
         except Exception as err:
             print("ERROR: Unable to open file %s - %s" % (filename, err))
             return False
@@ -158,8 +165,6 @@ class IRRepertoire(Repertoire):
         if (df.columns.str.contains('^Unnamed').any()):
             print("Warning: column without a title detected in file ", filename)    
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-        print(df["physical_linkage"])
-        print(df["grants"])
 
         # Check to make sure all of the curator_fields are present in the file read in.
         # If not, this is an error.
@@ -169,7 +174,20 @@ class IRRepertoire(Repertoire):
                       (row[curation_tag], filename))
                 return False
 
-        # Check the validity of the columns in the actual file being loaded. Note that
+        # Check to make sure all AIRR required columns exist
+        for index, row in airr_fields.iterrows():
+            # If the row is required by the AIRR standard
+            if row["airr_required"] == "TRUE":
+                repository_field = row[repository_tag]
+                # If the repository representation of the AIRR column is not
+                # in the data we are going to write to the repository, then
+                # we have an error.
+                if not repository_field in df.columns:
+                    print("ERROR: Required AIRR field %s (%s) missing"%
+                          (row["airr"],repository_field))
+                    return False
+
+        # Check the type of the columns in the actual file being loaded. Note that
         # it is sufficient to test the type of the column by its first value because 
         # Pandas data frames are stongly typed by column. So if the first value in
         # the column is correct, then all values in the column are correct.
@@ -185,9 +203,8 @@ class IRRepertoire(Repertoire):
             if not field_type in ["ontology", "array"]:
                 value = column_data[0]
                 if not self.validAIRRFieldType(curation_file_column, value, False):
-                    print(value)
-                    print("Warning: Found type mismatch in column %s"%
-                          (curation_file_column))
+                    print("Warning: Found type mismatch in column %s (%s, %s, %s)"%
+                          (curation_file_column, field_type, str(value), type(value)))
                     bad_columns.append(curation_file_column)
 
         # This probably shouldn't occur, given we force the types at data load.
@@ -207,37 +224,32 @@ class IRRepertoire(Repertoire):
                 print("ERROR: Unable to force column type for %s to %s"%
                       (column, field_type))
             
-        #for curation_file_column in df.columns:
+        # Change the name of the columns to reflect the repository's naming rather
+        # than the name in the input file.
         for (curation_file_column, column_data) in df.iteritems():
             if curation_file_column in columnMapping:
-                mongo_column = columnMapping[curation_file_column]
+                repository_column = columnMapping[curation_file_column]
                 if self.verbose():
                     print("Info: Mapping input file column %s -> %s" %
-                          (curation_file_column, mongo_column))
-                df.rename({curation_file_column:mongo_column}, axis='columns', inplace=True)
+                          (curation_file_column, repository_column))
+                df.rename({curation_file_column:repository_column},
+                          axis='columns', inplace=True)
             else:
                 # If we don't have a mapping, keep the name the same, as we want to
                 # still save the data even though we don't have a mapping.
                 if self.verbose():
-                    print("Info: No mapping for input file column %s, storing in repository as is"
+                    print("Info: No mapping for file column %s, storing in repository as is"
                           %(curation_file_column))
-
-        # Check to see which desired Curation mappings we don't have... We check this
-        # against the "mongo_column" from the repository in the data frame, because
-        # we have already mapped the columns from the file columns to the repository columns.
-        for curation_column, mongo_column in columnMapping.items():
-            if not mongo_column in df.columns:
-                if self.verbose():
-                    print("Warning: Missing data in input file for " + curation_column)
 
         # Get the mapping for the sequence count field for the repository and 
         # initialize the sequeunce count to 0. If we can't find a mapping for this
         # field then we can't do anything. 
-        count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id",
+        count_field = self.getAIRRMap().getMapping(rearrangement_count_field,
+                                                   ireceptor_id_tag,
                                                    repository_tag)
         if count_field is None:
-            print("Warning: Could not find ir_sequence_count tag in repository, not initialized"
-                  %(repository_tag))
+            print("Warning: Could not find %s field in repository, not initialized"
+                  %(rearrangement_count_field, repository_tag))
         else:
             df[count_field] = 0
 
@@ -245,7 +257,8 @@ class IRRepertoire(Repertoire):
         # This is a fatal error as we can not link any data to this set of samples,
         # so there is no point adding the samples...
         repository_file_field = self.getAIRRMap().getMapping(rearrangement_file_field,
-                                                             "ir_id", repository_tag)
+                                                             ireceptor_id_tag,
+                                                             repository_tag)
         # If we can't find a mapping for this field in the repository mapping, then
         # we might still be OK if the metadata spreadsheet has the field. If the fails, 
         # then we should exit.
@@ -269,20 +282,6 @@ class IRRepertoire(Repertoire):
         df["ir_created_at"] = now_str
         df["ir_updated_at"] = now_str
 
-        # Check to make sure all AIRR required columns exist
-        for index, row in airr_fields.iterrows():
-            # If the repository column exists for this AIRR term...
-            if not pd.isnull(row[repository_tag]):
-                # If the row is required by the AIRR standard
-                if row["airr_required"] == "TRUE":
-                    mongo_field = row[repository_tag]
-                    # If the repository representation of the AIRR column is not
-                    # in the data we are going to write to the repository, then
-                    # we have an error.
-                    if not mongo_field in df.columns:
-                        print("ERROR: Required AIRR field %s (%s) missing"%
-                              (row["airr"],mongo_field))
-                        return False
 
         # Check to make sure all of our columns are unique.
         if len(df.columns) != len(df.columns.unique()):
