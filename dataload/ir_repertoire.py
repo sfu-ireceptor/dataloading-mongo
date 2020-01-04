@@ -30,12 +30,13 @@ class IRRepertoire(Repertoire):
 
         # Extract the fields that are of interest for this file. Essentiall all
         # non null curator fields
-        #curation_tag = "ir_curator"
-        curation_tag = "airr"
-        if not curation_tag in self.getAIRRMap().airr_repertoire_map:
-            print("ERROR: Could not find Curation mapping (%s) in mapping file"%(curation_tag))
+        curation_tag = "ir_curator"
+        if not self.getAIRRMap().hasColumn(curation_tag):
+            print("ERROR: Could not find Curation mapping (%s) in mapping file"%
+                  (curation_tag))
             return False
         map_column = self.getAIRRMap().getRepertoireMapColumn(curation_tag)
+        map_column = self.getAIRRMap().airr_mappings[curation_tag]
         fields_of_interest = map_column.notnull()
         
         # We select the rows in the mapping that contain fields of interest for curataion.
@@ -43,10 +44,10 @@ class IRRepertoire(Repertoire):
         # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
         # only data that is relevant to curataion
         airr_fields = self.getAIRRMap().getRepertoireRows(fields_of_interest)
+        curator_fields = self.getAIRRMap().airr_mappings.loc[fields_of_interest]
         
-        # We need to build the set of fields that the repository can store. We don't
-        # want to extract fields that the repository doesn't want.
-        curationColumns = []
+        # We need to build a column mapping for the curation columns to the fields
+        # that the repository will store.
         columnMapping = {}
 
         if self.verbose():
@@ -54,7 +55,8 @@ class IRRepertoire(Repertoire):
         type_dict = dict()
         for index, row in airr_fields.iterrows():
             if self.verbose():
-                print("Info:    " + str(row[curation_tag]) + " -> " + str(row[repository_tag]))
+                print("Info:    %s -> %s"%
+                      (str(row[curation_tag]), str(row[repository_tag])))
 
             # For each column, get a type value and if it is integer or string set the
             # type in the type dictionary. We use this later when we read the CSV file
@@ -62,29 +64,37 @@ class IRRepertoire(Repertoire):
             # type here, as it handles integer NaN values correctly. If an integer
             # column is not Int64 then whenever it has a Nan in it it will be cast
             # to a float column, which is bad...
+            # See:
+            #   - https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
+            #   - https://pandas.pydata.org/pandas-docs/stable/user_guide/integer_na.html
             field_type = self.getAIRRMap().getMapping(row[curation_tag],
-                                                      "airr", "airr_type",
-                                                      self.getAIRRMap().getRepertoireClass())
+                                           "airr", "airr_type",
+                                           self.getAIRRMap().getRepertoireClass())
             if field_type == "integer":
                 type_dict[row[curation_tag]] = "Int64"
             elif field_type == "string":
                 type_dict[row[curation_tag]] = str
+            elif field_type == "number":
+                type_dict[row[curation_tag]] = float
+            elif field_type == "boolean":
+                type_dict[row[curation_tag]] = bool
 
-            # If the repository column has a value for the curator field, track the field
+            # If the repository column has a value for the AIRR field, track the field
             # from both the curator and repository side.
             if not pd.isnull(row[repository_tag]):
-                curationColumns.append(row[curation_tag])
                 columnMapping[row[curation_tag]] = row[repository_tag]
             else:
-                print("Warning: Repository does not map " +
-                    str(row[curation_tag]) + ", inserting into repository as is")
+                print("Warning: No AIRR mapping for field %s"%(str(row[curation_tag])))
 
         # Read in the CSV file. We need to read this with a utf-8-sig encoding,
         # which means it is a UTF file with a BOM signature. Note that this has
-        # been confirmed to work with a Non-UTF ASCII file fine...
+        # been confirmed to work with a Non-UTF ASCII file fine... Use the 
+        # type_dict dictionary to enforce the type of each column. This will
+        # cause Pandas to complain if the typing is wrong.
         try:
-            df = pd.read_csv(filename, sep=None, engine='python', encoding='utf-8-sig',
-                             dtype=type_dict)
+            df = pd.read_csv(filename, sep=None, engine='python',
+                             encoding='utf-8-sig')
+                             #encoding='utf-8-sig', dtype=type_dict)
         except Exception as err:
             print("ERROR: Unable to open file %s - %s" % (filename, err))
             return False
@@ -97,6 +107,14 @@ class IRRepertoire(Repertoire):
             print("Warning: column without a title detected in file ", filename)    
         df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
+        # Check to make sure all of the curator_fields are present in the file read in.
+        # If not, this is an error.
+        for index, row in curator_fields.iterrows():
+            if not row[curation_tag] in df.columns:
+                print("ERROR: Could not find curation field %s in file %s"%
+                      (row[curation_tag], filename))
+                return False
+
         # Check the validity of the columns in the actual file being loaded. Note that
         # it is sufficient to test the type of the column by its first value because 
         # Pandas data frames are stongly typed by column. So if the first value in
@@ -107,29 +125,32 @@ class IRRepertoire(Repertoire):
         for (curation_file_column, column_data) in df.iteritems():
             # For each column, check the value of the data against the type expected
             field_type = self.getAIRRMap().getMapping(curation_file_column,
-                                                      "airr", "airr_type",
-                                                      self.getAIRRMap().getRepertoireClass())
+                                           "airr", "airr_type",
+                                           self.getAIRRMap().getRepertoireClass())
             # Skip ontology fields and array fields for now.
             if not field_type in ["ontology", "array"]:
                 value = column_data[0]
                 if not self.validAIRRFieldType(curation_file_column, value, False):
-                    print("Warning: Found type mismatch in column %s"%(curation_file_column))
+                    print("Warning: Found type mismatch in column %s"%
+                          (curation_file_column))
                     bad_columns.append(curation_file_column)
 
         # This probably shouldn't occur, given we force the types at data load.
         for column in bad_columns:
             # Get the field type
             field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type",
-                                                      self.getAIRRMap().getRepertoireClass())
+                                           self.getAIRRMap().getRepertoireClass())
             if field_type == "string":
                 print("Warning: Trying to force column type to string for %s"%(column))
                 df[column] = df[column].apply(str)
-                #print(df[column])
                 value = df.at[0, column]
                 if not self.validAIRRFieldType(column, value, False):
                     print("ERROR: Unable to force column type to string for %s"%(column))
                     return False
                 print("Warning: Succesfully forced column type to string for %s"%(column))
+            else:
+                print("ERROR: Unable to force column type for %s to %s"%
+                      (column, field_type))
             
         #for curation_file_column in df.columns:
         for (curation_file_column, column_data) in df.iteritems():
