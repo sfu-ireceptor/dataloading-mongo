@@ -53,7 +53,10 @@ class Repertoire(Parser):
             valid_type = True
 
         if self.verbose():
-            if not valid_type:
+            if pd.isnull(value):
+                print("Warning: Field %s type ERROR, null value, field is non-nullable"%
+                      (key))
+            elif not valid_type:
                 print("Warning: Field %s type ERROR, expected %s, got %s"%
                       (key, field_type, str(type(value))))
                 #print(key)
