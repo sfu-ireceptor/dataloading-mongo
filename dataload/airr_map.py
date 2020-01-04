@@ -78,6 +78,13 @@ class AIRRMap:
     def getRearrangementClass(self):
         return self.repertoire_class
 
+    # Utility function to determine if the mapping has a specific column
+    def hasColumn(self, column_name):
+        if column_name in self.airr_mappings:
+            return True
+        else:
+            return False
+
     # Return the value for the row and column keys provided. If it can't be found
     # None is returned. 
     def getMapping(self, field, from_column, to_column, map_class=None):
