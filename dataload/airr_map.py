@@ -8,14 +8,23 @@ class AIRRMap:
         # MiAIRR Standard.
         self.rearrangement_class = "Rearrangement"
         self.repertoire_class = "Repertoire"
+        # Create an internal class for IR Repertoire objects. This is defined in the
+        # Mapping file and should be one of the values in the ir_class column.
+        self.ir_repertoire_class = "IR_Repertoire"
+
         # Keep track of the mapfile being used.
         self.mapfile = ""
         # Keep track of the verbosity flag.
         self.verbose = verbose
         # Initialize the internal data structures
+        # Full mapping set.
         self.airr_mappings = []
+        # AIRR rearrangement mappings only
         self.airr_rearrangement_map = []
+        # AIRR repertoire mappings only
         self.airr_repertiore_map = []
+        # AIRR and IR repertoire mapping only
+        self.ir_repertiore_map = []
         
     # Read in a map file given a file name.
     def readMapFile(self, mapfile):
@@ -46,15 +55,18 @@ class AIRRMap:
                   (len(self.airr_mappings.columns), mapfile))
 
         # Get the labels for all of the fields that are in the airr rearrangements class.
-        #labels = self.airr_mappings['ir_subclass'].isin(self.airr_rearrangement_classes)
         labels = self.airr_mappings['ir_class'].isin([self.rearrangement_class])
         # Get all of the rows that have the rearrangement class labels.
         self.airr_rearrangement_map = self.airr_mappings.loc[labels]
         # Get the labels for all of the fields that are in the airr repertoire class.
-        #labels = self.airr_mappings['ir_subclass'].isin(self.airr_repertoire_classes)
         labels = self.airr_mappings['ir_class'].isin([self.repertoire_class])
         # Get all of the rows that have the repertoire class labels.
         self.airr_repertoire_map = self.airr_mappings.loc[labels]
+        # Get the labels for all of the fields that are in the airr repertoire class.
+        labels = self.airr_mappings['ir_class'].isin([self.repertoire_class,
+                                                      self.ir_repertoire_class])
+        # Get all of the rows that have the AIRR and IR repertoire class labels.
+        self.ir_repertoire_map = self.airr_mappings.loc[labels]
 
         # Debug stuff
         #print(self.airr_repertoire_map['ir_id'])
@@ -75,8 +87,11 @@ class AIRRMap:
     def getRepertoireClass(self):
         return self.repertoire_class
 
+    def getIRRepertoireClass(self):
+        return self.ir_repertoire_class
+
     def getRearrangementClass(self):
-        return self.repertoire_class
+        return self.rearrangement_class
 
     # Utility function to determine if the mapping has a specific column
     def hasColumn(self, column_name):
@@ -95,6 +110,8 @@ class AIRRMap:
            mapping = self.airr_rearrangement_map
         elif map_class == self.repertoire_class: 
            mapping = self.airr_repertoire_map
+        elif map_class == self.ir_repertoire_class: 
+           mapping = self.ir_repertoire_map
         else:
             print("Warning: Invalid maping class %s"%(map_class))
             return None
@@ -157,3 +174,17 @@ class AIRRMap:
     # repertoire table size.
     def getRepertoireRows(self, extract_flags):
         return self.airr_repertoire_map.loc[extract_flags]
+
+    # Return a full column of the iReceptor Repertoire mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getIRRepertoireMapColumn(self, column_name):
+        if column_name in self.ir_repertoire_map:
+            return self.ir_repertoire_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the iReceptor repertoire table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # repertoire table size.
+    def getIRRepertoireRows(self, extract_flags):
+        return self.ir_repertoire_map.loc[extract_flags]
