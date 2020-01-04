@@ -11,7 +11,11 @@ class Repertoire(Parser):
     
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
-        
+    
+    # Utility function to check to see if a given value is a valid type for a specific
+    # AIRR field.  If doing strict AIRR checks, if the field is not an AIRR field then
+    # it returns FALSE. If not doing strict AIRR checks, then it doesn't do any checks
+    # against the the field if it isn't an AIRR field (it returns TRUE). 
     def validAIRRFieldType(self, key, value, strict):
         field_type = self.getAIRRMap().getMapping(key, "airr", "airr_type",
                                   self.getAIRRMap().getRepertoireClass())
