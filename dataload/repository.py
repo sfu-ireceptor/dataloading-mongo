@@ -157,8 +157,8 @@ class Repository:
         try:
             if not self.skipload:
                 results = self.repertoire.insert(doc)
-        except:
-            print("ERROR: Repository insertion failed")
+        except Exception as err:
+            print("ERROR: Repository insertion failed, %s"%(err))
             return False
         return True
 
