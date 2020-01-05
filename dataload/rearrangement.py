@@ -201,12 +201,6 @@ class Rearrangement(Parser):
     # Hide the repository implementation from the Rearrangement subclasses.
     #####################################################################################
 
-    # Look for the file_name given in the repertoire collection in the file_field field
-    # in the repository. Return an array of integers which are the sample IDs where the
-    # file_name was found in the field field_name.
-    def repositoryGetRepertoireIDs(self, file_field, file_name):
-        return self.repository.getRepertoireIDs(file_field, file_name)
-
     # Write the set of JSON records provided to the "rearrangements" collection.
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.

@@ -92,6 +92,16 @@ class Parser:
     def getAIRRMap(self):
        return self.airr_map
 
+    #####################################################################################
+    # Hide the repository implementation from the Parser subclasses.
+    #####################################################################################
+
+    # Look for the file_name given in the repertoire collection in the file_field field
+    # in the repository. Return an array of integers which are the sample IDs where the
+    # file_name was found in the field field_name.
+    def repositoryGetRepertoireIDs(self, file_field, file_name):
+        return self.repository.getRepertoireIDs(file_field, file_name)
+
     # Utility methods to deal with data and scratch folders that all Parsers need.
     def getDataFolder(self, fileWithPath):
         # Data folder is based on the path to the file.
