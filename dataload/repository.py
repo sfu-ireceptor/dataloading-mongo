@@ -85,9 +85,10 @@ class Repository:
     # Look for the file_name given in the samples collection in the file_field field in
     # the repository. Return an array of integers which are the sample IDs where the
     # file_name was found in the field field_name.
-    def getRepertoireIDs(self, file_field, file_name):
-        repertoire_cursor = self.repertoire.find( {file_field: { '$regex': file_name }}, {'_id': 1})
-        idarray = [reperotire['_id'] for reperotire in repertoire_cursor]
+    def getRepertoireIDs(self, repertoire_field, file_field, file_name):
+        query =  {file_field: {'$regex': file_name}}
+        repertoire_cursor = self.repertoire.find(query, {repertoire_field: 1})
+        idarray = [reperotire[repertoire_field] for reperotire in repertoire_cursor]
         return idarray
 
     # Write the set of JSON records provided to the "rearrangements" collection.
@@ -107,20 +108,15 @@ class Repository:
             print("ERROR: Invalid repertoire field (%s) or repertoire_id (%s)"%
                   (repertoire_field, repertoire_id))
             return -1
-
-        rearrangement_count = self.rearrangement.find(
-                {repertoire_field:{'$eq':repertoire_id}}
-            ).count()
+        query = {repertoire_field:{'$eq':repertoire_id}}
+        rearrangement_count = self.rearrangement.find(query).count()
         return rearrangement_count
 
-
-
     # Update the count for the given reperotire and count field. 
-    def updateCount(self, repertoire_id, count_field, count):
+    def updateCount(self, repertoire_field, repertoire_id, count_field, count):
         if not self.skipload:
-            self.repertoire.update(
-                {"_id":repertoire_id}, {"$set": {count_field:count}}
-            )
+            update = {"$set": {count_field:count}}
+            self.repertoire.update( {repertoire_field:repertoire_id}, update)
 
     # Insert a repertoire document into the repertoire collection
     def insertRepertoire( self, doc ):
