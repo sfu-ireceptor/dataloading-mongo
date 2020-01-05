@@ -19,7 +19,7 @@ class IRRepertoire(Repertoire):
             print("ERROR: input file " + filename + " is not a file")
             return False
 
-        # Set the tag for the repository that we are using.
+        # Set the tag for the iReceptor column
         ireceptor_id_tag = "ir_id"
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(ireceptor_id_tag):
@@ -35,6 +35,7 @@ class IRRepertoire(Repertoire):
                   (repository_tag))
             return False
 
+        # Set the tag for the Curator column
         curation_tag = "ir_curator"
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(curation_tag):
@@ -42,6 +43,7 @@ class IRRepertoire(Repertoire):
                   (curation_tag))
             return False
 
+        # Set the tag for the AIRR column
         airr_tag = "airr"
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(airr_tag):
@@ -49,6 +51,7 @@ class IRRepertoire(Repertoire):
                   (airr_tag))
             return False
 
+        # Set the tag for the AIRR type column
         airr_type_tag = "airr_type"
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(airr_type_tag):
@@ -56,6 +59,7 @@ class IRRepertoire(Repertoire):
                   (airr_type_tag))
             return False
 
+        # Set the tag for the Repisotory type column
         repository_type_tag = "ir_repository_type"
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(repository_type_tag):
@@ -275,8 +279,6 @@ class IRRepertoire(Repertoire):
             print("ERROR: Will not be able to link repertoire to rearrangement annotations")
             return False
 
-        # TODO: NEED TO TEST TO SEE IF THIS REPERTOIRE ALREADY EXISTS!!!
-
         # Add a created_at and updated_at field in the repository.
         now_str = Parser.getDateTimeNowUTC()
         df["ir_created_at"] = now_str
@@ -301,6 +303,7 @@ class IRRepertoire(Repertoire):
         # are stored in the repository. So if the provided CSV file has lots of extra fields
         # they will exist in the repository.
         for r in record_list:
-            self.repositoryInsertRepertoire( r )
+            if not self.repositoryInsertRepertoire(r):
+                return False
     
         return True
