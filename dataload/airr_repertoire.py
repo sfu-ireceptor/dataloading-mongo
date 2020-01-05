@@ -202,6 +202,7 @@ class AIRRRepertoire(Repertoire):
         # are stored in the repository. So if the provided file has lots of extra fields
         # they will exist in the repository.
         for r in repertoire_list:
-            self.repositoryInsertRepertoire( r )
-    
+            if not self.repositoryInsertRepertoire(r):
+                return False
+
         return True
