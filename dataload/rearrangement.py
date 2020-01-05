@@ -212,12 +212,16 @@ class Rearrangement(Parser):
     # want to hide this and just talk about reperotire IDs, so this is hidden in the 
     # Rearrangement class...
     def repositoryCountRearrangements(self, repertoire_id):
-        repertoire_field = self.airr_map.getMapping("ir_project_sample_id",
+        repertoire_field = self.airr_map.getMapping(self.getRearrangementLinkIDField(),
                                                     "ir_id",
                                                     self.repository_tag)
         return self.repository.countRearrangements(repertoire_field, repertoire_id)
 
     # Update the cached sequence count for the given reperotire to be the given count.
     def repositoryUpdateCount(self, repertoire_id, count):
-        self.repository.updateCount(repertoire_id, "ir_sequence_count", count)
+        repertoire_field = self.airr_map.getMapping(self.getRearrangementLinkIDField(),
+                                                    "ir_id",
+                                                    self.repository_tag)
+        self.repository.updateCount(repertoire_field, repertoire_id,
+                                    "ir_sequence_count", count)
 
