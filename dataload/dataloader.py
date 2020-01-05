@@ -282,4 +282,7 @@ if __name__ == "__main__":
     print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
 
     # Return success
-    sys.exit(0)
+    if parse_ok:
+        sys.exit(0)
+    else:
+        sys.exit(1)
