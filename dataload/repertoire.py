@@ -69,20 +69,44 @@ class Repertoire(Parser):
 
     # Hide the impementation of the repository from the Repertoire subclasses.
     # The subclasses don't ask much of the repository, just insert a single
-    #JSON document at a time.
+    # JSON document at a time.
     def repositoryInsertRepertoire( self, json_document ):
     
-        self.repository.insertRepertoire(json_document)
-        if self.verbose:
-            # If we are in verbose mode, print out a summary of the record.
-            study_tag = self.getAIRRMap().getMapping("study_id", "ir_id",
-                                                     self.getRepositoryTag())
-            study = "NULL" if not study_tag in json_document else json_document[study_tag]
-            sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id",
-                                                      self.getRepositoryTag())
-            sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
-            file_tag = self.getAIRRMap().getMapping(self.getRearrangementFileField(),
-                                                    "ir_id", self.getRepositoryTag())
-            filestr = "NULL" if not file_tag in json_document else json_document[file_tag]
+        # Check to see if the repertoire already exists. We do this by using
+        # the rearrangement file field and check to see if the file field
+        # already exists in another record or not...
+        # First get the file field we use to connect rearrangments and reperotires
+        rearrangement_file_field = self.getRearrangementFileField()
+        # Then get the repository field
+        repository_field = self.getAIRRMap().getMapping(rearrangement_file_field,
+                                                        "ir_id", self.getRepositoryTag())
+        # Then get the actual files we are trying to write to the repository
+        file_names = json_document[repository_field]
+        # Finally we search for and get a list of the repertoires that have this value.
+        idarray = self.repositoryGetRepertoireIDs(rearrangement_file_field, file_names)
+        # The number of repertoires should be 0 other wise it already exists. Fail if
+        # the number is not 0.
+        num_repertoires = len(idarray)
+        # Get some info to help write out messages
+        study_tag = self.getAIRRMap().getMapping("study_id", "ir_id",
+                                                 self.getRepositoryTag())
+        study = "NULL" if not study_tag in json_document else json_document[study_tag]
+        sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id",
+                                                  self.getRepositoryTag())
+        sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
+        # Print an error if record already exists.
+        if not num_repertoires == 0:
+            print("ERROR: Unable to write repertoire, already exists in the repository")
+            print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
+            print("ERROR:     File field %s contains rearrangement files %s"%
+                  (rearrangement_file_field, file_names))
+            print("ERROR:     Files found in record %s"%(str(idarray)))
+            return False
+
+        # Try to write the record and return True/False as appropriate.
+        insert_ok = self.repository.insertRepertoire(json_document)
+        if insert_ok and self.verbose:
             print("Info: Writing repertoire record <%s, %s, %s>" %
-                  (study, sample, filestr))
+                  (study, sample, file_names))
+
+        return insert_ok
