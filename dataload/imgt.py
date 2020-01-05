@@ -279,7 +279,7 @@ class IMGT(Rearrangement):
                     # If no calculation is required, then it is a direct mapping.
                     # If there is calculation required, we perform those calculations
                     # later...
-                    if row[calculate_tag] == 'FALSE':
+                    if not row[calculate_tag] or row[calculate_tag] == "FALSE":
                         if self.verbose():
                             print("Info:    %s  -> %s"%
                                   (str(row[filemap_tag]),
