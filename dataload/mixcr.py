@@ -66,7 +66,8 @@ class MiXCR(Rearrangement):
         # Get the fields to use for finding repertoire IDs, either using those IDs
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
-        repertoire_id_field = self.getRepertoireLinkIDField()
+        repertoire_link_field = self.getRepertoireLinkIDField()
+        rearrangement_link_field = self.getRearrangementLinkIDField()
         rearrangement_file_field = self.getRearrangementFileField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
@@ -85,8 +86,11 @@ class MiXCR(Rearrangement):
                                          repository_tag)
         idarray = []
         if file_field is None:
-            print("ERROR: Could not find field %s in repository %s"%
-                  (rearrangement_file_field, repository_tag))
+            print("ERROR: Could not find link field %s in repository %s"
+                   %(rerrangement_file_field, repository_tag))
+            print("ERROR: Unable to find rearrangement file %s in repertoires."
+                  %(filename))
+
             return False
         else:
             if self.verbose():
@@ -95,19 +99,19 @@ class MiXCR(Rearrangement):
             idarray = self.repositoryGetRepertoireIDs(file_field, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
-        num_samples = len(idarray)
-        if num_samples == 0:
+        num_repertoires = len(idarray)
+        if num_repertoires == 0:
             print("ERROR: Could not find repertoire in repository for file %s"%(filename))
             print("ERROR: No repertoire could be associated with this annotation file.")
             return False
-        elif num_samples > 1:
-            print("ERROR: File can not be associated with a unique repertoire")
-            print("ERROR: Found %d repertoires for the file in the repository"%(num_samples))
-            print("ERROR: Unique assignment of annotations to a single repertoire are required.")
+        elif num_repertoires > 1:
+            print("ERROR: More than one repertoire (%d) found using file %s"%
+                  (num_repertoires, filename))
+            print("ERROR: Unique assignment of annotations to a single repertoire required.")
             return False
 
-        # Get the sample ID and assign it to sample ID field
-        ir_project_sample_id = idarray[0]
+        # Get the repertoire ID 
+        repertoire_link_id = idarray[0]
 
         # Extract the fields that are of interest for this file. Essentiall all non null fields
         # in the file. This is a boolean array that is T everywhere there is a notnull field in
@@ -228,12 +232,12 @@ class MiXCR(Rearrangement):
             productive = airr_map.getMapping("productive", "ir_id", repository_tag)
             df_chunk[productive] = True
 
-            ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id",
-                                                             "ir_id", repository_tag)
-            if not ir_project_sample_id_field is None:
-                df_chunk[ir_project_sample_id_field] = ir_project_sample_id
+            rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
+                                                               "ir_id", repository_tag)
+            if not rep_rearrangement_link_field is None:
+                df_chunk[rep_rearrangement_link_field] = repertoire_link_id
             else:
-                print("ERROR: Could not get ir_project_sample_id field from AIRR mapping.")
+                print("ERROR: Could not get repertoire link field from AIRR mapping.")
                 return False
 
             # Create the created and update values for this block of records. Note that this
@@ -257,17 +261,17 @@ class MiXCR(Rearrangement):
             total_records = total_records + num_records
             print("Info: Total records so far =", total_records, flush=True)
 
-        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
+        # Get the number of annotations for this repertoire 
         if self.verbose():
             print("Info: Getting the number of annotations for this repertoire")
-        annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
+        annotation_count = self.repositoryCountRearrangements(repertoire_link_id)
         if annotation_count == -1:
             print("ERROR: invalid annotation count (%d), write failed." %
                   (annotation_count))
             return False
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
-        self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
+        self.repositoryUpdateCount(repertoire_link_id, annotation_count)
 
         # Inform on what we added and the total count for the this record.
         print("Info: Inserted %d records, total annotation count = %d" %

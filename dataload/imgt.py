@@ -179,7 +179,8 @@ class IMGT(Rearrangement):
         # Get the fields to use for finding repertoire IDs, either using those IDs
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
-        repertoire_id_field = self.getRepertoireLinkIDField()
+        repertoire_link_field = self.getRepertoireLinkIDField()
+        rearrangement_link_field = self.getRearrangementLinkIDField()
         rearrangement_file_field = self.getRearrangementFileField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
@@ -208,8 +209,10 @@ class IMGT(Rearrangement):
         value = airr_map.getMapping(rearrangement_file_field, "ir_id", repository_tag)
         idarray = []
         if value is None:
-            print("ERROR: Could not find field %s in repository %s" 
-                  %(rearrangement_file_field, repository_tag))
+            print("ERROR: Could not find link field %s in repository %s"
+                  %(rerrangement_file_field, repository_tag))
+            print("ERROR: Unable to find rearrangement file %s in repertoires."
+                  %(fileName))
             return False
         else:
             if self.verbose():
@@ -218,18 +221,19 @@ class IMGT(Rearrangement):
             idarray = self.repositoryGetRepertoireIDs(value, fileName)
 
         # Check to see that we found it and that we only found one. Fail if not.
-        num_samples = len(idarray)
-        if num_samples == 0:
-            print("ERROR: Could not find annotation file " + fileName + " in the repository samples", flush=True)
-            print("ERROR: No sample could be associated with this annotation file.", flush=True)
+        num_repertoires = len(idarray)
+        if num_repertoires == 0:
+            print("ERROR: No repertoire could be associated with annotation file %s."%
+                  (fileName))
             return False
-        elif num_samples > 1:
-            print("ERROR: Annotation file can not be associated with a unique sample, found", num_samples, flush=True)
-            print("ERROR: Unique assignment of annotations to a single sample are required.", flush=True)
+        elif num_repertoires > 1:
+            print("ERROR: More than one repertoire (%d) found using file %s"%
+                  (num_repertoires, fileName))
+            print("ERROR: Unique assignment of annotations to a single repertoire required.")
             return False
 
-        # Get the sample ID and assign it to sample ID field
-        ir_project_sample_id = idarray[0]
+        # Get the repertoire ID 
+        reperotire_link_id = idarray[0]
 
         # Open the tar file, extract the data, and close the tarfile. 
         # This leaves us with a folder with all of the individual vQUest
@@ -371,10 +375,10 @@ class IMGT(Rearrangement):
 
         # The internal Mongo sample ID that links the sample to each sequence, constant
         # for all sequences in this file.
-        ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id",
+        rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
                                                          "ir_id",
                                                          repository_tag)
-        mongo_concat[ir_project_sample_id_field] = ir_project_sample_id
+        mongo_concat[rep_rearrangement_link_field] = reperotire_link_id
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
@@ -628,18 +632,23 @@ class IMGT(Rearrangement):
             print("Info: Inserted records, time = %f seconds (%f records/s)" %
                   ((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
-        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
+        # Get the number of annotations for this repertoire
         if self.verbose():
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
-        annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
+        annotation_count = self.repositoryCountRearrangements(reperotire_link_id)
+        if annotation_count == -1:
+            print("ERROR: invalid annotation count (%d), write failed." %
+                  (annotation_count))
+            return False
+
         t_end = time.perf_counter()
         if self.verbose():
             print("Info: Annotation count = %d, time = %f" %
                   (annotation_count, (t_end - t_start)), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
-        self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
+        self.repositoryUpdateCount(reperotire_link_id, annotation_count)
         t_end_full = time.perf_counter()
 
         # Inform on what we added and the total count for the this record.

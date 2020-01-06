@@ -70,7 +70,8 @@ class AIRR_TSV(Rearrangement):
         # Get the fields to use for finding repertoire IDs, either using those IDs
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
-        repertoire_id_field = self.getRepertoireLinkIDField()
+        repertoire_link_field = self.getRepertoireLinkIDField()
+        rearrangement_link_field = self.getRearrangementLinkIDField()
         rearrangement_file_field = self.getRearrangementFileField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
@@ -108,29 +109,32 @@ class AIRR_TSV(Rearrangement):
         value = airr_map.getMapping(rearrangement_file_field, "ir_id", repository_tag)
         idarray = []
         if value is None:
-            print("ERROR: Could not find field %s in repository %s"
+            print("ERROR: Could not find link field %s in repository %s"
                   %(rerrangement_file_field, repository_tag))
+            print("ERROR: Unable to find rearrangement file %s in repertoires."
+                  %(filename))
             return False
         else:
             # Look up the filename in the repository field and get an array of sample ids
             # where the file name was found.
             if self.verbose():
-                print("Info: Retrieving associated repertoire for file " + filename + " from repository field " + value)
+                print("Info: Retrieving repertoire for file %s from repository field %s"%
+                      (filename, value))
             idarray = self.repositoryGetRepertoireIDs(value, filename)
 
         # Check to see that we found it and that we only found one. Fail if not.
-        num_samples = len(idarray)
-        if num_samples == 0:
-            print("ERROR: Could not find annotation file", filename)
-            print("ERROR: No sample in the repository could be associated with this annotation file.")
+        num_repertoires = len(idarray)
+        if num_repertoires == 0:
+            print("ERROR: No repertoire could be associated with annotation file %s."%(filename))
             return False
-        elif num_samples > 1:
-            print("ERROR: Annotation file can not be associated with a unique sample in the repository, found", num_samples)
-            print("ERROR: Unique assignment of annotations to a single sample are required.")
+        elif num_repertoires > 1:
+            print("ERROR: More than one repertoire (%d) found using file %s"%
+                  (num_repertoires, filename))
+            print("ERROR: Unique assignment of annotations to a single repertoire are required.")
             return False
             
-        # We found a unique sample, keep track of it for later. 
-        ir_project_sample_id = idarray[0]
+        # We found a unique repertoire, keep track of it for later. 
+        repertoire_link_id = idarray[0]
 
         # Extract the fields that are of interest for this file. Essentiall all non null fields
         # in the file. This is a boolean array that is T everywhere there is a notnull field in
@@ -200,10 +204,12 @@ class AIRR_TSV(Rearrangement):
             # Junction AA substrings.
             junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
             ir_substring = airr_map.getMapping("ir_substring", "ir_id", repository_tag)
-            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length", "ir_id", repository_tag)
+            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length",
+                                                        "ir_id", repository_tag)
             if junction_aa in airr_df:
                 if self.verbose():
-                    print("Info: Retrieving junction amino acids and building substrings...", flush=True)
+                    print("Info: Retrieving junction amino acids and building substrings...",
+                          flush=True)
                 airr_df[ir_substring] = airr_df[junction_aa].apply(Rearrangement.get_substring)
 
                 # The AIRR TSV format doesn't have AA length, we want it in our repository.
@@ -245,17 +251,10 @@ class AIRR_TSV(Rearrangement):
             if not locus in airr_df:
                 airr_df[locus] = airr_df[v_call].apply(Rearrangement.getLocus)
 
-            # For now we assume that an AIRR TSV file, when loaded into iReceptor, has
-            # been produced by igblast. This in general is not the case, but as a loader
-            # script we assume this to be the case.
-            if self.verbose():
-                print("Info: Setting annotation tool to be " + self.getAnnotationTool(), flush=True)
-            ir_annotation_tool = airr_map.getMapping("ir_annotation_tool", "ir_id", repository_tag)
-            airr_df[ir_annotation_tool] = self.getAnnotationTool() 
-
-            # Keep track of the sample id so can link each rearrangement to a repertoire
-            ir_project_sample_id_field = airr_map.getMapping("ir_project_sample_id", "ir_id", repository_tag)
-            airr_df[ir_project_sample_id_field]=ir_project_sample_id
+            # Keep track of the reperotire id so can link each rearrangement to a repertoire
+            rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
+                                                               "ir_id", repository_tag)
+            airr_df[rep_rearrangement_link_field]=repertoire_link_id
 
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
@@ -278,17 +277,24 @@ class AIRR_TSV(Rearrangement):
             total_records = total_records + num_records
             print("Info: Total records so far =", total_records, flush=True)
  
-        # Get the number of annotations for this repertoire (as defined by the ir_project_sample_id)
+        # Get the number of annotations for this repertoire (as defined by the repertoire link id
         if self.verbose():
-            print("Info: Getting the number of annotations for this repertoire")
-        annotation_count = self.repositoryCountRearrangements(ir_project_sample_id)
+            print("Info: Getting the number of annotations for repertoire %s"%
+                  (str(repertoire_link_id)))
+        annotation_count = self.repositoryCountRearrangements(repertoire_link_id)
+        if annotation_count == -1:
+            print("ERROR: invalid annotation count (%d), write failed." %
+                  (annotation_count))
+            return False
+
         if self.verbose():
             print("Info: Annotation count = %d" % (annotation_count), flush=True)
 
-        # Set the cached ir_sequeunce_count field for the repertoire/sample.
-        self.repositoryUpdateCount(ir_project_sample_id, annotation_count)
+        # Set the cached sequence count field for the repertoire.
+        self.repositoryUpdateCount(repertoire_link_id, annotation_count)
 
         # Inform on what we added and the total count for the this record.
-        print("Info: Inserted %d records, total annotation count = %d" % (total_records, annotation_count))
+        print("Info: Inserted %d records, total annotation count = %d" %
+              (total_records, annotation_count))
 
         return True;
