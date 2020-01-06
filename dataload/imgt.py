@@ -431,7 +431,7 @@ class IMGT(Rearrangement):
         # Special case for junction_aa_length. This does not exist in the AIRR standard,
         # so we have to check to see if the mapping returned None as well. 
         junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-        junction_aa_length = airr_map.getMapping("junction_aa_length",
+        junction_aa_length = airr_map.getMapping("ir_junction_aa_length",
                                                  "ir_id",
                                                  repository_tag)
         if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
