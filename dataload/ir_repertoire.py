@@ -207,7 +207,7 @@ class IRRepertoire(Repertoire):
             if not field_type in ["ontology", "array"]:
                 value = column_data[0]
                 if not self.validAIRRFieldType(curation_file_column, value, False):
-                    print("Warning: Found type mismatch in column %s (%s, %s, %s)"%
+                    print("Info: Found type mismatch in column %s (%s, %s, %s)"%
                           (curation_file_column, field_type, str(value), type(value)))
                     bad_columns.append(curation_file_column)
 
@@ -217,15 +217,15 @@ class IRRepertoire(Repertoire):
             field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type",
                                            self.getAIRRMap().getRepertoireClass())
             if field_type == "string":
-                print("Warning: Trying to force column type to string for %s"%(column))
+                print("Info: Trying to force column type to string for %s"%(column))
                 df[column] = df[column].apply(str)
                 value = df.at[0, column]
                 if not self.validAIRRFieldType(column, value, False):
                     print("ERROR: Unable to force column type to string for %s"%(column))
                     return False
-                print("Warning: Succesfully forced column type to string for %s"%(column))
+                print("Info: Succesfully forced column type to string for %s"%(column))
             else:
-                print("ERROR: Unable to force column type for %s to %s"%
+                print("Warning: Unable to force column type for %s to %s"%
                       (column, field_type))
             
         # Change the name of the columns to reflect the repository's naming rather
