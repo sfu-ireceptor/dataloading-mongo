@@ -86,18 +86,28 @@ class Repository:
     # Look for the search_name given in the repertoire collection in the search_field in
     # the repository. Return an array of IDs which are the IDs from repertoitre_field
     # where the search_name was found in the field search_field.
+    # Return None on error, return empty array if not found.
     def getRepertoireIDs(self, repertoire_field, search_field, search_name):
         query =  {search_field: {'$regex': search_name}}
-        repertoire_cursor = self.repertoire.find(query, {repertoire_field: 1})
-        idarray = [reperotire[repertoire_field] for reperotire in repertoire_cursor]
+        try:
+            repertoire_cursor = self.repertoire.find(query, {repertoire_field: 1})
+            idarray = [reperotire[repertoire_field] for reperotire in repertoire_cursor]
+        except Exception as err:
+            return None
+            
         return idarray
 
     # Write the set of JSON records provided to the "rearrangements" collection.
     # This is hiding the Mongo implementation. Probably should refactor the
     # repository implementation completely.
+    # Return True on success False on failure.
     def insertRearrangements(self, json_records):
         if not self.skipload:
-            self.rearrangement.insert(json_records)
+            try:
+                self.rearrangement.insert(json_records)
+            except Exception as err:
+                return False
+        return True
 
     # Count the number of rearrangements that belong to a specific repertoire. 
     # Return -1 on error. Note: In our early implementations, we had an
@@ -110,7 +120,13 @@ class Repository:
                   (repertoire_field, repertoire_id))
             return -1
         query = {repertoire_field:{'$eq':repertoire_id}}
-        rearrangement_count = self.rearrangement.find(query).count()
+        try:
+            rearrangement_count = self.rearrangement.find(query).count()
+        except Exception as err:
+            print("ERROR: Query failed for repertoire field (%s) or repertoire_id (%s)"%
+                  (repertoire_field, repertoire_id))
+            return -1
+
         return rearrangement_count
 
     # Update the count for the given reperotire and count field. 
