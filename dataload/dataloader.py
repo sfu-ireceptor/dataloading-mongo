@@ -1,7 +1,7 @@
 #! /opt/ireceptor/data/bin/python
 """
  ireceptor_data_loader.py is a batch loading script for loading
- iReceptor sample metadata and sequence annotation
+ iReceptor repertoire metadata and sequence rearrangement annotations
  
 """
 import os
@@ -9,14 +9,19 @@ import argparse
 import time
 import sys
 
+# AIRR Mapping class.
+from airr_map import AIRRMap
+# Repository class - hides the DB implementation
 from repository import Repository
+# Repertoire loader classes 
 from ir_repertoire import IRRepertoire
 from airr_repertoire import AIRRRepertoire
+# Rearrangement loader classes
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
-from airr_map import AIRRMap
 
+# Get the command line arguments...
 def getArguments():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -57,10 +62,9 @@ def getArguments():
 
     # Processing iReceptor Repertoire metadata
     type_group.add_argument(
-        "-s",
-        "--sample",
+        "--ireceptor",
         action="store_const",
-        const="sample",
+        const="iReceptor Repertoire",
         dest="type",
         default="",
         help="The file to be loaded is an iReceptor sample/repertoire metadata file (a 'csv' file with standard iReceptor/AIRR column headers)."
@@ -68,10 +72,9 @@ def getArguments():
 
     # Processing AIRR Repertoire metadata
     type_group.add_argument(
-        "-r",
         "--repertoire",
         action="store_const",
-        const="repertoire",
+        const="AIRR Repertoire",
         dest="type",
         default="",
         help="The file to be loaded is an AIRR repertoire metadata file (a 'JSON' file that adheres to the AIRR Repertoire standard)."
@@ -79,30 +82,27 @@ def getArguments():
 
     # Processing IMGT VQuest data, in the form of a zip archive
     type_group.add_argument(
-        "-i",
         "--imgt",
         action='store_const',
-        const="imgt",
+        const="IMGT V-Quest",
         dest="type",
         help="The file to be loaded is a compressed archive files as provided by the IMGT HighV-QUEST annotation tool."
     )
 
     # Processing MiXCR data
     type_group.add_argument(
-        "-m",
         "--mixcr",
         action='store_const',
-        const="mixcr",
+        const="MiXCR",
         dest="type",
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool."
     )
 
     # Processing AIRR TSV annotation data, typically (but not limited to) from IgBLAST
     type_group.add_argument(
-        "-a",
         "--airr",
         action='store_const',
-        const="airr",
+        const="AIRR TSV",
         dest="type",
         help="The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by IgBLAST (and other tools) that can produce AIRR TSV rearrangement files."
     )
@@ -212,7 +212,7 @@ if __name__ == "__main__":
                             options.repertoire_collection,
                             options.rearrangement_collection,
                             options.skipload)
-    # Check on the successful creation of the context and its validity.
+    # Check on the successful creation of the repository
     if repository is None or not repository:
         sys.exit(1)
 
@@ -223,33 +223,34 @@ if __name__ == "__main__":
     airr_map = AIRRMap(options.verbose)
     airr_map.readMapFile(options.mapfile)
     if airr_map.getRearrangementMapColumn(options.database_map) is None:
-        print("ERROR: Could not find repository mapping " + options.database_map + " in AIRR Mappings")
+        print("ERROR: Could not find repository mapping %s in AIRR Mappings"%
+              (options.database_map))
         sys.exit(1)
 
     # Start timing the file loading
     t_start = time.perf_counter()
 
-    if options.type == "sample":
+    if options.type == "iReceptor Repertoire":
         # process iReceptor Repertoire metadata 
         print("Info: Processing iReceptor repertoire metadata file: {}".format(options.filename))
         parser = IRRepertoire(options.verbose, options.database_map, options.database_chunk,
                               airr_map, repository)
-    elif options.type == "repertoire":
+    elif options.type == "AIRR Repertoire":
         # process AIRR Repertoire metadata
         print("Info: Processing AIRR repertoire metadata file: {}".format(options.filename))
         parser = AIRRRepertoire(options.verbose, options.database_map, options.database_chunk,
                                 airr_map, repository)
-    elif options.type == "imgt":
+    elif options.type == "IMGT V-Quest":
         # process imgt
         print("Info: Processing IMGT data file: {}".format(options.filename))
         parser = IMGT(options.verbose, options.database_map, options.database_chunk,
                       airr_map, repository)
-    elif options.type == "mixcr":
+    elif options.type == "MiXCR":
         # process mixcr
         print("Info: Processing MiXCR data file: {}".format(options.filename))
         parser = MiXCR(options.verbose, options.database_map, options.database_chunk,
                        airr_map, repository)
-    elif options.type == "airr":
+    elif options.type == "AIRR TSV":
         # process AIRR TSV
         print("Info: Processing AIRR TSV annotation data file: ", options.filename)
         parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
