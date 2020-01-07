@@ -99,12 +99,14 @@ class Parser:
     # Look for the file_name given in the repertoire collection in the file_field field
     # in the repository. Return an array of integers which are the sample IDs where the
     # file_name was found in the field field_name.
-    def repositoryGetRepertoireIDs(self, file_field, file_name):
+    def repositoryGetRepertoireIDs(self, search_field, search_name):
+        # Get the field the repository is using to linke repertoires and rearrangements.
+        # That is the field we want to use to generate the repertoire IDs
         repertoire_field = self.airr_map.getMapping(self.getRepertoireLinkIDField(),
                                                     "ir_id",
                                                     self.repository_tag)
-
-        return self.repository.getRepertoireIDs(repertoire_field, file_field, file_name)
+        # Ask the repository to do the search and return the results.
+        return self.repository.getRepertoireIDs(repertoire_field, search_field, search_name)
 
     # Utility methods to deal with data and scratch folders that all Parsers need.
     def getDataFolder(self, fileWithPath):
