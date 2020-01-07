@@ -197,6 +197,9 @@ class IRRepertoire(Repertoire):
         # the column is correct, then all values in the column are correct.
         # This should typically not be a problem as we force the types of the columns
         # to be the correct type when loading the CSV file.
+        # TODO: Note that we are only warning at this point... The intent is to have
+        # the types enforced on JSON write so for now we keep track and warn about
+        # the issues.
         bad_columns = []
         for (curation_file_column, column_data) in df.iteritems():
             # For each column, check the value of the data against the type expected
@@ -284,7 +287,6 @@ class IRRepertoire(Repertoire):
         df["ir_created_at"] = now_str
         df["ir_updated_at"] = now_str
 
-
         # Check to make sure all of our columns are unique.
         if len(df.columns) != len(df.columns.unique()):
             print("ERROR: Duplicate column name in data to be written")
@@ -306,4 +308,5 @@ class IRRepertoire(Repertoire):
             if not self.repositoryInsertRepertoire(r):
                 return False
     
+        # If we got here, we are DONE!
         return True
