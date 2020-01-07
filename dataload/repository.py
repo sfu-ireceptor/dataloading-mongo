@@ -38,9 +38,10 @@ class Repository:
             print("Info: Connecting to Mongo with no username/password on '%s:%s'" %
                 (self.host, self.port))
         else:
-            uri = 'mongodb://%s:%s@%s:%s' % (self.username, self.password, self.host, self.port)
+            uri = 'mongodb://%s:%s@%s:%s' % (self.username, self.password,
+                                             self.host, self.port)
             print("Info: Connecting to Mongo as user '%s' on '%s:%s'" %
-                (self.username, self.host, self.port))
+                  (self.username, self.host, self.port))
 
         # Connect to the Mongo server and return if not able to connect.
         try:
@@ -70,10 +71,10 @@ class Repository:
                     % (self.host, self.port, str(err)))
             return None
         except StopIteration:
-            # This exception is not an error. The cursor.next() raises this exception when it has no more
-            # data in the cursor. In this case, this would mean that the database is empty,
-            # but the database was opened and the query worked. So this is not an error case as it
-            # OK to have an empty database.
+            # This exception is not an error. The cursor.next() raises this exception
+            # when it has no more data in the cursor. In this case, this would mean
+            # that the database is empty, but the database was opened and the query
+            # worked. So this is not an error case as it OK to have an empty database.
             pass
 
 
@@ -82,11 +83,11 @@ class Repository:
         self.repertoire = self.mongo_db[self.repertoire_collection]
         self.rearrangement = self.mongo_db[self.rearrangement_collection]
 
-    # Look for the file_name given in the samples collection in the file_field field in
-    # the repository. Return an array of integers which are the sample IDs where the
-    # file_name was found in the field field_name.
-    def getRepertoireIDs(self, repertoire_field, file_field, file_name):
-        query =  {file_field: {'$regex': file_name}}
+    # Look for the search_name given in the repertoire collection in the search_field in
+    # the repository. Return an array of IDs which are the IDs from repertoitre_field
+    # where the search_name was found in the field search_field.
+    def getRepertoireIDs(self, repertoire_field, search_field, search_name):
+        query =  {search_field: {'$regex': search_name}}
         repertoire_cursor = self.repertoire.find(query, {repertoire_field: 1})
         idarray = [reperotire[repertoire_field] for reperotire in repertoire_cursor]
         return idarray
@@ -134,20 +135,20 @@ class Repository:
         if empty:
             # If the cursor is empty, then this is the first record in the repertoire
             # collection. So we set the repertoire ID to 1.
-            seq = 1
+            rep_id = 1
         else:
             # If it isn't empty, check the type... If it is an integer, generate a 
             # new unique identifier and use that for the record.
-            seq = record["_id"]
-            if not type(seq) is int:
-                print("ERROR: Invalid ID for samples found, expecting an integer, got " + str(seq))
+            rep_id = record["_id"]
+            if not type(rep_id) is int:
+                print("ERROR: Invalid ID for samples found, expecting an integer, got " + str(rep_id))
                 print("ERROR: DB may be corrupt")
                 return False
             else:
-                seq = seq + 1
+                rep_id = rep_id + 1
 
         # Add the ID to the record we are writing.
-        doc["_id"] = seq
+        doc["_id"] = rep_id
 
         # Write the record and return
         try:
