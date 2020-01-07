@@ -54,17 +54,11 @@ class Repertoire(Parser):
 
         if self.verbose():
             if pd.isnull(value):
-                print("Warning: Field %s type ERROR, null value, field is non-nullable"%
+                print("Info: Field %s type ERROR, null value, field is non-nullable"%
                       (key))
             elif not valid_type:
-                print("Warning: Field %s type ERROR, expected %s, got %s"%
+                print("Info: Field %s type ERROR, expected %s, got %s"%
                       (key, field_type, str(type(value))))
-                #print(key)
-                #print(field_type)
-                #print(field_nullable)
-                #print(value)
-                #print(type(value))
-
         return valid_type
 
     # Hide the impementation of the repository from the Repertoire subclasses.
