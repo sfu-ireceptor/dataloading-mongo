@@ -201,8 +201,10 @@ class AIRRRepertoire(Repertoire):
         # that was read in. That is, all of the non MiAIRR fileds that exist
         # are stored in the repository. So if the provided file has lots of extra fields
         # they will exist in the repository.
+        # TODO: Ensure that all records are written as the correct type for the repository.
         for r in repertoire_list:
             if not self.repositoryInsertRepertoire(r):
                 return False
 
+        # If we made it here we are DONE!
         return True

@@ -304,6 +304,8 @@ class IRRepertoire(Repertoire):
         # that was read in the CSV file. That is, all of the non MiAIRR fileds that exist
         # are stored in the repository. So if the provided CSV file has lots of extra fields
         # they will exist in the repository.
+        # TODO: Check the types of all of the fields to ensure that they are the correct type
+        # for the repository.
         for r in record_list:
             if not self.repositoryInsertRepertoire(r):
                 return False
