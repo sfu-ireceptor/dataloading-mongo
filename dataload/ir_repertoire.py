@@ -210,8 +210,9 @@ class IRRepertoire(Repertoire):
             if not field_type in ["ontology", "array"]:
                 value = column_data[0]
                 if not self.validAIRRFieldType(curation_file_column, value, False):
-                    print("Info: Found type mismatch in column %s (%s, %s, %s)"%
-                          (curation_file_column, field_type, str(value), type(value)))
+                    if self.verbose():
+                        print("Info: Found type mismatch in column %s (%s, %s, %s)"%
+                              (curation_file_column, field_type, str(value), type(value)))
                     bad_columns.append(curation_file_column)
 
         # This probably shouldn't occur, given we force the types at data load.
@@ -220,16 +221,19 @@ class IRRepertoire(Repertoire):
             field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type",
                                            self.getAIRRMap().getRepertoireClass())
             if field_type == "string":
-                print("Info: Trying to force column type to string for %s"%(column))
+                if self.verbose():
+                    print("Info: Trying to force column type to string for %s"%(column))
                 df[column] = df[column].apply(str)
                 value = df.at[0, column]
                 if not self.validAIRRFieldType(column, value, False):
                     print("ERROR: Unable to force column type to string for %s"%(column))
                     return False
-                print("Info: Succesfully forced column type to string for %s"%(column))
+                if self.verbose():
+                    print("Info: Succesfully forced column type to string for %s"%(column))
             else:
-                print("Warning: Unable to force column type for %s to %s"%
-                      (column, field_type))
+                value = df.at[0, column]
+                print("Warning: Unable to force column type for %s from %s to %s"%
+                      (column, type(value), field_type))
             
         # Change the name of the columns to reflect the repository's naming rather
         # than the name in the input file.
@@ -304,15 +308,26 @@ class IRRepertoire(Repertoire):
         # that was read in the CSV file. That is, all of the non MiAIRR fileds that exist
         # are stored in the repository. So if the provided CSV file has lots of extra fields
         # they will exist in the repository.
-        # TODO: Check the types of all of the fields to ensure that they are the correct type
-        # for the repository.
         rep_class = self.getAIRRMap().getIRRepertoireClass()
         for r in record_list:
+            # Create a temporary dict() for the converted record
             converted_record = dict()
+            # Traverse all of the fields in the record and do a type check and converion
+            # to use the repository type as required. We use the repository_tag as the
+            # field to look things up in because we have already converted the field names
+            # to the repository field names (we did that as a pandas data frame conversion.
             for key, value in r.items():
-                rep_value = self.valueToRepository(key, repository_tag, value, rep_class)
+                # Catch type errors. The method throws errors for things it thinks are not
+                # recoverable and should cause the record to not be written...
+                try:
+                    rep_value = self.valueToRepository(key, repository_tag, value, rep_class)
+                except TypeError as error:
+                    print("ERROR: %s"%(error))
+                    return False
+                # If the conversion worked for this key, store the converted value
                 converted_record[key] = rep_value
 
+            # Write it to the repository, return on failure.
             if not self.repositoryInsertRepertoire(converted_record):
                 return False
     
