@@ -124,6 +124,7 @@ class Parser:
     def valueToRepository(self, field, field_column, value, map_class=None):
         # Define the columns to use for the mappings
         airr_type_tag = "airr_type"
+        airr_nullable_tag = "airr_nullable"
         repository_type_tag = "ir_repository_type"
 
         # Get the types of the fields, both the AIRR type and the repository type
@@ -131,9 +132,19 @@ class Parser:
                                                        airr_type_tag, map_class)
         repository_field_type = self.getAIRRMap().getMapping(field, field_column,
                                                              repository_type_tag, map_class)
+        field_nullable = self.getAIRRMap().getMapping(field, field_column,
+                                                      airr_nullable_tag, map_class)
 
-        # Do the conversion for the value
+        # Check for a null value on a nullable field, if it happens this is an error
+        # so raise an exception. Note if we could not find a mapping for the
+        # field in the nullable mapping column then this is not an error. No nullable
+        # mapping means we don't know if it is nullable or not, so we assume it is.
+        if value is None and not field_nullable is None and not field_nullable:
+            raise TypeError("Null value for AIRR non nullable field " + field)
+
+        # Do a default the conversion for the value
         rep_value = value
+
         if repository_field_type == "string":
             # We don't want null strings, we want empty strings.
             if value is None:
@@ -141,7 +152,21 @@ class Parser:
             else:
                 rep_value = str(value)
         elif repository_field_type == "boolean":
-            rep_value = bool(value)
+            # Even though python does not allow boolean values to be null
+            # (e.g. bool(None) == False), JSON and data repositories often do,
+            # so in this case we don't want to return False for a None value. 
+            # We want to return None...
+            if value is None:
+                rep_value = None
+            elif isinstance(value,(str)):
+                if value in ["T","t","True","TRUE","true"]:
+                    rep_value = True
+                elif value in ["F","f","False","FALSE","false"]:
+                    rep_value = False
+                else:
+                    raise TypeError("Invalid boolean value " + value + " for field " + field)
+            else:
+                rep_value = bool(value)
         elif repository_field_type == "integer":
             # We allow integers to be null, as we don't know what to replace them
             # with.
@@ -150,11 +175,16 @@ class Parser:
             else:
                 rep_value = int(value)
         elif repository_field_type == "number":
-            rep_value = float(value)
+            # We allow floats to be null, as we don't know what to replace them
+            # with.
+            if value is None:
+                rep_value = None
+            else:
+                rep_value = float(value)
         else:
             if self.verbose():
-                print("Info: Unable to convert field %s (%s -> %s), no conversion done"%
-                      (field, airr_field_type, repository_field_type))
+                print("Info: Unable to convert field %s = %s (%s, %s, %s), not converted"%
+                      (field, value, airr_field_type, repository_field_type, type(value)))
          
         #print("Info: Converting field %s (%s -> %s)"%(field, value, rep_value))
         return rep_value
