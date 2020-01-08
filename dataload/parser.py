@@ -92,6 +92,62 @@ class Parser:
     def getAIRRMap(self):
        return self.airr_map
 
+
+    # Utility function to map a key of a specific value to the correct field for
+    # the repository. Possible to limit the mapping to a class in the mapping.
+    def fieldToRepository(self, field, map_class=None):
+        # Define the columns to use for the mappings
+        airr_tag = "airr"
+
+        # Check to see if the field is in the AIRR mapping, if not warn.
+        airr_field = self.getAIRRMap().getMapping(field, airr_tag, airr_tag, map_class)
+        if airr_field is None:
+            print("Warning: Could not find %s in AIRR mapping"%(field))
+
+        # Check to see if the field can be mapped to a field in the repository, if not warn.
+        repo_field = self.getAIRRMap().getMapping(field, airr_tag, self.repository_tag,
+                                                  map_class)
+        if repo_field is None:
+            repo_field = field
+            print("Warning: Could not find repository mapping for %s, storing as is"%(field))
+
+        # If we are verbose, tell about the mapping...
+        if self.verbose():
+            print("Info: Mapping %s => %s" % (field, repo_field))
+
+        # Return the mapping.
+        return repo_field
+
+
+    # Utility function to map a key of a specific value to the correct type for
+    # the repository. 
+    def valueToRepository(self, field, field_column, value, map_class=None):
+        # Define the columns to use for the mappings
+        airr_type_tag = "airr_type"
+        repository_type_tag = "ir_repository_type"
+
+        # Get the types of the fields, both the AIRR type and the repository type
+        airr_field_type = self.getAIRRMap().getMapping(field, field_column,
+                                                       airr_type_tag, map_class)
+        repository_field_type = self.getAIRRMap().getMapping(field, field_column,
+                                                             repository_type_tag, map_class)
+
+        # Do the conversion for the value
+        rep_value = value
+        if repository_field_type == "string":
+            rep_value = str(value)
+        elif repository_field_type == "boolean":
+            rep_value = bool(value)
+        elif repository_field_type == "integer":
+            rep_value = int(value)
+        elif repository_field_type == "number":
+            rep_value = float(value)
+        else:
+            print("Warning: Unable to convert field %s (%s -> %s)"%
+                  (field, airr_field_type, repository_field_type))
+         
+        return rep_value
+
     #####################################################################################
     # Hide the repository implementation from the Parser subclasses.
     #####################################################################################
