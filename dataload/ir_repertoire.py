@@ -306,8 +306,14 @@ class IRRepertoire(Repertoire):
         # they will exist in the repository.
         # TODO: Check the types of all of the fields to ensure that they are the correct type
         # for the repository.
+        rep_class = self.getAIRRMap().getIRRepertoireClass()
         for r in record_list:
-            if not self.repositoryInsertRepertoire(r):
+            converted_record = dict()
+            for key, value in r.items():
+                rep_value = self.valueToRepository(key, repository_tag, value, rep_class)
+                converted_record[key] = rep_value
+
+            if not self.repositoryInsertRepertoire(converted_record):
                 return False
     
         # If we got here, we are DONE!
