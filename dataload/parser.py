@@ -173,7 +173,39 @@ class Parser:
             if value is None:
                 rep_value = None
             else:
-                rep_value = int(value)
+                # This is a complex case... We are converting a boolean AIRR field to
+                # an integer representation of that boolean value. The problem is that
+                # on loading the boolean AIRR field may be represented as an integer (0/1),
+                # a string (T/True/TRUE/true), or a boolean (True/False). We want to handle 
+                # all of these cases.
+                if airr_field_type == "boolean":
+                    if isinstance(value, (int)):
+                        if value == 1: rep_value = 1
+                        elif value == 0: rep_value = 0
+                        else:
+                            raise TypeError("Invalid boolean value " + str(value) +
+                                            " for field " + field)
+                    elif isinstance(value, (str)):
+                        if value in ["T","t","True","TRUE","true"]:
+                            rep_value = 1
+                        elif value in ["F","f","False","FALSE","false"]:
+                            rep_value = 0
+                        else:
+                            raise TypeError("Invalid boolean value " + value +
+                                            " for field " + field)
+                    elif isinstance(value, (bool)):
+                        if value == True: rep_value = 1
+                        elif value == False: rep_value = 0
+                        else:
+                            raise TypeError("Invalid boolean value " + str(value) +
+                                            " for field " + field)
+                    else:
+                        raise TypeError("Invalid boolean value " + str(value) +
+                                            " for field " + field)
+
+                else:
+                    # This is the base case - we convert an integer to an integer...
+                    rep_value = int(value)
         elif repository_field_type == "number":
             # We allow floats to be null, as we don't know what to replace them
             # with.
