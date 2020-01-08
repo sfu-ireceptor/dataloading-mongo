@@ -135,17 +135,28 @@ class Parser:
         # Do the conversion for the value
         rep_value = value
         if repository_field_type == "string":
-            rep_value = str(value)
+            # We don't want null strings, we want empty strings.
+            if value is None:
+                rep_value = ""
+            else:
+                rep_value = str(value)
         elif repository_field_type == "boolean":
             rep_value = bool(value)
         elif repository_field_type == "integer":
-            rep_value = int(value)
+            # We allow integers to be null, as we don't know what to replace them
+            # with.
+            if value is None:
+                rep_value = None
+            else:
+                rep_value = int(value)
         elif repository_field_type == "number":
             rep_value = float(value)
         else:
-            print("Warning: Unable to convert field %s (%s -> %s)"%
-                  (field, airr_field_type, repository_field_type))
+            if self.verbose():
+                print("Info: Unable to convert field %s (%s -> %s), no conversion done"%
+                      (field, airr_field_type, repository_field_type))
          
+        #print("Info: Converting field %s (%s -> %s)"%(field, value, rep_value))
         return rep_value
 
     #####################################################################################
