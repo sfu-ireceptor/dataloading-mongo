@@ -79,9 +79,9 @@ class Repertoire(Parser):
         # Check to see if there are files in the file field. If not, then pring a warning
         # as we won't be able to link any rearrangements to this repertoire. We set an empty
         # array as we want to still insert the record with the following warning...
-        if file_names is None:
+        if file_names is None or file_names == "":
             print("Warning: Repertoire does not have any rearrangement files.")
-            print("ERROR:     Will not be able to link rearrangements to this repertoire")
+            print("Warning:     Will not be able to link rearrangements to this repertoire")
             idarray = []
         else:
             # Finally we search for and get a list of the repertoires that have the files.
