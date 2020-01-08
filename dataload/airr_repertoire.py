@@ -14,27 +14,6 @@ class AIRRRepertoire(Repertoire):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Repertoire.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository) 
 
-    def ir_maptorepository(self, field):
-        # Check to see if the field is in the AIRR mapping, if not warn.
-        airr_field = self.getAIRRMap().getMapping(field, "airr", "airr",
-                                                  self.getAIRRMap().getRepertoireClass())
-        if airr_field is None:
-            print("Warning: Could not find %s in AIRR mapping"%(field))
-
-        # Check to see if the field can be mapped to a field in the repository, if not warn.
-        repo_field = self.getAIRRMap().getMapping(field, "airr", self.getRepositoryTag(),
-                                                  self.getAIRRMap().getRepertoireClass())
-        if repo_field is None:
-            repo_field = field
-            print("Warning: Could not find repository mapping for %s, storing as is"%(field))
-
-        # If we are verbose, tell about the mapping...
-        if self.verbose():
-            print("Info: Mapping %s => %s" % (field, repo_field))
-
-        # Return the mapping.
-        return repo_field
-
     # This method is a recursive function that takes a key and value in a JSON
     # object and recursively flattens the values adding each element to the dictionary 
     # as it finds a "leaf node". Note a leaf node in general is a key value pair where
@@ -43,16 +22,22 @@ class AIRRRepertoire(Repertoire):
     # a leaf node is a bit complex and specialized based on both the AIRR spec and how
     # they are represented in the iReceptor repository. 
     def ir_flatten(self, key, value, dictionary):
+        rep_class = self.getAIRRMap().getRepertoireClass()
+        column = "airr"
         # If it is an integer, float, or bool we just use the key value pair.
         if isinstance(value, (int, float, bool)):
             if self.validAIRRFieldType(key, value, False):
-                dictionary[self.ir_maptorepository(key)] = value
+                rep_key = self.fieldToRepository(key, rep_class)
+                rep_value = self.valueToRepository(key, column, value, rep_class)
+                dictionary[rep_key] = rep_value
             else:
                 raise TypeError("AIRR type error for " + key)
         # If it is a string we just use the key value pair.
         elif isinstance(value, str):
             if self.validAIRRFieldType(key, value, False):
-                dictionary[self.ir_maptorepository(key)] = value
+                rep_key = self.fieldToRepository(key, rep_class)
+                rep_value = self.valueToRepository(key, column, value, rep_class)
+                dictionary[rep_key] = rep_value
             else:
                 raise TypeError("AIRR type error for " + key)
         elif isinstance(value, dict):
@@ -64,34 +49,47 @@ class AIRRRepertoire(Repertoire):
             if type_info == "ontology":
                 # TODO: need to implement type checking on ontology fields.
                 #if self.validAIRRFieldType(key, value, False):
-                #    dictionary[self.ir_maptorepository(key)] = value['value']
+                #    dictionary[repository_key] = value['value']
                 #else:
                 #    raise TypeError(key)
-                dictionary[self.ir_maptorepository(key)] = value['value']
-                dictionary[self.ir_maptorepository(key+"_value")] = value['value']
-                dictionary[self.ir_maptorepository(key+"_id")] = value['id']
+                #rep_key = self.fieldToRepository(key, rep_class)
+                #rep_value = self.valueToRepository(key, column, value['value'], rep_class)
+                #dictionary[rep_key] = rep_value
+                value_key = key+"_value"
+                id_key = key+"_id"
+                rep_value = self.valueToRepository(value_key, column,
+                                                   value['value'], rep_class)
+                dictionary[self.fieldToRepository(value_key,rep_class)] = rep_value
+                rep_value = self.valueToRepository(id_key, column, value['id'], rep_class)
+                dictionary[self.fieldToRepository(id_key, rep_class)] = rep_value
             else:
                 for sub_key, sub_value in value.items():
                     self.ir_flatten(sub_key, sub_value, dictionary)
         elif isinstance(value, list):
-            # There are currently three possible list  situations in the spec. 
-            # - keywords_study: This is an array of strings that should be concatenated
+            # There are currently three possible list situations in the spec. 
+            # - keywords_study, data_processing_files: An array of strings
+            #   that should be concatenated
             # - diagnosis: We only support one per repertoire. Warn and continue with 1st
             # - pcr_target: We only support one per repertoire. Warn and continue with 1st
-            # - data_processing: We only support one per repertoire. Warn and continue with 1st
+            # - data_processing: We only support one per repertoire. Warn and continue
+            #   with 1st data processing
 
-            # We flatten this explicitly as a special case. We want to store the list of strings.
+            # We flatten this explicitly as a special case. We want to store the list
+            # of strings.
+            #if key == "keywords_study" or "key" == "data_processing_files":
             if key == "keywords_study":
                 # TODO: Need to implement type checking on this field...
                 #if self.validAIRRFieldType(key, value, False):
-                #    dictionary[self.ir_maptorepository(key)] = value
+                #    dictionary[repository_key] = value
                 #else:
                 #    raise TypeError(key)
-                dictionary[self.ir_maptorepository(key)] = value
+                rep_key = self.fieldToRepository(key, rep_class)
+                rep_value = self.valueToRepository(key, column, value, rep_class)
+                dictionary[rep_key] = rep_value
             else:
                 # If we are handling a data processing element list, we have a hint as 
-                # to which element is the most important, as we can use the "primary_annotation"
-                # field to determine which one to use.
+                # to which element is the most important, as we can use the
+                # "primary_annotation" field to determine which one to use.
                 if key == "data_processing":
                     # Warn if we found more than one, as we only store one per repertoire. If
                     # you have more than one and want to store the rearrangements separately
@@ -120,7 +118,8 @@ class AIRRRepertoire(Repertoire):
                     # element in the array and ignore the rest. This is a fairly substantial
                     # issue and MAYBE it should be a FATAL ERROR???
                     if len(value) > 1:
-                        print("Warning: Found a repertoire list for %s > 1 (%d)."%(key, len(value)))
+                        print("Warning: Found a repertoire list for %s > 1 (%d)."%
+                              (key, len(value)))
                         print("Warning: iReceptor only supports a single array, using first instance.")
                     for sub_key, sub_value in value[0].items():
                         self.ir_flatten(sub_key, sub_value, dictionary)
@@ -137,7 +136,8 @@ class AIRRRepertoire(Repertoire):
         try:
             data = airr.load_repertoire(filename, validate=True)
         except airr.ValidationError as err:
-            print("ERROR: AIRR repertoire validation failed for file %s - %s" % (filename, err))
+            print("ERROR: AIRR repertoire validation failed for file %s - %s" %
+                  (filename, err))
             return False
 
         # Get the fields to use for finding repertoire IDs, either using those IDs
