@@ -62,10 +62,10 @@ class AIRR_TSV(Rearrangement):
         # Get the AIRR Map object for this class (for convenience).
         airr_map = self.getAIRRMap()
 
-        # Set the tag for the repository that we are using. Note this should
-        # be refactored so that it is a parameter provided so that we can use
-        # multiple repositories.
+        # Set the tag for the repository that we are using.
         repository_tag = self.getRepositoryTag()
+        # Set the tag for the iReceptor identifier (ir_id).
+        ireceptor_tag = self.getiReceptorTag()
 
         # Get the fields to use for finding repertoire IDs, either using those IDs
         # directly or by looking for a repertoire ID based on a rearrangement file
@@ -106,7 +106,7 @@ class AIRR_TSV(Rearrangement):
         # Get the repertoire ID of the data we are processing. We use the rearrangement
         # file name field in the repository to match the file at the moment, but this
         # may not be the most robust method.
-        value = airr_map.getMapping(rearrangement_file_field, "ir_id", repository_tag)
+        value = airr_map.getMapping(rearrangement_file_field, ireceptor_tag, repository_tag)
         idarray = []
         if value is None:
             print("ERROR: Could not find link field %s in repository %s"
@@ -125,20 +125,21 @@ class AIRR_TSV(Rearrangement):
         # Check to see that we found it and that we only found one. Fail if not.
         num_repertoires = len(idarray)
         if num_repertoires == 0:
-            print("ERROR: No repertoire could be associated with annotation file %s."%(filename))
+            print("ERROR: No repertoire could be associated with annotation file %s."%
+                  (filename))
             return False
         elif num_repertoires > 1:
             print("ERROR: More than one repertoire (%d) found using file %s"%
                   (num_repertoires, filename))
-            print("ERROR: Unique assignment of annotations to a single repertoire are required.")
+            print("ERROR: Assignment of annotations to a single repertoire is required.")
             return False
             
         # We found a unique repertoire, keep track of it for later. 
         repertoire_link_id = idarray[0]
 
-        # Extract the fields that are of interest for this file. Essentiall all non null fields
-        # in the file. This is a boolean array that is T everywhere there is a notnull field in
-        # the column of interest.
+        # Extract the fields that are of interest for this file. Essentiall all non null
+        # fields in the file. This is a boolean array that is T everywhere there is a
+        #  notnull field in the column of interest.
         map_column = airr_map.getRearrangementMapColumn(filemap_tag)
         fields_of_interest = map_column.notnull()
 
@@ -153,13 +154,13 @@ class AIRR_TSV(Rearrangement):
         igblastColumns = []
         columnMapping = {}
         if self.verbose():
-            print("Info: Dumping expected " + self.getAnnotationTool() + "(" + filemap_tag +
-                  ") to repository mapping")
+            print("Info: Dumping expected %s (%s) to repository mapping"%
+                  (self.getAnnotationTool(),filemap_tag))
         for index, row in file_fields.iterrows():
             if self.verbose():
-                print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]))
-            # If the repository column has a value for the field in the file, track the field
-            # from both the file and repository side.
+                print("Info:    %s -> %s"%(str(row[filemap_tag]), str(row[repository_tag])))
+            # If the repository column has a value for the field in the file, track the 
+            # field from both the file and repository side.
             if not pd.isnull(row[repository_tag]):
                 igblastColumns.append(row[filemap_tag])
                 columnMapping[row[filemap_tag]] = row[repository_tag]
@@ -173,13 +174,14 @@ class AIRR_TSV(Rearrangement):
         for airr_field in airr_reader.fields:
             if airr_field in columnMapping:
                 if self.verbose():
-                    print("Info: Mapping " + self.getAnnotationTool() + " field in file: " +
-                          airr_field + " -> " + columnMapping[airr_field])
+                    print("Info: Mapping %s field in file: %s -> %s"%
+                          (self.getAnnotationTool(), airr_field, columnMapping[airr_field]))
                 finalMapping[airr_field] = columnMapping[airr_field]
             else:
                 if self.verbose():
-                    print("Info: No mapping for input " + self.getAnnotationTool() + " field "
-                          + airr_field + ", adding to repository without mapping.")
+                    print("Info: No mapping for input " + self.getAnnotationTool() +
+                          " field " + airr_field +
+                          ", adding to repository without mapping.")
 
         # Determine if we are missing any repository columns from the input data.
         for igblast_column, mongo_column in columnMapping.items():
@@ -202,10 +204,10 @@ class AIRR_TSV(Rearrangement):
 
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings.
-            junction_aa = airr_map.getMapping("junction_aa", "ir_id", repository_tag)
-            ir_substring = airr_map.getMapping("ir_substring", "ir_id", repository_tag)
+            junction_aa = airr_map.getMapping("junction_aa", ireceptor_tag, repository_tag)
+            ir_substring = airr_map.getMapping("ir_substring", ireceptor_tag, repository_tag)
             ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length",
-                                                        "ir_id", repository_tag)
+                                                        ireceptor_tag, repository_tag)
             if junction_aa in airr_df:
                 if self.verbose():
                     print("Info: Retrieving junction amino acids and building substrings...",
@@ -221,7 +223,7 @@ class AIRR_TSV(Rearrangement):
             # Check to see if we have a productive field (later versions of AIRR TSV). If
             # so conver to our repositories boolean storage mechanism. Similarly if the
             # older AIRR TSV version of the functional field is present, handle that as well.
-            productive = airr_map.getMapping("productive", "ir_id", repository_tag)
+            productive = airr_map.getMapping("productive", ireceptor_tag, repository_tag)
             if productive in airr_df:
                 airr_df[productive] = airr_df[productive].apply(self.functional_boolean)
             elif 'functional' in airr_df:
@@ -230,39 +232,50 @@ class AIRR_TSV(Rearrangement):
             # We need to look up the "known parameter" from an iReceptor perspective (the field
             # name in the "ir_id" column mapping and map that to the correct field name for the
             # repository we are writing to.
-            v_call = airr_map.getMapping("v_call", "ir_id", repository_tag)
-            d_call = airr_map.getMapping("d_call", "ir_id", repository_tag)
-            j_call = airr_map.getMapping("j_call", "ir_id", repository_tag)
-            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene", "ir_id", repository_tag)
-            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene", "ir_id", repository_tag)
-            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene", "ir_id", repository_tag)
-            ir_vgene_family = airr_map.getMapping("ir_vgene_family", "ir_id", repository_tag)
-            ir_dgene_family = airr_map.getMapping("ir_dgene_family", "ir_id", repository_tag)
-            ir_jgene_family = airr_map.getMapping("ir_jgene_family", "ir_id", repository_tag)
+            v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
+            d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
+            j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
+            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene",
+                                                 ireceptor_tag, repository_tag)
+            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene",
+                                                 ireceptor_tag, repository_tag)
+            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene",
+                                                 ireceptor_tag, repository_tag)
+            ir_vgene_family = airr_map.getMapping("ir_vgene_family",
+                                                 ireceptor_tag, repository_tag)
+            ir_dgene_family = airr_map.getMapping("ir_dgene_family",
+                                                 ireceptor_tag, repository_tag)
+            ir_jgene_family = airr_map.getMapping("ir_jgene_family",
+                                                 ireceptor_tag, repository_tag)
 
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
             self.processGene(airr_df, v_call, v_call, ir_vgene_gene, ir_vgene_family)
             self.processGene(airr_df, j_call, j_call, ir_jgene_gene, ir_jgene_family)
             self.processGene(airr_df, d_call, d_call, ir_dgene_gene, ir_dgene_family)
-            # If we don't already have a locus (that is the data file didn't provide one) then
-            # calculate the locus based on the v_call array.
-            locus = airr_map.getMapping("locus", "ir_id", repository_tag)
+            # If we don't already have a locus (that is the data file didn't provide one) 
+            # then calculate the locus based on the v_call array.
+            locus = airr_map.getMapping("locus", ireceptor_tag, repository_tag)
             if not locus in airr_df:
                 airr_df[locus] = airr_df[v_call].apply(Rearrangement.getLocus)
 
             # Keep track of the reperotire id so can link each rearrangement to a repertoire
             rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
-                                                               "ir_id", repository_tag)
+                                                               ireceptor_tag, repository_tag)
             airr_df[rep_rearrangement_link_field]=repertoire_link_id
 
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
-            ir_created_at = airr_map.getMapping("ir_created_at", "ir_id", repository_tag)
-            ir_updated_at = airr_map.getMapping("ir_updated_at", "ir_id", repository_tag)
+            ir_created_at = airr_map.getMapping("ir_created_at",
+                                                 ireceptor_tag, repository_tag)
+            ir_updated_at = airr_map.getMapping("ir_updated_at",
+                                                 ireceptor_tag, repository_tag)
             airr_df[ir_created_at] = now_str
             airr_df[ir_updated_at] = now_str
+
+            # Transform the data frame so that it meets the repository type requirements
+            self.mapToRepositoryType(airr_df)
 
             # Insert the chunk of records into Mongo.
             num_records = len(airr_df)
