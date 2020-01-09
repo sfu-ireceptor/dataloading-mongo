@@ -20,6 +20,9 @@ class Parser:
         # The tag in the map file to use for the repository
         self.repository_tag = repository_tag
 
+        # The tag in the map file to use for iReceptor specific fields
+        self.ireceptor_tag = "ir_id" 
+
         # The size of each data chunk to load in the parser, when loading large files.
         self.repository_chunk = repository_chunk
 
@@ -78,6 +81,9 @@ class Parser:
     # Utility method to return the tag used by the mapping for the repository.
     def getRepositoryTag(self):
         return self.repository_tag
+    # Utility method to return the tag used by the mapping for the repository.
+    def getiReceptorTag(self):
+        return self.ireceptor_tag
 
     # Utility method to return the size of the data set chunks to load in
     # the repository. 
@@ -117,6 +123,37 @@ class Parser:
 
         # Return the mapping.
         return repo_field
+
+    @staticmethod
+    def str_to_bool(string_value):
+        if not isinstance(string_value, (str)):
+            raise TypeError("Can't convert non-string value " + str(string_value))
+        elif string_value in ["T","t","True","TRUE","true"]:
+            return True
+        elif string_value in ["F","f","False","FALSE","false"]:
+            return False
+        # If we get here we failed...
+        raise TypeError("Can't convert string " + string_value + " to boolean")
+
+    @staticmethod
+    def int_to_bool(int_value):
+        if not isinstance(int_value, (int)):
+            raise TypeError("Can't convert non-integer value " + str(int_value))
+        elif int_value == 1:
+            return True
+        elif int_value == 0:
+            return False
+        # If we get here we failed...
+        raise TypeError("Can't convert integer " + str(int_value) + " to boolean")
+ 
+    @staticmethod
+    def float_to_str(float_value):
+        if not isinstance(float_value, (float)):
+            raise TypeError("Can't convert non-float value " + str(float_value))
+        elif pd.isnull(float_value):
+            return ""
+        else:
+            return str(float_value)
 
 
     # Utility function to map a key of a specific value to the correct type for
@@ -159,12 +196,15 @@ class Parser:
             if value is None:
                 rep_value = None
             elif isinstance(value,(str)):
-                if value in ["T","t","True","TRUE","true"]:
-                    rep_value = True
-                elif value in ["F","f","False","FALSE","false"]:
-                    rep_value = False
-                else:
-                    raise TypeError("Invalid boolean value " + value + " for field " + field)
+                rep_value = Parser.str_to_bool(value)
+                #if value in ["T","t","True","TRUE","true"]:
+                #    rep_value = True
+                #elif value in ["F","f","False","FALSE","false"]:
+                #    rep_value = False
+                #else:
+                #    raise TypeError("Invalid boolean value " + value + " for field " + field)
+            elif isinstance(value,(int)):
+                rep_value = Parser.int_to_bool(value)
             else:
                 rep_value = bool(value)
         elif repository_field_type == "integer":
