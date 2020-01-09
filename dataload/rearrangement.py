@@ -7,6 +7,7 @@ from datetime import timezone
 import re
 import os
 import pandas as pd
+import numpy as np
 from parser import Parser
 
 
@@ -196,6 +197,45 @@ class Rearrangement(Parser):
 
     def readScratchDfNoHeader(self, fileName, sep=','):
         return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False, header=None)
+
+    # Method to map a dataframe to the repository type mapping.
+    def mapToRepositoryType(self, df):
+        airr_type_tag = "airr_type"
+        repo_type_tag = "ir_repository_type"
+        repository_tag = self.getRepositoryTag()
+
+        for (column, column_data) in df.iteritems():
+            airr_type = self.airr_map.getMapping(column, repository_tag, airr_type_tag)
+            repo_type = self.airr_map.getMapping(column, repository_tag, repo_type_tag)
+            print("Info: Trying to map column %s to repository (%s, %s, %s)"%
+                  (column, airr_type, repo_type, type(column_data[0])))
+            if repo_type == "boolean":
+                if isinstance(column_data[0],(bool, np.bool_)):
+                    continue
+                elif isinstance(column_data[0], (str)):
+                    df[column]= column_data.apply(Parser.str_to_bool)
+                    print("Info: Mapped column %s to repository (%s, %s, %s)"%
+                          (column, airr_type, repo_type, type(df[column][0])))
+                elif isinstance(column_data[0], (int)):
+                    df[column] = column_data.apply(Parser.int_to_bool)
+                    print("Info: Mapped column %s to repository (%s, %s, %s)"%
+                          (column, airr_type, repo_type, type(df[column][0])))
+            if repo_type == "string":
+                if isinstance(column_data[0],(str)):
+                    continue
+                elif isinstance(column_data[0],(int)): 
+                    df[column] = column_data.apply(str)
+                    print("Info: Mapped integer column %s to repository (%s, %s, %s)"%
+                          (column, airr_type, repo_type, type(df[column][0])))
+                    print("Info: Mapped column %s to repository (%s, %s, %s)"%
+                          (column, airr_type, repo_type, type(df[column][1])))
+                elif isinstance(column_data[0],(np.float64)): 
+                    df[column] = column_data.apply(Parser.float_to_str)
+                    print("Info: Mapped float column %s to repository (%s, %s, %s)"%
+                          (column, airr_type, repo_type, type(df[column][0])))
+                    print("Info: Mapped column %s to repository (%s, %s, %s)"%
+                          (column, airr_type, repo_type, type(df[column][1])))
+                
 
     #####################################################################################
     # Hide the repository implementation from the Rearrangement subclasses.
