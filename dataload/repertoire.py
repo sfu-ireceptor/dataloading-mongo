@@ -63,7 +63,7 @@ class Repertoire(Parser):
 
     # Hide the impementation of the repository from the Repertoire subclasses.
     # The subclasses don't ask much of the repository, just insert a single
-    # JSON document at a time.
+    # JSON document at a time. Returns a record_id > 0 on success, -1 on failure
     def repositoryInsertRepertoire( self, json_document ):
     
         # Check to see if the repertoire already exists. We do this by using
@@ -73,7 +73,14 @@ class Repertoire(Parser):
         rearrangement_file_field = self.getRearrangementFileField()
         # Then get the repository field
         repository_field = self.getAIRRMap().getMapping(rearrangement_file_field,
-                                                        "ir_id", self.getRepositoryTag())
+                                                        self.getiReceptorTag(),
+                                                        self.getRepositoryTag())
+        # Also get the field that links repertoires to rearrangements
+        link_field = self.getRepertoireLinkIDField()
+        # Map it to a repository field
+        link_repository_field = self.getAIRRMap().getMapping(link_field,
+                                                             self.getiReceptorTag(),
+                                                             self.getRepositoryTag())
         # Then get the actual files that belong to this repertoire.
         file_names = json_document[repository_field]
         # Check to see if there are files in the file field. If not, then pring a warning
@@ -110,13 +117,13 @@ class Repertoire(Parser):
             print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
             print("ERROR:     File field %s contains rearrangement files %s"%
                   (rearrangement_file_field, file_names))
-            print("ERROR:     Files found in record %s"%(str(idarray)))
+            print("ERROR:     Files found in records with record IDs %s"%(str(idarray)))
             return False
 
-        # Try to write the record and return True/False as appropriate.
-        insert_ok = self.repository.insertRepertoire(json_document)
-        if insert_ok and self.verbose:
-            print("Info: Writing repertoire record <%s, %s, %s>" %
+        # Try to write the record and return record_id as appropriate.
+        record_id = self.repository.insertRepertoire(json_document, link_repository_field)
+        if record_id > 0 and self.verbose:
+            print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
                   (study, sample, file_names))
 
-        return insert_ok
+        return record_id
