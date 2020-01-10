@@ -187,6 +187,9 @@ class IMGT(Rearrangement):
         # look up into the columns of the AIRR Mapping that we are using.
         filemap_tag = self.getFileMapping()
 
+        # Set the tag for the iReceptor ID that we use.
+        ireceptor_tag = self.getiReceptorTag()
+
         # Set the tag for the calculation flag mapping that we are using. Ths is essentially
         # the look up into the columns of the AIRR Mapping that we are using for this.
         calculate_tag = self.imgt_calculate_map
@@ -233,7 +236,7 @@ class IMGT(Rearrangement):
             return False
 
         # Get the repertoire ID 
-        reperotire_link_id = idarray[0]
+        repertoire_link_id = idarray[0]
 
         # Open the tar file, extract the data, and close the tarfile. 
         # This leaves us with a folder with all of the individual vQUest
@@ -373,12 +376,20 @@ class IMGT(Rearrangement):
             print("Info: Cleaning up NULL columns", flush=True) 
         mongo_concat = mongo_concat.where((pd.notnull(mongo_concat)), "")
 
-        # The internal Mongo sample ID that links the sample to each sequence, constant
-        # for all sequences in this file.
-        rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
-                                                         "ir_id",
-                                                         repository_tag)
-        mongo_concat[rep_rearrangement_link_field] = reperotire_link_id
+        # Explicilty store a link for each rearrangement record in this repertoire to
+        # the appropriate record id for the repertoire object. Note this is NOT
+        # repertoire_id as repertoire_id is not sufficient to identify a unique row in 
+        # the repertoire collection in our repository.
+        repository_link_field = airr_map.getMapping(rearrangement_link_field,
+                                                    ireceptor_tag,
+                                                    repository_tag)
+        if not repository_link_field is None:
+            mongo_concat[repository_link_field] = repertoire_link_id
+        else:
+            print("ERROR: Could not get a repository link field for %s"%
+                  (rearrangement_link_field))
+            return False
+            
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
@@ -602,7 +613,6 @@ class IMGT(Rearrangement):
                         print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
                               (vquest_calc_fields[index], value), flush=True)
 
-
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
         now_str = Rearrangement.getDateTimeNowUTC()
@@ -636,7 +646,7 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
-        annotation_count = self.repositoryCountRearrangements(reperotire_link_id)
+        annotation_count = self.repositoryCountRearrangements(repertoire_link_id)
         if annotation_count == -1:
             print("ERROR: invalid annotation count (%d), write failed." %
                   (annotation_count))
@@ -648,7 +658,7 @@ class IMGT(Rearrangement):
                   (annotation_count, (t_end - t_start)), flush=True)
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
-        self.repositoryUpdateCount(reperotire_link_id, annotation_count)
+        self.repositoryUpdateCount(repertoire_link_id, annotation_count)
         t_end_full = time.perf_counter()
 
         # Inform on what we added and the total count for the this record.
