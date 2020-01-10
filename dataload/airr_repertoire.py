@@ -44,7 +44,8 @@ class AIRRRepertoire(Repertoire):
             # We need to handle the AIRR ontology terms. If we get one we want 
             # to use the value of the ontology term in our repository for now.
             # We also store the id and value separately as two non AIRR keywords.
-            type_info = self.getAIRRMap().getMapping(key, ireceptor_tag, "airr_type",
+            type_info = self.getAIRRMap().getMapping(key, self.getiReceptorTag(),
+                                                  "airr_type",
                                                   self.getAIRRMap().getRepertoireClass())
             if type_info == "ontology":
                 # TODO: need to implement type checking on ontology fields.
