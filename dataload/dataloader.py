@@ -268,6 +268,11 @@ if __name__ == "__main__":
         print("ERROR: unknown data type '{}'".format(options.type))
         sys.exit(4)
 
+    # Check for a valid parser.
+    if not parser.checkValidity():
+        print("ERROR: Parser not contructed correctly, exiting...")
+        sys.exit(4)
+
     # Override what the default annotation tool that the Parser subclass set by default.
     if not options.annotation_tool == "":
         parser.setAnnotationTool(options.annotation_tool)

@@ -80,11 +80,11 @@ class Parser:
         self.rearrangement_linkid_field = "ir_project_sample_id_rearrangement"
 
     # Sanity check for validity for the parser...
-    def sanityCheck():
-        if not airr_map.hasColumn(self.ireceptor_tag):
+    def checkValidity(self):
+        if not self.airr_map.hasColumn(self.ireceptor_tag):
             print("ERROR: Could not find required iReceptor column in AIRR Mapping")
             return False
-        if not airr_map.hasColumn(self.repository_tag):
+        if not self.airr_map.hasColumn(self.repository_tag):
             print("ERROR: Could not find required Repository column in AIRR Mapping")
             return False
         return True
