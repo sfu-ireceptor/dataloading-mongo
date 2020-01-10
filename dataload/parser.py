@@ -47,33 +47,57 @@ class Parser:
         # As a result, when we load a file of rearrangements we need to associate
         # each file with a repertoire. There are two ways of doing this.
         # 
-        # Firstly, each row in the Repertoire collection has a repertoire ID field
-        # (identified by a specific ir_id field) and it is this field 
+        # Firstly, each row in the Repertoire collection has a ID field
+        # (identified by a specific iReceptor field) and it is this field 
         # that must be unique across all of the repertoires in the repository. As
-        # a result, it is possible to specify a repertoire ID to which all of the
+        # a result, it is possible to specify a ID to which all of the
         # rearrangements in a specific file should be associated.
         #
         # Secondly, it is possible to use the rearrangement file name of the file 
         # being loaded to identify the repertoire to which the rearrangements
         # belong. The file name for rearrangements is stored in a field (again,
-        # identified by a specific ir_id field).
+        # identified by a specific iReceptor field).
         #
-        # Below, we keep track of both of these important fields. This is
+        # Below, we keep track of these important fields. This is
         # maintained by the Parser class because these are the fields that link
-        # the two types of parsed files.
+        # the two types of parsed files. repertoire_link_id field is the ID of
+        # record in the repertoire collection. Rearrangements are associated with
+        # this ID through the field identified by the rearrangement_linkid_field.
+        # The rearrangement_file_field is the field in the repertoire where file
+        # names for rearrangement files are stored. This is the main lookup
+        # mechanism when a rearrangement file is loaded against a repertoire.
+        # Finally ir_sequence_count it the internal field that the repository
+        # uses to cache the could of all the sequences that belong to a specific
+        # repertoire record.
         self.repertoire_linkid_field = "ir_project_sample_id"
         self.rearrangement_file_field = "ir_rearrangement_file_name"
+        self.rearrangement_count_field = "ir_sequence_count"
 
-        # Finally, we need to keep track of the field (identified by an ir_id
-        # field name in the rearrangement collection that points to the
-        # Repertoire ID field in the repertoire collection.
+        # Finally, we need to keep track of the field (identified by an iReceptor 
+        # field name) in the rearrangement collection that points to the
+        # Repertoire ID field in the repertoire collection. This should exist in
+        # each rearrangement record.
         self.rearrangement_linkid_field = "ir_project_sample_id_rearrangement"
 
+    # Sanity check for validity for the parser...
+    def sanityCheck():
+        if not airr_map.hasColumn(self.ireceptor_tag):
+            print("ERROR: Could not find required iReceptor column in AIRR Mapping")
+            return False
+        if not airr_map.hasColumn(self.repository_tag):
+            print("ERROR: Could not find required Repository column in AIRR Mapping")
+            return False
+        return True
+
+    # Utility methods to return internal field names of importance
     def getRepertoireLinkIDField(self):
         return self.repertoire_linkid_field
 
     def getRearrangementFileField(self):
         return self.rearrangement_file_field
+
+    def getRearrangementCountField(self):
+        return self.rearrangement_count_field
 
     def getRearrangementLinkIDField(self):
         return self.rearrangement_linkid_field

@@ -38,15 +38,14 @@ class AIRRMap:
         # If we have read a mapfile, keep track of the file name.
         self.mapfile = mapfile
 
-        # We need the ir_subclass column to be in the AIRR Mapping.
-        if not "ir_subclass" in self.airr_mappings:
+        # We need the ir_class column to be in the AIRR Mapping.
+        if not "ir_class" in self.airr_mappings:
             print("ERROR: Could not find required ir_subclass field in AIRR Mapping")
             return False
 
-        # We need the ir_id column to be in the AIRR Mapping. This is the iReceptor key
-        # column that we use across all mapping internally.
-        if not "ir_id" in self.airr_mappings:
-            print("ERROR: Could not find required ir_id field in AIRR Mapping")
+        # We need the ir_subclass column to be in the AIRR Mapping.
+        if not "ir_subclass" in self.airr_mappings:
+            print("ERROR: Could not find required ir_class field in AIRR Mapping")
             return False
 
         # Write some diagnostics about the file read in
@@ -58,29 +57,19 @@ class AIRRMap:
         labels = self.airr_mappings['ir_class'].isin([self.rearrangement_class])
         # Get all of the rows that have the rearrangement class labels.
         self.airr_rearrangement_map = self.airr_mappings.loc[labels]
+
         # Get the labels for all of the fields that are in the airr repertoire class.
         labels = self.airr_mappings['ir_class'].isin([self.repertoire_class])
         # Get all of the rows that have the repertoire class labels.
         self.airr_repertoire_map = self.airr_mappings.loc[labels]
+
         # Get the labels for all of the fields that are in the airr repertoire class.
         labels = self.airr_mappings['ir_class'].isin([self.repertoire_class,
                                                       self.ir_repertoire_class])
         # Get all of the rows that have the AIRR and IR repertoire class labels.
         self.ir_repertoire_map = self.airr_mappings.loc[labels]
 
-        # Debug stuff
-        #print(self.airr_repertoire_map['ir_id'])
-        #print(self.airr_rearrangement_map['ir_id'])
-
         # Return success if we get here.
-        return True
-
-    def checkValidity():
-        # Check to see if the AIRR mappings are valid.
-        if not context.repository_tag in context.airr_map.airr_mappings:
-            print("ERROR: Could not find repository mapping %s in AIRR Mappings"%
-                  (context.repository_tag))
-            return False
         return True
 
     # Abstract the class strings for Repertoire and Rearrangements.

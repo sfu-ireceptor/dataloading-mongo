@@ -74,14 +74,14 @@ class IRRepertoire(Repertoire):
         # name.
         repertoire_id_field = self.getRepertoireLinkIDField()
         rearrangement_file_field = self.getRearrangementFileField()
-        rearrangement_count_field = "ir_sequence_count"
+        rearrangement_count_field = self.getRearrangementCountField()
 
         # Get the column of values from the AIRR tag. We only want the
         # Repertoire related fields.
         map_column = self.getAIRRMap().getRepertoireMapColumn(airr_tag)
         # Get a boolean column that flags columns of interest. Exclude nulls.
         fields_of_interest = map_column.notnull()
-        # Afer the following, airr_fields contains N columns (e.g. ir_id, airr, vquest) 
+        # Afer the following, airr_fields contains N columns (e.g. iReceptor, AIRR, VQuest) 
         # that contain the AIRR Repertoire mappings. 
         airr_fields = self.getAIRRMap().getRepertoireRows(fields_of_interest)
 

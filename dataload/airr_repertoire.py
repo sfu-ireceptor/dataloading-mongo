@@ -44,7 +44,7 @@ class AIRRRepertoire(Repertoire):
             # We need to handle the AIRR ontology terms. If we get one we want 
             # to use the value of the ontology term in our repository for now.
             # We also store the id and value separately as two non AIRR keywords.
-            type_info = self.getAIRRMap().getMapping(key, "ir_id", "airr_type",
+            type_info = self.getAIRRMap().getMapping(key, ireceptor_tag, "airr_type",
                                                   self.getAIRRMap().getRepertoireClass())
             if type_info == "ontology":
                 # TODO: need to implement type checking on ontology fields.
@@ -132,6 +132,12 @@ class AIRRRepertoire(Repertoire):
             print("ERROR: input file " + filename + " is not a file")
             return False
 
+        # Get the column tag for the iReceptor mapping
+        ireceptor_tag = self.getiReceptorTag()
+
+        # Get the column tag for the iReceptor mapping
+        repository_tag = self.getRepositoryTag()
+
         # Check the validity of the repertoires from an AIRR perspective
         try:
             data = airr.load_repertoire(filename, validate=True)
@@ -166,11 +172,11 @@ class AIRRRepertoire(Repertoire):
             # Get the mapping for the sequence count field for the repository and 
             # initialize the sequeunce count to 0. If we can't find a mapping for this
             # field then we can't do anything. 
-            count_field = self.getAIRRMap().getMapping("ir_sequence_count", "ir_id",
-                                                       self.getRepositoryTag())
+            count_field = self.getAIRRMap().getMapping("ir_sequence_count", ireceptor_tag,
+                                                       repository_tag)
             if count_field is None:
                 print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
-                      % ( self.getRepositoryTag() ))
+                      % ( repository_tag ))
             else:
                 repertoire_dict[count_field] = 0
 
@@ -178,7 +184,7 @@ class AIRRRepertoire(Repertoire):
             # this is a fatal error as we can not link any data to this set repertoire,
             # so there is no point adding the repertoire...
             repository_file_field = self.getAIRRMap().getMapping(rearrangement_file_field,
-                                                    "ir_id", self.getRepositoryTag())
+                                                    ireceptor_tag, repository_tag)
             # If we can't find a mapping for this field in the repository mapping, then
             # we might still be OK if the metadata spreadsheet has the field. If the fails, 
             # then we should exit.

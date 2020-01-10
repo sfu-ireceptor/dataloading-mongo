@@ -124,7 +124,7 @@ class MiXCR(Rearrangement):
 
         # We select the rows in the mapping that contain fields of interest for MiXCR.
         # At this point, file_fields contains N columns that contain our mappings for the
-        # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
+        # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited to have
         # only data that is relevant to MiXCR
         file_fields = airr_map.getRearrangementRows(fields_of_interest)
 
@@ -207,9 +207,9 @@ class MiXCR(Rearrangement):
                 df_chunk[junction_length] = df_chunk[junction].apply(str).apply(len)
 
 
-            # We need to look up the "known parameter" from an iReceptor perspective (the field
-            # name in the "ir_id" column mapping and map that to the correct field name for the
-            # repository we are writing to.
+            # We need to look up the "known parameter" from an iReceptor perspective (the 
+            # field name in the iReceptor column mapping and map that to the correct field
+            # name for the repository we are writing to.
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)

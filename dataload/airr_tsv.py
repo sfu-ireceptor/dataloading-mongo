@@ -64,7 +64,7 @@ class AIRR_TSV(Rearrangement):
 
         # Set the tag for the repository that we are using.
         repository_tag = self.getRepositoryTag()
-        # Set the tag for the iReceptor identifier (ir_id).
+        # Set the tag for the iReceptor identifier.
         ireceptor_tag = self.getiReceptorTag()
 
         # Get the fields to use for finding repertoire IDs, either using those IDs
@@ -145,7 +145,7 @@ class AIRR_TSV(Rearrangement):
 
         # We select the rows in the mapping that contain fields of interest from the file.
         # At this point, file_fields contains N columns that contain our mappings for the
-        # the specific formats (e.g. ir_id, airr, vquest). The rows are limited to have
+        # the specific formats (e.g. iReceptor, AIRR, VQuest). The rows are limited to have
         # only data that is relevant to the file format column of interest. 
         file_fields = airr_map.getRearrangementRows(fields_of_interest)
 
@@ -229,9 +229,9 @@ class AIRR_TSV(Rearrangement):
             elif 'functional' in airr_df:
                 airr_df[productive] = airr_df['functional'].apply(self.functional_boolean)
 
-            # We need to look up the "known parameter" from an iReceptor perspective (the field
-            # name in the "ir_id" column mapping and map that to the correct field name for the
-            # repository we are writing to.
+            # We need to look up the "known parameter" from an iReceptor perspective (the 
+            # field name in the iReceptor column mapping and map that to the correct field 
+            # name for the repository we are writing to.
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
