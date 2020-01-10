@@ -168,6 +168,10 @@ class IMGT(Rearrangement):
         return self.processImgtArchive(filewithpath)
 
     def processImgtArchive(self, filewithpath):
+
+        # Start a timer for performance reasons.
+        t_start_full = time.perf_counter()
+
         # Get the AIRR Map object for this class (for convenience).
         airr_map = self.getAIRRMap()
 
@@ -629,7 +633,7 @@ class IMGT(Rearrangement):
         # Convert the mongo data frame dats int JSON.
         if self.verbose():
             print("Info: Creating JSON from Dataframe", flush=True) 
-        t_start_full = time.perf_counter()
+        t_start_load_= time.perf_counter()
         t_start = time.perf_counter()
         records = json.loads(mongo_concat.T.to_json()).values()
         t_end = time.perf_counter()
@@ -640,7 +644,7 @@ class IMGT(Rearrangement):
         # The climax: insert the records into the MongoDb collection!
         if self.verbose():
             print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
-        t_start = time.perf_counter()
+        t_start = t_start_load = time.perf_counter()
         self.repositoryInsertRearrangements(records)
         t_end = time.perf_counter()
         if self.verbose():
@@ -664,16 +668,19 @@ class IMGT(Rearrangement):
 
         # Set the cached ir_sequeunce_count field for the repertoire/sample.
         self.repositoryUpdateCount(repertoire_link_id, annotation_count)
-        t_end_full = time.perf_counter()
-
-        # Inform on what we added and the total count for the this record.
-        print("Info: Inserted %d records, total annotation count = %d, %f insertions/s" %
-              (len(records), annotation_count,
-              annotation_count/(t_end_full - t_start_full)), flush=True)
+        t_end_load = time.perf_counter()
+        if self.verbose():
+            print("Info: Total load time = %f" % (t_end_load - t_start_load))
 
         # Clean up annotation files and scratch folder
         if self.verbose():
             print("Info: Cleaning up scratch folder: ", self.getScratchFolder())
         rmtree(self.getScratchFolder())
+
+        # Inform on what we added and the total count for the this record.
+        t_end_full = time.perf_counter()
+        print("Info: Inserted %d records, annotation count = %d, %f s, %f insertions/s" %
+              (len(records), annotation_count, t_end_full - t_start_full,
+              len(records)/(t_end_full - t_start_full)), flush=True)
 
         return True

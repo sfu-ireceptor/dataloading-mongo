@@ -55,6 +55,9 @@ class MiXCR(Rearrangement):
 
     def processMiXcrFile( self, file_handle, filename ):
 
+        # Start a timer for performance reasons.
+        t_start_full = time.perf_counter()
+
         # Get the AIRR Map object for this class (for convenience).
         airr_map = self.getAIRRMap()
 
@@ -285,7 +288,10 @@ class MiXCR(Rearrangement):
         self.repositoryUpdateCount(repertoire_link_id, annotation_count)
 
         # Inform on what we added and the total count for the this record.
-        print("Info: Inserted %d records, total annotation count = %d" %
-                  (total_records, annotation_count))
+        t_end_full = time.perf_counter()
+        print("Info: Inserted %d records, annotation count = %d, %f s, %f insertions/s" %
+              (total_records, annotation_count, t_end_full - t_start_full,
+              total_records/(t_end_full - t_start_full)), flush=True)
+
         return True
         
