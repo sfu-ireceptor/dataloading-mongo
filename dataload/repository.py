@@ -89,10 +89,13 @@ class Repository:
     # Return None on error, return empty array if not found.
     def getRepertoireIDs(self, repertoire_field, search_field, search_name):
         query =  {search_field: {'$regex': search_name}}
+        idarray = []
         try:
             repertoire_cursor = self.repertoire.find(query, {repertoire_field: 1})
-            idarray = [reperotire[repertoire_field] for reperotire in repertoire_cursor]
+            for repertoire in repertoire_cursor:
+                idarray.append(repertoire[repertoire_field])
         except Exception as err:
+            print("ERROR: Search for repertoire field failed, field = %s"%(str(err)))
             return None
             
         return idarray
@@ -135,8 +138,11 @@ class Repository:
             update = {"$set": {count_field:count}}
             self.repertoire.update( {repertoire_field:repertoire_id}, update)
 
-    # Insert a repertoire document into the repertoire collection
-    def insertRepertoire( self, doc ):
+    # Insert a repertoire document into the repertoire collection. Generates a 
+    # unique integer ID for the record, based on the largest interger stored 
+    # thus far and increments it. Uses record 1 if there are no records in the
+    # repository yet. Returns the record ID on success, return -1 on failure.
+    def insertRepertoire( self, doc, link_field ):
         # We want to get a single record, sorted, so we can get the latest ID
         cursor = self.repertoire.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
 
@@ -159,12 +165,20 @@ class Repository:
             if not type(rep_id) is int:
                 print("ERROR: Invalid ID for samples found, expecting an integer, got " + str(rep_id))
                 print("ERROR: DB may be corrupt")
-                return False
+                return -1
             else:
                 rep_id = rep_id + 1
 
         # Add the ID to the record we are writing.
         doc["_id"] = rep_id
+        # Add the ID to the link_field if one was provided. This allows us to track the
+        # ID field with another field in the repository without exposing the internal
+        # Mongo field.
+        if link_field is None:
+            print("ERROR: Must provide a link field for rearrangements")
+            return -1
+        else:
+            doc[link_field] = rep_id
 
         # Write the record and return
         try:
@@ -172,6 +186,6 @@ class Repository:
                 results = self.repertoire.insert(doc)
         except Exception as err:
             print("ERROR: Repository insertion failed, %s"%(err))
-            return False
-        return True
+            return -1
+        return rep_id
 
