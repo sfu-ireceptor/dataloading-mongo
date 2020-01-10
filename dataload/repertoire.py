@@ -72,7 +72,7 @@ class Repertoire(Parser):
         # First get the file field we use to connect rearrangments and reperotires
         rearrangement_file_field = self.getRearrangementFileField()
         # Then get the repository field
-        repository_field = self.getAIRRMap().getMapping(rearrangement_file_field,
+        file_repository_field = self.getAIRRMap().getMapping(rearrangement_file_field,
                                                         self.getiReceptorTag(),
                                                         self.getRepositoryTag())
         # Also get the field that links repertoires to rearrangements
@@ -82,7 +82,7 @@ class Repertoire(Parser):
                                                              self.getiReceptorTag(),
                                                              self.getRepositoryTag())
         # Then get the actual files that belong to this repertoire.
-        file_names = json_document[repository_field]
+        file_names = json_document[file_repository_field]
         # Check to see if there are files in the file field. If not, then pring a warning
         # as we won't be able to link any rearrangements to this repertoire. We set an empty
         # array as we want to still insert the record with the following warning...
@@ -105,10 +105,11 @@ class Repertoire(Parser):
         # the number is not 0.
         num_repertoires = len(idarray)
         # Get some info to help write out messages
-        study_tag = self.getAIRRMap().getMapping("study_id", "ir_id",
+        study_tag = self.getAIRRMap().getMapping("study_id",
+                                                 self.getiReceptorTag(),
                                                  self.getRepositoryTag())
         study = "NULL" if not study_tag in json_document else json_document[study_tag]
-        sample_tag = self.getAIRRMap().getMapping("sample_id", "ir_id",
+        sample_tag = self.getAIRRMap().getMapping("sample_id", self.getiReceptorTag(),
                                                   self.getRepositoryTag())
         sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
         # Print an error if record already exists.
