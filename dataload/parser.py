@@ -67,7 +67,7 @@ class Parser:
         # Finally, we need to keep track of the field (identified by an ir_id
         # field name in the rearrangement collection that points to the
         # Repertoire ID field in the repertoire collection.
-        self.rearrangement_linkid_field = "repertoire_id_rearrangement"
+        self.rearrangement_linkid_field = "ir_project_sample_id_rearrangement"
 
     def getRepertoireLinkIDField(self):
         return self.repertoire_linkid_field
@@ -271,11 +271,11 @@ class Parser:
     def repositoryGetRepertoireIDs(self, search_field, search_name):
         # Get the field the repository is using to linke repertoires and rearrangements.
         # That is the field we want to use to generate the repertoire IDs
-        repertoire_field = self.airr_map.getMapping(self.getRepertoireLinkIDField(),
-                                                    "ir_id",
-                                                    self.repository_tag)
+        link_field = self.airr_map.getMapping(self.getRepertoireLinkIDField(),
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag())
         # Ask the repository to do the search and return the results.
-        return self.repository.getRepertoireIDs(repertoire_field, search_field, search_name)
+        return self.repository.getRepertoireIDs(link_field, search_field, search_name)
 
     # Utility methods to deal with data and scratch folders that all Parsers need.
     def getDataFolder(self, fileWithPath):
