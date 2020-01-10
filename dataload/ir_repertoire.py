@@ -326,8 +326,8 @@ class IRRepertoire(Repertoire):
                 # If the conversion worked for this key, store the converted value
                 converted_record[key] = rep_value
 
-            # Write it to the repository, return on failure.
-            if not self.repositoryInsertRepertoire(converted_record):
+            # Write it to the repository, return on failure (-1).
+            if not self.repositoryInsertRepertoire(converted_record) > 0:
                 return False
     
         # If we got here, we are DONE!

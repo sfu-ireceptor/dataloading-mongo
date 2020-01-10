@@ -203,7 +203,7 @@ class AIRRRepertoire(Repertoire):
         # they will exist in the repository.
         # TODO: Ensure that all records are written as the correct type for the repository.
         for r in repertoire_list:
-            if not self.repositoryInsertRepertoire(r):
+            if not self.repositoryInsertRepertoire(r) > 0:
                 return False
 
         # If we made it here we are DONE!
