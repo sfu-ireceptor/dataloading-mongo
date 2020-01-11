@@ -301,6 +301,10 @@ class Parser:
         # Ask the repository to do the search and return the results.
         return self.repository.getRepertoireIDs(link_field, search_field, search_name)
 
+    #####################################################################################
+    # Hide the internal use of temporary folders from the subclasses
+    #####################################################################################
+
     # Utility methods to deal with data and scratch folders that all Parsers need.
     def getDataFolder(self, fileWithPath):
         # Data folder is based on the path to the file.
@@ -317,6 +321,10 @@ class Parser:
 
     def getScratchFolder(self):
         return self.scratchFolder
+
+    #####################################################################################
+    # Hide the internal implementation of performing timing functions.
+    #####################################################################################
 
     @staticmethod
     def getDateTimeNowUTC():

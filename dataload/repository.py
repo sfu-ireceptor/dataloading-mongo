@@ -132,11 +132,12 @@ class Repository:
 
         return rearrangement_count
 
-    # Update the count for the given reperotire and count field. 
-    def updateCount(self, repertoire_field, repertoire_id, count_field, count):
+    # Update the update_field to update_value wherever search_field is equal to
+    # search value.
+    def updateField(self, search_field, search_value, update_field, update_value):
         if not self.skipload:
-            update = {"$set": {count_field:count}}
-            self.repertoire.update( {repertoire_field:repertoire_id}, update)
+            update = {"$set": {update_field:update_value}}
+            self.repertoire.update( {search_field:search_value}, update)
 
     # Insert a repertoire document into the repertoire collection. Generates a 
     # unique integer ID for the record, based on the largest interger stored 

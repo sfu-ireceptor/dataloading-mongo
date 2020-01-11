@@ -173,13 +173,14 @@ class AIRRRepertoire(Repertoire):
             # Get the mapping for the sequence count field for the repository and 
             # initialize the sequeunce count to 0. If we can't find a mapping for this
             # field then we can't do anything. 
-            count_field = self.getAIRRMap().getMapping("ir_sequence_count", ireceptor_tag,
-                                                       repository_tag)
-            if count_field is None:
-                print("Warning: Could not find ir_sequence_count tag in %s, field not initialized"
-                      % ( repository_tag ))
+            ir_count_field = self.getRearrangementCountField() 
+            repo_count_field = self.getAIRRMap().getMapping(ir_count_field,
+                                                            ireceptor_tag, repository_tag)
+            if repo_count_field is None:
+                print("Warning: Could not find %s field in %s, field not initialized"
+                      % ( ir_count_field, repository_tag ))
             else:
-                repertoire_dict[count_field] = 0
+                repertoire_dict[repo_count_field] = 0
 
             # Ensure that we have a correct file name to link fields. If we can't find it 
             # this is a fatal error as we can not link any data to this set repertoire,

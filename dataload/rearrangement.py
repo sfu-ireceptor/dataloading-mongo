@@ -262,6 +262,9 @@ class Rearrangement(Parser):
         repertoire_field = self.airr_map.getMapping(self.getRepertoireLinkIDField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
-        self.repository.updateCount(repertoire_field, repertoire_id,
-                                    "ir_sequence_count", count)
+        count_field = self.airr_map.getMapping(self.getRearrangementCountField(),
+                                                    self.ireceptor_tag,
+                                                    self.repository_tag)
+        self.repository.updateField(repertoire_field, repertoire_id,
+                                    count_field, count)
 

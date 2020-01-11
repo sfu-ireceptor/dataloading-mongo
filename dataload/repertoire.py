@@ -121,10 +121,34 @@ class Repertoire(Parser):
             print("ERROR:     Files found in records with record IDs %s"%(str(idarray)))
             return False
 
+        # Get the repertoire, data_processing, and sample_processing IDs for the record
+        # being inserted.
+        repertoire_id_tag =  self.getAIRRMap().getMapping("repertoire_id",
+                                                          self.getiReceptorTag(),
+                                                          self.getRepositoryTag())
+        display_proc_id_tag =  self.getAIRRMap().getMapping("display_processing_id",
+                                                          self.getiReceptorTag(),
+                                                          self.getRepositoryTag())
+        sample_proc_id_tag =  self.getAIRRMap().getMapping("sample_processing_id",
+                                                          self.getiReceptorTag(),
+                                                          self.getRepositoryTag())
+        if repertoire_id_tag in json_document:
+            repetoire_id = json_document[repertoire_id_tag]
+        else: repertoire_id = None
+
+        if display_proc_id_tag in json_document:
+            display_processing_id = json_document[display_proc_id_tag]
+        else: display_processing_id = None
+
+        if sample_proc_id_tag in json_document:
+            sample_processing_id = json_document[sample_proc_id_tag]
+        else: sample_processing_id = None
+
         # Try to write the record and return record_id as appropriate.
         record_id = self.repository.insertRepertoire(json_document, link_repository_field)
         if record_id > 0 and self.verbose:
             print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
                   (study, sample, file_names))
 
+        #print("############ %s %s %s"%(repetoire_id, display_processing_id, sample_processing_id))
         return record_id
