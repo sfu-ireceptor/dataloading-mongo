@@ -84,7 +84,8 @@ class Repository:
         self.rearrangement = self.mongo_db[self.rearrangement_collection]
 
     # Look for the search_name given in the repertoire collection in the search_field in
-    # the repository. Return an array of IDs which are the IDs from repertoitre_field
+    # the repository. NOTE: This is a regurlar expression search (string contains).
+    # Return an array of IDs which are the IDs from repertoire_field
     # where the search_name was found in the field search_field.
     # Return None on error, return empty array if not found.
     def getRepertoireIDs(self, repertoire_field, search_field, search_name):
@@ -99,6 +100,23 @@ class Repository:
             return None
             
         return idarray
+
+    # Look for the search_name given in the repertoire collection in the search_field in
+    # the repository. Return an array of the repertoire which are repertoitre_field
+    # where the search_name was found in the field search_field.
+    # Return None on error, return empty array if not found.
+    def getRepertoires(self, search_field, search_name):
+        query =  {search_field: {'$eq': search_name}}
+        rep_array = []
+        try:
+            repertoire_cursor = self.repertoire.find(query)
+            for repertoire in repertoire_cursor:
+                rep_array.append(repertoire)
+        except Exception as err:
+            print("ERROR: Search for repertoire field failed, field = %s"%(str(err)))
+            return None
+            
+        return rep_array
 
     # Write the set of JSON records provided to the "rearrangements" collection.
     # This is hiding the Mongo implementation. Probably should refactor the
