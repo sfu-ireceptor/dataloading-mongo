@@ -301,6 +301,12 @@ class Parser:
         # Ask the repository to do the search and return the results.
         return self.repository.getRepertoireIDs(link_field, search_field, search_name)
 
+    # Look for the field given in the repertoire collection in the repository.
+    # Return an array of repertoires which match the search criteria 
+    def repositoryGetRepertoires(self, search_field, search_name):
+        # Ask the repository to do the search and return the results.
+        return self.repository.getRepertoires(search_field, search_name)
+
     #####################################################################################
     # Hide the internal use of temporary folders from the subclasses
     #####################################################################################
