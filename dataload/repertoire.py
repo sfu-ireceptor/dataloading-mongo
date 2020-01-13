@@ -123,32 +123,99 @@ class Repertoire(Parser):
 
         # Get the repertoire, data_processing, and sample_processing IDs for the record
         # being inserted.
-        repertoire_id_tag =  self.getAIRRMap().getMapping("repertoire_id",
+        rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
                                                           self.getiReceptorTag(),
                                                           self.getRepositoryTag())
-        display_proc_id_tag =  self.getAIRRMap().getMapping("display_processing_id",
+        data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
                                                           self.getiReceptorTag(),
                                                           self.getRepositoryTag())
-        sample_proc_id_tag =  self.getAIRRMap().getMapping("sample_processing_id",
+        sample_id_field =  self.getAIRRMap().getMapping("sample_processing_id",
                                                           self.getiReceptorTag(),
                                                           self.getRepositoryTag())
-        if repertoire_id_tag in json_document:
-            repetoire_id = json_document[repertoire_id_tag]
+        if rep_id_field in json_document:
+            repertoire_id = json_document[rep_id_field]
+            if repertoire_id == "":
+                repertoire_id = None
         else: repertoire_id = None
 
-        if display_proc_id_tag in json_document:
-            display_processing_id = json_document[display_proc_id_tag]
-        else: display_processing_id = None
+        if data_id_field in json_document:
+            data_processing_id = json_document[data_id_field]
+            if data_processing_id == "":
+                data_processing_id = None
+        else: data_processing_id = None
 
-        if sample_proc_id_tag in json_document:
-            sample_processing_id = json_document[sample_proc_id_tag]
+        if sample_id_field in json_document:
+            sample_processing_id = json_document[sample_id_field]
+            if sample_processing_id == "":
+                sample_processing_id = None
         else: sample_processing_id = None
+
+        # Check to see if there are any repertoires with the same repertoire_id as
+        # we are trying to insert... If there are, then we may have an error as 
+        # repertoire_id's (combined with their data_processing_id and 
+        # sample_processing_id) should be unique.
+        rep_array = self.repositoryGetRepertoires(rep_id_field, repertoire_id)
+        # The number of repertoires should be 0 other wise it already exists. Fail if
+        # the number is not 0.
+        num_repertoires = len(rep_array)
+        # Print an error if record already exists.
+        if not num_repertoires == 0:
+            duplicate = True
+            for rep in rep_array:
+                #print("new = -%s- -%s- -%s-"%
+                #      (repertoire_id, data_processing_id, sample_processing_id))
+                #print("current = -%s- -%s- -%s-"%
+                #      (rep[rep_id_field],
+                #       rep[data_id_field],
+                #       rep[sample_id_field]))
+                if (data_id_field in rep and
+                        not rep[data_id_field] == data_processing_id and
+                        not rep[data_id_field] == "" and
+                        not data_processing_id is None and
+                        not data_processing_id == ""):
+                    #print("DIFFERENT DATA_PROC")
+                    duplicate = False
+                elif (sample_id_field in rep and
+                        not rep[sample_id_field] == sample_processing_id and
+                        not rep[sample_id_field] == "" and
+                        not sample_processing_id is None and
+                        not sample_processing_id == ""):
+                    #print("DIFFERENT SAMPLE_PROC")
+                    duplicate = False
+            if duplicate:
+                print("ERROR: Unable to confirm uniqieness of repertoire in repository")
+                print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
+                print("ERROR:     Trying to write a record with fields:")
+                print("ERROR:         %s = %s"% (rep_id_field, repertoire_id))
+                print("ERROR:         %s = %s"% (data_id_field, data_processing_id))
+                print("ERROR:         %s = %s"% (sample_id_field, sample_processing_id))
+                print("ERROR:     Unable to differentiate from repository record:")
+                print("ERROR:         %s = %s"% (rep_id_field, rep[rep_id_field]))
+                print("ERROR:         %s = %s"% (data_id_field, rep[data_id_field]))
+                print("ERROR:         %s = %s"% (sample_id_field, rep[sample_id_field]))
+                return False
 
         # Try to write the record and return record_id as appropriate.
         record_id = self.repository.insertRepertoire(json_document, link_repository_field)
-        if record_id > 0 and self.verbose:
-            print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
-                  (study, sample, file_names))
 
-        #print("############ %s %s %s"%(repetoire_id, display_processing_id, sample_processing_id))
+        if record_id > 0:
+            # Update the _id fields if they were empty to force uniqueness. To do this we use
+            # the record_id which is guaranteed to be unique in the repository.
+            if repertoire_id is None:
+                self.repository.updateField(link_repository_field, record_id,
+                                            rep_id_field, str(record_id))
+            if data_processing_id is None:
+                self.repository.updateField(link_repository_field, record_id,
+                                            data_id_field, str(record_id))
+            if sample_processing_id is None:
+                self.repository.updateField(link_repository_field, record_id,
+                                            sample_id_field, str(record_id))
+            if self.verbose:
+                print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
+                      (study, sample, file_names))
+
+        #print("############ %d %s %s %s"%(record_id, repertoire_id,
+        #       data_processing_id, sample_processing_id))
+
+
         return record_id
