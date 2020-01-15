@@ -17,10 +17,10 @@ class Repertoire(Parser):
     # it returns FALSE. If not doing strict AIRR checks, then it doesn't do any checks
     # against the the field if it isn't an AIRR field (it returns TRUE). 
     def validAIRRFieldType(self, key, value, strict):
-        field_type = self.getAIRRMap().getMapping(key, "airr", "airr_type",
-                                  self.getAIRRMap().getRepertoireClass())
-        field_nullable = self.getAIRRMap().getMapping(key, "airr", "airr_nullable",
-                                  self.getAIRRMap().getRepertoireClass())
+        field_type = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
+                               "airr_type", self.getAIRRMap().getRepertoireClass())
+        field_nullable = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
+                               "airr_nullable", self.getAIRRMap().getRepertoireClass())
         # If we are not doing strict typing, then if the key is not an AIRR
         # key (field_type == None) then we return True. This allows us to
         # check AIRR keys only and skip non-AIRR keys. If strict checking is
@@ -124,14 +124,22 @@ class Repertoire(Parser):
         # Get the repertoire, data_processing, and sample_processing IDs for the record
         # being inserted.
         rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
-                                                          self.getiReceptorTag(),
-                                                          self.getRepositoryTag())
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if rep_id_field is None:
+            print("ERROR: Could not find \"repertoire_id\" field in mapping (%s -> %s)"%
+                  (self.getAIRRTag(), self.getRepositoryTag()))
+            return False
+
         data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
-                                                          self.getiReceptorTag(),
-                                                          self.getRepositoryTag())
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
         sample_id_field =  self.getAIRRMap().getMapping("sample_processing_id",
-                                                          self.getiReceptorTag(),
-                                                          self.getRepositoryTag())
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
         if rep_id_field in json_document:
             repertoire_id = json_document[rep_id_field]
             if repertoire_id == "":
