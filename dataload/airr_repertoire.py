@@ -23,7 +23,7 @@ class AIRRRepertoire(Repertoire):
     # they are represented in the iReceptor repository. 
     def ir_flatten(self, key, value, dictionary):
         rep_class = self.getAIRRMap().getRepertoireClass()
-        column = "airr"
+        column = self.getAIRRTag()
         # If it is an integer, float, or bool we just use the key value pair.
         if isinstance(value, (int, float, bool)):
             if self.validAIRRFieldType(key, value, False):

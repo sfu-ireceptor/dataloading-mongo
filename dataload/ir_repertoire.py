@@ -46,7 +46,7 @@ class IRRepertoire(Repertoire):
             return False
 
         # Set the tag for the AIRR column
-        airr_tag = "airr"
+        airr_tag = self.getAIRRTag() 
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(airr_tag):
             print("ERROR: Could not find AIRR mapping (%s) in mapping file"%
@@ -190,7 +190,7 @@ class IRRepertoire(Repertoire):
                 # we have an error.
                 if not repository_field in df.columns:
                     print("ERROR: Required AIRR field %s (%s) missing"%
-                          (row["airr"],repository_field))
+                          (row[self.getAIRRTag()],repository_field))
                     return False
 
         # Check the type of the columns in the actual file being loaded. Note that
@@ -219,7 +219,7 @@ class IRRepertoire(Repertoire):
         # This probably shouldn't occur, given we force the types at data load.
         for column in bad_columns:
             # Get the field type
-            field_type = self.getAIRRMap().getMapping(column, "airr", "airr_type",
+            field_type = self.getAIRRMap().getMapping(column, airr_tag, "airr_type",
                                            self.getAIRRMap().getRepertoireClass())
             if field_type == "string":
                 if self.verbose():
