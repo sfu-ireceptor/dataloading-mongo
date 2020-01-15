@@ -23,6 +23,9 @@ class Parser:
         # The tag in the map file to use for iReceptor specific fields
         self.ireceptor_tag = "ir_id" 
 
+        # The tag in the map file to use for iReceptor specific fields
+        self.airr_tag = "airr" 
+
         # The size of each data chunk to load in the parser, when loading large files.
         self.repository_chunk = repository_chunk
 
@@ -69,7 +72,7 @@ class Parser:
         # Finally ir_sequence_count it the internal field that the repository
         # uses to cache the could of all the sequences that belong to a specific
         # repertoire record.
-        self.repertoire_linkid_field = "ir_project_sample_id"
+        self.repertoire_linkid_field = "ir_annotation_number"
         self.rearrangement_file_field = "ir_rearrangement_file_name"
         self.rearrangement_count_field = "ir_sequence_count"
 
@@ -77,7 +80,7 @@ class Parser:
         # field name) in the rearrangement collection that points to the
         # Repertoire ID field in the repertoire collection. This should exist in
         # each rearrangement record.
-        self.rearrangement_linkid_field = "ir_project_sample_id_rearrangement"
+        self.rearrangement_linkid_field = "ir_annotation_number_rearrangement"
 
     # Sanity check for validity for the parser...
     def checkValidity(self):
@@ -105,9 +108,12 @@ class Parser:
     # Utility method to return the tag used by the mapping for the repository.
     def getRepositoryTag(self):
         return self.repository_tag
-    # Utility method to return the tag used by the mapping for the repository.
+    # Utility method to return the tag used by the mapping for the iReceptor fields.
     def getiReceptorTag(self):
         return self.ireceptor_tag
+    # Utility method to return the tag used by the mapping for the AIRR fields.
+    def getAIRRTag(self):
+        return self.airr_tag
 
     # Utility method to return the size of the data set chunks to load in
     # the repository. 
@@ -126,17 +132,16 @@ class Parser:
     # Utility function to map a key of a specific value to the correct field for
     # the repository. Possible to limit the mapping to a class in the mapping.
     def fieldToRepository(self, field, map_class=None):
-        # Define the columns to use for the mappings
-        airr_tag = "airr"
 
         # Check to see if the field is in the AIRR mapping, if not warn.
-        airr_field = self.getAIRRMap().getMapping(field, airr_tag, airr_tag, map_class)
+        airr_field = self.getAIRRMap().getMapping(field, self.airr_tag,
+                                                  self.airr_tag, map_class)
         if airr_field is None:
             print("Warning: Could not find %s in AIRR mapping"%(field))
 
         # Check to see if the field can be mapped to a field in the repository, if not warn.
-        repo_field = self.getAIRRMap().getMapping(field, airr_tag, self.repository_tag,
-                                                  map_class)
+        repo_field = self.getAIRRMap().getMapping(field, self.airr_tag,
+                                                  self.repository_tag, map_class)
         if repo_field is None:
             repo_field = field
             print("Warning: Could not find repository mapping for %s, storing as is"%(field))
