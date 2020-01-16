@@ -30,6 +30,64 @@ class Rearrangement(Parser):
         # column.
         self.file_mapping = ""
 
+    # Method to calculate the LINK ID for the repertoire that has the filename
+    # provided. This should return one and only one record, so will fail if it
+    # finds 0 or more than one record with the file name in question.
+    def getRepertoireInfo(self, filename):
+        # Get the AIRR Map object for this class (for convenience).
+        airr_map = self.getAIRRMap()
+
+        # Set the tag for the repository that we are using. Note this should
+        # be refactored so that it is a parameter provided so that we can use
+        # multiple repositories.
+        repository_tag = self.getRepositoryTag()
+
+        # Get the tag to use for iReceptor specific mappings
+        ireceptor_tag = self.getiReceptorTag()
+
+        # Get the fields to use for finding repertoire IDs, either using those IDs
+        # directly or by looking for a repertoire ID based on a rearrangement file
+        # name.
+        repertoire_link_field = self.getRepertoireLinkIDField()
+        rearrangement_link_field = self.getRearrangementLinkIDField()
+        rearrangement_file_field = self.getRearrangementFileField()
+
+        # Get the sample ID of the data we are processing. We use the file name for
+        # this at the moment, but this may not be the most robust method.
+        file_field = airr_map.getMapping(rearrangement_file_field,
+                                         ireceptor_tag, repository_tag)
+        idarray = []
+        if file_field is None:
+            print("ERROR: Could not find link field %s in repository %s"
+                   %(rerrangement_file_field, repository_tag))
+            print("ERROR: Unable to find rearrangement file %s in repertoires."
+                  %(filename))
+
+            return None
+        else:
+            if self.verbose():
+                print("Info: Retrieving repertoire for file %s from repository field %s"%
+                      (filename, file_field))
+            idarray = self.repositoryGetRepertoireIDs(file_field, filename)
+
+        # Check to see that we found it and that we only found one. Fail if not.
+        num_repertoires = len(idarray)
+        if num_repertoires == 0:
+            print("ERROR: Could not find repertoire in repository for file %s"%(filename))
+            print("ERROR: No repertoire could be associated with this annotation file.")
+            return None
+        elif num_repertoires > 1:
+            print("ERROR: More than one repertoire (%d) found using file %s"%
+                  (num_repertoires, filename))
+            print("ERROR: Unique assignment of annotations to a single repertoire required.")
+            return None
+
+        # Get the repertoire ID
+        repertoire_link_id = idarray[0]
+        return repertoire_link_id
+
+
+
     # Method to set the Annotation Tool for the class.
     def setAnnotationTool(self, toolname):
         self.annotation_tool = toolname
