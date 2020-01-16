@@ -86,38 +86,12 @@ class MiXCR(Rearrangement):
         # Query for the sample and create an array of sample IDs
         filename = filename.replace(".gz", "")
 
-        # Get the sample ID of the data we are processing. We use the file name for
-        # this at the moment, but this may not be the most robust method.
-        file_field = airr_map.getMapping(rearrangement_file_field, ireceptor_tag,
-                                         repository_tag)
-        idarray = []
-        if file_field is None:
-            print("ERROR: Could not find link field %s in repository %s"
-                   %(rerrangement_file_field, repository_tag))
-            print("ERROR: Unable to find rearrangement file %s in repertoires."
-                  %(filename))
-
+        # Get the single, unique repertoire link id for the filename we are loading. If
+        # we can't find one, this is an error and we return failure.
+        repertoire_link_id = self.getRepertoireInfo(filename)
+        if repertoire_link_id is None:
+            print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
-        else:
-            if self.verbose():
-                print("Info: Retrieving repertoire for file %s from repository field %s"%
-                      (filename, file_field))
-            idarray = self.repositoryGetRepertoireIDs(file_field, filename)
-
-        # Check to see that we found it and that we only found one. Fail if not.
-        num_repertoires = len(idarray)
-        if num_repertoires == 0:
-            print("ERROR: Could not find repertoire in repository for file %s"%(filename))
-            print("ERROR: No repertoire could be associated with this annotation file.")
-            return False
-        elif num_repertoires > 1:
-            print("ERROR: More than one repertoire (%d) found using file %s"%
-                  (num_repertoires, filename))
-            print("ERROR: Unique assignment of annotations to a single repertoire required.")
-            return False
-
-        # Get the repertoire ID 
-        repertoire_link_id = idarray[0]
 
         # Extract the fields that are of interest for this file. Essentiall all non null fields
         # in the file. This is a boolean array that is T everywhere there is a notnull field in
@@ -245,15 +219,16 @@ class MiXCR(Rearrangement):
             df_chunk[productive] = True
 
             rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
-                                                               ireceptor_tag, repository_tag)
+                                                               ireceptor_tag,
+                                                               repository_tag)
             if not rep_rearrangement_link_field is None:
                 df_chunk[rep_rearrangement_link_field] = repertoire_link_id
             else:
                 print("ERROR: Could not get repertoire link field from AIRR mapping.")
                 return False
 
-            # Create the created and update values for this block of records. Note that this
-            # means that each block of inserts will have the same date.
+            # Create the created and update values for this block of records. Note that
+            # this means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
             ir_created_at = airr_map.getMapping("ir_created_at", 
                                                 ireceptor_tag, repository_tag)

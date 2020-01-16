@@ -211,36 +211,12 @@ class IMGT(Rearrangement):
             print("Info: Path: ", filewithpath)
             print("Info: Scratch folder: ", self.getScratchFolder())
 
-        # Get the sample ID of the data we are processing. We use the IMGT file name for
-        # this at the moment, but this may not be the most robust method.
-        value = airr_map.getMapping(rearrangement_file_field, ireceptor_tag, repository_tag)
-        idarray = []
-        if value is None:
-            print("ERROR: Could not find link field %s in repository %s"
-                  %(rerrangement_file_field, repository_tag))
-            print("ERROR: Unable to find rearrangement file %s in repertoires."
-                  %(fileName))
+        # Get the single, unique repertoire link id for the filename we are loading. If
+        # we can't find one, this is an error and we return failure.
+        repertoire_link_id = self.getRepertoireInfo(fileName)
+        if repertoire_link_id is None:
+            print("ERROR: Could not link file %s to a valid repertoire"%(fileName))
             return False
-        else:
-            if self.verbose():
-                print("Info: Retrieving repertoire for file %s from repository field %s"
-                      %(fileName, value))
-            idarray = self.repositoryGetRepertoireIDs(value, fileName)
-
-        # Check to see that we found it and that we only found one. Fail if not.
-        num_repertoires = len(idarray)
-        if num_repertoires == 0:
-            print("ERROR: No repertoire could be associated with annotation file %s."%
-                  (fileName))
-            return False
-        elif num_repertoires > 1:
-            print("ERROR: More than one repertoire (%d) found using file %s"%
-                  (num_repertoires, fileName))
-            print("ERROR: Unique assignment of annotations to a single repertoire required.")
-            return False
-
-        # Get the repertoire ID 
-        repertoire_link_id = idarray[0]
 
         # Open the tar file, extract the data, and close the tarfile. 
         # This leaves us with a folder with all of the individual vQUest

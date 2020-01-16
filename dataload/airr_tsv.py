@@ -107,43 +107,16 @@ class AIRR_TSV(Rearrangement):
         # May need to strip off any gzip 'archive' file extension
         filename = filename.replace(".gz","")
 
-        # Get the repertoire ID of the data we are processing. We use the rearrangement
-        # file name field in the repository to match the file at the moment, but this
-        # may not be the most robust method.
-        value = airr_map.getMapping(rearrangement_file_field, ireceptor_tag, repository_tag)
-        idarray = []
-        if value is None:
-            print("ERROR: Could not find link field %s in repository %s"
-                  %(rerrangement_file_field, repository_tag))
-            print("ERROR: Unable to find rearrangement file %s in repertoires."
-                  %(filename))
+        # Get the single, unique repertoire link id for the filename we are loading. If
+        # we can't find one, this is an error and we return failure.
+        repertoire_link_id = self.getRepertoireInfo(filename)
+        if repertoire_link_id is None:
+            print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
-        else:
-            # Look up the filename in the repository field and get an array of sample ids
-            # where the file name was found.
-            if self.verbose():
-                print("Info: Retrieving repertoire for file %s from repository field %s"%
-                      (filename, value))
-            idarray = self.repositoryGetRepertoireIDs(value, filename)
-
-        # Check to see that we found it and that we only found one. Fail if not.
-        num_repertoires = len(idarray)
-        if num_repertoires == 0:
-            print("ERROR: No repertoire could be associated with annotation file %s."%
-                  (filename))
-            return False
-        elif num_repertoires > 1:
-            print("ERROR: More than one repertoire (%d) found using file %s"%
-                  (num_repertoires, filename))
-            print("ERROR: Assignment of annotations to a single repertoire is required.")
-            return False
-            
-        # We found a unique repertoire, keep track of it for later. 
-        repertoire_link_id = idarray[0]
 
         # Extract the fields that are of interest for this file. Essentiall all non null
         # fields in the file. This is a boolean array that is T everywhere there is a
-        #  notnull field in the column of interest.
+        # notnull field in the column of interest.
         map_column = airr_map.getRearrangementMapColumn(filemap_tag)
         fields_of_interest = map_column.notnull()
 
