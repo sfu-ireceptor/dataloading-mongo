@@ -72,7 +72,7 @@ class Parser:
         # Finally ir_sequence_count it the internal field that the repository
         # uses to cache the could of all the sequences that belong to a specific
         # repertoire record.
-        self.repertoire_linkid_field = "ir_annotation_number"
+        self.repertoire_linkid_field = "ir_annotation_set_metadata_id"
         self.rearrangement_file_field = "ir_rearrangement_file_name"
         self.rearrangement_count_field = "ir_sequence_count"
 
@@ -80,7 +80,7 @@ class Parser:
         # field name) in the rearrangement collection that points to the
         # Repertoire ID field in the repertoire collection. This should exist in
         # each rearrangement record.
-        self.rearrangement_linkid_field = "ir_annotation_number_rearrangement"
+        self.rearrangement_linkid_field = "ir_annotation_set_metadata_id_rearrangement"
 
     # Sanity check for validity for the parser...
     def checkValidity(self):
