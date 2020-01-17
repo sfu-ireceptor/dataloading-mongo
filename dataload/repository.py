@@ -158,10 +158,28 @@ class Repository:
             self.repertoire.update( {search_field:search_value}, update)
 
     # Insert a repertoire document into the repertoire collection. Generates a 
+    # unique identifier for the record and stores that ID in the field provided
+    # in the link_field field for refernce without having to access the internal
+    # _id.  Returns the string value of the record ID on success, return 
+    # None on failure.
+    def insertRepertoire( self, doc, link_field ):
+        try:
+            if not self.skipload:
+                results = self.repertoire.insert(doc)
+        except Exception as err:
+            print("ERROR: Repository insertion failed, %s"%(err))
+            return None
+
+        # Store the internal ID as a string in the link_field.
+        self.updateField("_id", results, link_field, str(results))
+        # Return a string repersentation of the internal ID
+        return str(results)
+
+    # Insert a repertoire document into the repertoire collection. Generates a 
     # unique integer ID for the record, based on the largest interger stored 
     # thus far and increments it. Uses record 1 if there are no records in the
     # repository yet. Returns the record ID on success, return -1 on failure.
-    def insertRepertoire( self, doc, link_field ):
+    def insertRepertoireOld( self, doc, link_field ):
         # We want to get a single record, sorted, so we can get the latest ID
         cursor = self.repertoire.find( {}, { "_id": 1 } ).sort("_id", -1).limit(1)
 
@@ -184,7 +202,7 @@ class Repository:
             if not type(rep_id) is int:
                 print("ERROR: Invalid ID for samples found, expecting an integer, got " + str(rep_id))
                 print("ERROR: DB may be corrupt")
-                return -1
+                return None
             else:
                 rep_id = rep_id + 1
 
@@ -195,7 +213,7 @@ class Repository:
         # Mongo field.
         if link_field is None:
             print("ERROR: Must provide a link field for rearrangements")
-            return -1
+            return None
         else:
             doc[link_field] = rep_id
 
@@ -203,8 +221,9 @@ class Repository:
         try:
             if not self.skipload:
                 results = self.repertoire.insert(doc)
+                print(results)
         except Exception as err:
             print("ERROR: Repository insertion failed, %s"%(err))
-            return -1
+            return None
         return rep_id
 
