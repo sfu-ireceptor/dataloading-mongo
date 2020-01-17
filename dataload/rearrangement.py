@@ -96,21 +96,31 @@ class Rearrangement(Parser):
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
-        if not rep_id_field is None and not rep_id_field in dataframe:
-            dataframe[rep_id_field] = repertoire_link_id
         data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
-        if not data_id_field is None and not data_id_field in dataframe:
-            dataframe[data_id_field] = repertoire_link_id
         sample_id_field =  self.getAIRRMap().getMapping("sample_processing_id",
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
-        if not sample_id_field is None and not sample_id_field in dataframe:
-            dataframe[sample_id_field] = repertoire_link_id
+        if rep_id_field in dataframe:
+            print("ERROR: Can not load data with preset field %s"%(rep_id_field))
+            return False
+        if data_id_field in dataframe:
+            print("ERROR: Can not load data with preset field %s"%(data_id_field))
+            return False
+        if sample_id_field in dataframe:
+            print("ERROR: Can not load data with preset field %s"%(sample_id_field))
+            return False
 
+        if not rep_id_field is None:
+            dataframe[rep_id_field] = repertoire_link_id
+        if not data_id_field is None:
+            dataframe[data_id_field] = repertoire_link_id
+        if not sample_id_field is None:
+            dataframe[sample_id_field] = repertoire_link_id
+        return True
 
     # Method to set the Annotation Tool for the class.
     def setAnnotationTool(self, toolname):

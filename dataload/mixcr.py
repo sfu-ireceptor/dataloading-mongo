@@ -227,8 +227,10 @@ class MiXCR(Rearrangement):
                 print("ERROR: Could not get repertoire link field from AIRR mapping.")
                 return False
 
-            # Set the relevant IDs for the record being inserted.
-            self.checkIDFields(df_chunk, repertoire_link_id)
+            # Set the relevant IDs for the record being inserted. If it fails, don't 
+            # load any data.
+            if not self.checkIDFields(df_chunk, repertoire_link_id):
+                return False
 
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.

@@ -241,8 +241,11 @@ class AIRR_TSV(Rearrangement):
                                                                ireceptor_tag, repository_tag)
             airr_df[rep_rearrangement_link_field]=repertoire_link_id
 
-            # Set the relevant IDs for the record being inserted.
-            self.checkIDFields(airr_df, repertoire_link_id)
+            # Set the relevant IDs for the record being inserted. If it fails, don't
+            # load any data.
+            if not self.checkIDFields(airr_df, repertoire_link_id):
+                return False
+
 
             # Create the created and update values for this block of records. Note that this
             # means that each block of inserts will have the same date.
