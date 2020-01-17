@@ -90,6 +90,26 @@ class Rearrangement(Parser):
         repertoire_link_id = idarray[0]
         return repertoire_link_id
 
+    # Method to check and set rearrangement fields if they need to be...
+    def checkIDFields(self, dataframe, repertoire_link_id):
+        rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if not rep_id_field is None and not rep_id_field in dataframe:
+            dataframe[rep_id_field] = repertoire_link_id
+        data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if not data_id_field is None and not data_id_field in dataframe:
+            dataframe[data_id_field] = repertoire_link_id
+        sample_id_field =  self.getAIRRMap().getMapping("sample_processing_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if not sample_id_field is None and not sample_id_field in dataframe:
+            dataframe[sample_id_field] = repertoire_link_id
 
 
     # Method to set the Annotation Tool for the class.
