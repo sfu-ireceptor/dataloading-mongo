@@ -370,6 +370,8 @@ class IMGT(Rearrangement):
                   (rearrangement_link_field))
             return False
             
+        # Set the relevant IDs for the record being inserted.
+        self.checkIDFields(mongo_concat, repertoire_link_id)
 
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
