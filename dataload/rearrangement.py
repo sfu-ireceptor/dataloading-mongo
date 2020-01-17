@@ -70,6 +70,10 @@ class Rearrangement(Parser):
                       (filename, file_field))
             idarray = self.repositoryGetRepertoireIDs(file_field, filename)
 
+        if idarray is None:
+            print("ERROR: could not find file %s in field %s"%(filename,file_field))
+            return None
+
         # Check to see that we found it and that we only found one. Fail if not.
         num_repertoires = len(idarray)
         if num_repertoires == 0:
