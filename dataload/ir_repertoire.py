@@ -329,7 +329,7 @@ class IRRepertoire(Repertoire):
                 converted_record[key] = rep_value
 
             # Write it to the repository, return on failure (-1).
-            if not self.repositoryInsertRepertoire(converted_record) > 0:
+            if self.repositoryInsertRepertoire(converted_record) is None:
                 return False
     
         # If we got here, we are DONE!
