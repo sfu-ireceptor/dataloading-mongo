@@ -63,7 +63,7 @@ class Repertoire(Parser):
 
     # Hide the impementation of the repository from the Repertoire subclasses.
     # The subclasses don't ask much of the repository, just insert a single
-    # JSON document at a time. Returns a record_id > 0 on success, -1 on failure
+    # JSON document at a time. Returns a record_id on success, None on failure
     def repositoryInsertRepertoire( self, json_document ):
     
         # Check to see if the repertoire already exists. We do this by using
@@ -99,7 +99,7 @@ class Repertoire(Parser):
             print("ERROR: Unable to check for repertoire existance for file %s"%(file_names))
             print("ERROR:     Repertoires must have valid rearrangement files.")
             print("ERROR:     Rearrangement files must be unique in the repository.")
-            return False
+            return None
 
         # The number of repertoires should be 0 other wise it already exists. Fail if
         # the number is not 0.
@@ -119,7 +119,7 @@ class Repertoire(Parser):
             print("ERROR:     File field %s contains rearrangement files %s"%
                   (rearrangement_file_field, file_names))
             print("ERROR:     Files found in records with record IDs %s"%(str(idarray)))
-            return False
+            return None
 
         # Get the repertoire, data_processing, and sample_processing IDs for the record
         # being inserted.
@@ -130,7 +130,7 @@ class Repertoire(Parser):
         if rep_id_field is None:
             print("ERROR: Could not find \"repertoire_id\" field in mapping (%s -> %s)"%
                   (self.getAIRRTag(), self.getRepositoryTag()))
-            return False
+            return None
 
         data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
                                               self.getAIRRTag(),
@@ -201,29 +201,28 @@ class Repertoire(Parser):
                 print("ERROR:         %s = %s"% (rep_id_field, rep[rep_id_field]))
                 print("ERROR:         %s = %s"% (data_id_field, rep[data_id_field]))
                 print("ERROR:         %s = %s"% (sample_id_field, rep[sample_id_field]))
-                return False
+                return None
 
         # Try to write the record and return record_id as appropriate.
         record_id = self.repository.insertRepertoire(json_document, link_repository_field)
+        if record_id is None:
+            print("ERROR: Unable to write repertoire record to repository")
+            return None
 
-        if record_id > 0:
-            # Update the _id fields if they were empty to force uniqueness. To do this we use
-            # the record_id which is guaranteed to be unique in the repository.
-            if repertoire_id is None:
-                self.repository.updateField(link_repository_field, record_id,
-                                            rep_id_field, str(record_id))
-            if data_processing_id is None:
-                self.repository.updateField(link_repository_field, record_id,
-                                            data_id_field, str(record_id))
-            if sample_processing_id is None:
-                self.repository.updateField(link_repository_field, record_id,
-                                            sample_id_field, str(record_id))
-            if self.verbose:
-                print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
-                      (study, sample, file_names))
+        # Update the _id fields if they were empty to force uniqueness. To do this we use
+        # the record_id which is guaranteed to be unique in the repository.
+        if repertoire_id is None:
+            self.repository.updateField(link_repository_field, record_id,
+                                        rep_id_field, str(record_id))
+        if data_processing_id is None:
+            self.repository.updateField(link_repository_field, record_id,
+                                        data_id_field, str(record_id))
+        if sample_processing_id is None:
+            self.repository.updateField(link_repository_field, record_id,
+                                        sample_id_field, str(record_id))
+        if self.verbose:
+            print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
+                  (study, sample, file_names))
 
-        #print("############ %d %s %s %s"%(record_id, repertoire_id,
-        #       data_processing_id, sample_processing_id))
-
-
+        # Return the record ID
         return record_id
