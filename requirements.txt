@@ -3,3 +3,4 @@ pymongo
 airr
 requests
 xlrd
+biopython
