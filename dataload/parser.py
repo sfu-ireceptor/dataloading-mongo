@@ -155,11 +155,13 @@ class Parser:
 
     @staticmethod
     def str_to_bool(string_value):
-        if not isinstance(string_value, (str)):
+        if pd.isnull(string_value):
+            return None
+        elif not isinstance(string_value, (str)):
             raise TypeError("Can't convert non-string value " + str(string_value))
-        elif string_value in ["T","t","True","TRUE","true"]:
+        elif string_value in ["T","t","True","TRUE","true","1"]:
             return True
-        elif string_value in ["F","f","False","FALSE","false"]:
+        elif string_value in ["F","f","False","FALSE","false","0"]:
             return False
         # If we get here we failed...
         raise TypeError("Can't convert string " + string_value + " to boolean")
@@ -180,7 +182,7 @@ class Parser:
         if not isinstance(float_value, (float)):
             raise TypeError("Can't convert non-float value " + str(float_value))
         elif pd.isnull(float_value):
-            return ""
+            return None
         else:
             return str(float_value)
 
