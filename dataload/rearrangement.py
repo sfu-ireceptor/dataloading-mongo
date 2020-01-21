@@ -348,7 +348,19 @@ class Rearrangement(Parser):
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.
     def repositoryInsertRearrangements(self, json_records):
-        self.repository.insertRearrangements(json_records)
+        record_ids = self.repository.insertRearrangements(json_records)
+        if record_ids is None:
+            return False
+        rearrange_id_field =  self.getAIRRMap().getMapping("rearrangement_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRearrangementClass())
+        if not rearrange_id_field is None:
+            for record_id in record_ids:
+                self.repository.updateRearrangementField("_id", record_id,
+                                                         "rearrangement_id", str(record_id))
+
+        return True
 
     # Count the number of rearrangements that belong to a specific repertoire. Note: In our
     # early implementations, we had an internal field name called ir_project_sample_id. We
