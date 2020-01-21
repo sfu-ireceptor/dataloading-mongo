@@ -125,10 +125,19 @@ class Repository:
     def insertRearrangements(self, json_records):
         if not self.skipload:
             try:
-                self.rearrangement.insert(json_records)
+                record_ids = self.rearrangement.insert(json_records)
             except Exception as err:
-                return False
-        return True
+                print("ERROR: Unable to write records to repository, %s"%(err))
+                return None
+        return record_ids
+
+    # Update the update_field to update_value wherever search_field is equal to
+    # search value.
+    def updateRearrangementField(self, search_field, search_value,
+                                 update_field, update_value):
+        if not self.skipload:
+            update = {"$set": {update_field:update_value}}
+            self.rearrangement.update( {search_field:search_value}, update)
 
     # Count the number of rearrangements that belong to a specific repertoire. 
     # Return -1 on error. Note: In our early implementations, we had an
