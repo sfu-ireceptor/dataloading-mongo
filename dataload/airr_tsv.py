@@ -91,16 +91,18 @@ class AIRR_TSV(Rearrangement):
         # file becasue that is too expensive of an operation.
         # Validate header by trying to read the first record. If it throws
         # an error then we have a problem.
-        airr_reader = RearrangementReader(file_handle, validate=True)
+        airr_reader = RearrangementReader(file_handle, validate=True, debug=True)
         airr_valid = True
         try:
-            iter(airr_reader)
+            airr_iterator = iter(airr_reader)
+            first_record = next(airr_iterator)
         except ValidationError as e:
             airr_valid = False
+            print("ERROR: File %s is not a valid AIRR TSV file, %s"
+                  %(path, e))
+            return False
         if airr_valid:
-                print("Info: File", path, "has a valid AIRR TSV header")
-        else:
-                print("Warning: File", path, "does NOT have a valid AIRR TSV header")
+            print("Info: File %s has a valid AIRR TSV header"%(path))
 
         # Get root filename from the path
         filename = os.path.basename(path)
@@ -197,15 +199,6 @@ class AIRR_TSV(Rearrangement):
                         print("Info: Computing junction amino acids length...", flush=True)
                     airr_df[ir_junction_aa_length] = airr_df[junction_aa].apply(str).apply(len)
 
-            # Check to see if we have a productive field (later versions of AIRR TSV). If
-            # so conver to our repositories boolean storage mechanism. Similarly if the
-            # older AIRR TSV version of the functional field is present, handle that as well.
-            productive = airr_map.getMapping("productive", ireceptor_tag, repository_tag)
-            if productive in airr_df:
-                airr_df[productive] = airr_df[productive].apply(self.functional_boolean)
-            elif 'functional' in airr_df:
-                airr_df[productive] = airr_df['functional'].apply(self.functional_boolean)
-
             # We need to look up the "known parameter" from an iReceptor perspective (the 
             # field name in the iReceptor column mapping and map that to the correct field 
             # name for the repository we are writing to.
@@ -236,9 +229,10 @@ class AIRR_TSV(Rearrangement):
             if not locus in airr_df:
                 airr_df[locus] = airr_df[v_call].apply(Rearrangement.getLocus)
 
-            # Keep track of the reperotire id so can link each rearrangement to a repertoire
+            # Keep track of the reperotire id so can link each rearrangement to
+            # a repertoire
             rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
-                                                               ireceptor_tag, repository_tag)
+                                                    ireceptor_tag, repository_tag)
             airr_df[rep_rearrangement_link_field]=repertoire_link_id
 
             # Set the relevant IDs for the record being inserted. If it fails, don't
@@ -246,9 +240,8 @@ class AIRR_TSV(Rearrangement):
             if not self.checkIDFields(airr_df, repertoire_link_id):
                 return False
 
-
-            # Create the created and update values for this block of records. Note that this
-            # means that each block of inserts will have the same date.
+            # Create the created and update values for this block of records. Note that
+            # this means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
             ir_created_at = airr_map.getMapping("ir_created_at",
                                                  ireceptor_tag, repository_tag)
@@ -258,7 +251,9 @@ class AIRR_TSV(Rearrangement):
             airr_df[ir_updated_at] = now_str
 
             # Transform the data frame so that it meets the repository type requirements
-            self.mapToRepositoryType(airr_df)
+            if not self.mapToRepositoryType(airr_df):
+                print("ERROR: Unable to map data to the repository")
+                return False
 
             # Insert the chunk of records into Mongo.
             num_records = len(airr_df)
@@ -267,13 +262,15 @@ class AIRR_TSV(Rearrangement):
             records = json.loads(airr_df.T.to_json()).values()
             self.repositoryInsertRearrangements(records)
             t_end = time.perf_counter()
-            print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
+            print("Info: Inserted records, time =", (t_end - t_start), "seconds",
+                  flush=True)
 
             # Keep track of the total number of records processed.
             total_records = total_records + num_records
             print("Info: Total records so far =", total_records, flush=True)
  
-        # Get the number of annotations for this repertoire (as defined by the repertoire link id
+        # Get the number of annotations for this repertoire (as defined by the
+        # repertoire link id
         if self.verbose():
             print("Info: Getting the number of annotations for repertoire %s"%
                   (str(repertoire_link_id)))
@@ -293,6 +290,6 @@ class AIRR_TSV(Rearrangement):
         t_end_full = time.perf_counter()
         print("Info: Inserted %d records, annotation count = %d, %f s, %f insertions/s" %
               (total_records, annotation_count, t_end_full - t_start_full,
-              total_records/(t_end_full - t_start_full)), flush=True)
+               total_records/(t_end_full - t_start_full)), flush=True)
 
         return True;
