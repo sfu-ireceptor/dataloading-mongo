@@ -124,7 +124,7 @@ class AIRR_TSV(Rearrangement):
 
         # We select the rows in the mapping that contain fields of interest from the file.
         # At this point, file_fields contains N columns that contain our mappings for the
-        # the specific formats (e.g. iReceptor, AIRR, VQuest). The rows are limited to have
+        # the specific formats (e.g. iReceptor, AIRR, VQuest). The rows are limited to 
         # only data that is relevant to the file format column of interest. 
         file_fields = airr_map.getRearrangementRows(fields_of_interest)
 
@@ -137,7 +137,8 @@ class AIRR_TSV(Rearrangement):
                   (self.getAnnotationTool(),filemap_tag))
         for index, row in file_fields.iterrows():
             if self.verbose():
-                print("Info:    %s -> %s"%(str(row[filemap_tag]), str(row[repository_tag])))
+                print("Info:    %s -> %s"%(str(row[filemap_tag]),
+                      str(row[repository_tag])))
             # If the repository column has a value for the field in the file, track the 
             # field from both the file and repository side.
             if not pd.isnull(row[repository_tag]):
@@ -154,7 +155,8 @@ class AIRR_TSV(Rearrangement):
             if airr_field in columnMapping:
                 if self.verbose():
                     print("Info: Mapping %s field in file: %s -> %s"%
-                          (self.getAnnotationTool(), airr_field, columnMapping[airr_field]))
+                          (self.getAnnotationTool(), airr_field,
+                           columnMapping[airr_field]))
                 finalMapping[airr_field] = columnMapping[airr_field]
             else:
                 if self.verbose():
@@ -177,31 +179,35 @@ class AIRR_TSV(Rearrangement):
         # Iterate over the file with data frames of size "chunk_size"
         total_records = 0
         for airr_df in airr_df_reader:
-            # Remap the column names. We need to remap because the columns may be in a differnt
-            # order in the file than in the column mapping.
+            # Remap the column names. We need to remap because the columns may be in a 
+            # differnt order in the file than in the column mapping.
             airr_df.rename(finalMapping, axis='columns', inplace=True)
 
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings.
-            junction_aa = airr_map.getMapping("junction_aa", ireceptor_tag, repository_tag)
-            ir_substring = airr_map.getMapping("ir_substring", ireceptor_tag, repository_tag)
-            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length",
-                                                        ireceptor_tag, repository_tag)
+            junction_aa = airr_map.getMapping("junction_aa",
+                                              ireceptor_tag, repository_tag)
+            ir_substring = airr_map.getMapping("ir_substring",
+                                               ireceptor_tag, repository_tag)
+            ir_junc_aa_len = airr_map.getMapping("ir_junction_aa_length",
+                                                 ireceptor_tag, repository_tag)
             if junction_aa in airr_df:
                 if self.verbose():
-                    print("Info: Retrieving junction amino acids and building substrings...",
+                    print("Info: Retrieving junction AA and building substrings",
                           flush=True)
-                airr_df[ir_substring] = airr_df[junction_aa].apply(Rearrangement.get_substring)
+                airr_df[ir_substring] = airr_df[junction_aa].apply(
+                                         Rearrangement.get_substring)
 
-                # The AIRR TSV format doesn't have AA length, we want it in our repository.
-                if not (ir_junction_aa_length in airr_df):
+                # The AIRR TSV format doesn't have AA length, we want it in repository.
+                if not (ir_junc_aa_len in airr_df):
                     if self.verbose():
-                        print("Info: Computing junction amino acids length...", flush=True)
-                    airr_df[ir_junction_aa_length] = airr_df[junction_aa].apply(str).apply(len)
+                        print("Info: Computing junction amino acids length...",
+                              flush=True)
+                    airr_df[ir_junc_aa_len] = airr_df[junction_aa].apply(str).apply(len)
 
             # We need to look up the "known parameter" from an iReceptor perspective (the 
-            # field name in the iReceptor column mapping and map that to the correct field 
-            # name for the repository we are writing to.
+            # field name in the iReceptor column mapping and map that to the correct 
+            # field name for the repository we are writing to.
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
