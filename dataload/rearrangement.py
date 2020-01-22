@@ -92,6 +92,7 @@ class Rearrangement(Parser):
 
     # Method to check and set rearrangement fields if they need to be...
     def checkIDFields(self, dataframe, repertoire_link_id):
+        # Get mapping of the ID fields we want to generate.
         rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
@@ -104,6 +105,7 @@ class Rearrangement(Parser):
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
+        # We don't want to over write existing fields.
         if rep_id_field in dataframe:
             print("ERROR: Can not load data with preset field %s"%(rep_id_field))
             return False
@@ -114,6 +116,7 @@ class Rearrangement(Parser):
             print("ERROR: Can not load data with preset field %s"%(sample_id_field))
             return False
 
+        # If we have a field, set it.
         if not rep_id_field is None:
             dataframe[rep_id_field] = repertoire_link_id
         if not data_id_field is None:
@@ -292,46 +295,70 @@ class Rearrangement(Parser):
 
     # Method to map a dataframe to the repository type mapping.
     def mapToRepositoryType(self, df):
+        # Get the general information we need to do the mapping
         airr_type_tag = "airr_type"
         repo_type_tag = "ir_repository_type"
         repository_tag = self.getRepositoryTag()
         map_class = self.airr_map.getRearrangementClass()
 
+        # For each column in the data frame, we want to convert it to the type
+        # required by the repository.
         for (column, column_data) in df.iteritems():
+            # Get both the AIRR type for the column and the Repository type.
             airr_type = self.airr_map.getMapping(column, repository_tag,
                                                  airr_type_tag, map_class)
             repo_type = self.airr_map.getMapping(column, repository_tag,
                                                  repo_type_tag, map_class)
-            #print("Info: Trying to map column %s to repository (%s, %s, %s)"%
-            #      (column, airr_type, repo_type, type(column_data[0])))
+            # Try to do the conversion
             try:
                 oldtype =  type(df[column][0])
+                # Need to convert to boolean for the repository
                 if repo_type == "boolean":
+                    # Boolean in repository, already a boolean
                     if isinstance(column_data[0],(bool, np.bool_)):
                         continue
+                    # Boolean in repository, string on input, do a str to boolean conversion
                     elif isinstance(column_data[0], (str)):
                         df[column]= column_data.apply(Parser.str_to_bool)
                         if self.verbose():
                             print("Info: Mapped column %s to repository (%s, %s, %s, %s)"%
                                   (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                    # Boolean in repository, int on input, do an int to boolean conversion
                     elif isinstance(column_data[0], (int)):
                         df[column] = column_data.apply(Parser.int_to_bool)
                         if self.verbose():
                             print("Info: Mapped column %s to repository (%s, %s, %s, %s)"%
                                   (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                if repo_type == "string":
+                # Need to convert to string for the repository
+                elif repo_type == "string":
+                    # String in repository, already string
                     if isinstance(column_data[0],(str)):
                         continue
+                    # String in repository, int on input, convert int to string
                     elif isinstance(column_data[0],(int)): 
                         df[column] = column_data.apply(str)
                         if self.verbose():
                             print("Info: Mapped integer column %s to repository (%s, %s, %s, %s)"%
                                   (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                    # String in repository, float on input, convert float to string
                     elif isinstance(column_data[0],(np.float64)): 
                         df[column] = column_data.apply(Parser.float_to_str)
                         if self.verbose():
                             print("Info: Mapped float column %s to repository (%s, %s, %s, %s)"%
                                   (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                elif repo_type == "integer":
+                    # int in repository, already int
+                    if isinstance(column_data[0],(int, np.int64)):
+                        continue
+                    print("Warning: No mapping for integer storing as is, column = %s, type = %s."
+                          %(column, type(column_data[0])))
+                elif repo_type == "number":
+                    # number in repository, already float
+                    if isinstance(column_data[0],(float, np.float64)):
+                        continue
+                    print("Warning: No mapping for float storing as is, column = %s, type = %s."
+                          %(column, type(column_data[0])))
+            # Catch any errors
             except TypeError as err:
                 print("ERROR: Could not map column %s to repository (%s, %s, %s, %s)"%
                       (column, airr_type, repo_type, oldtype, type(df[column][1])))
@@ -348,17 +375,21 @@ class Rearrangement(Parser):
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.
     def repositoryInsertRearrangements(self, json_records):
+        # Insert the JSON and get a list of IDs back. If no data returned, return an error
         record_ids = self.repository.insertRearrangements(json_records)
         if record_ids is None:
             return False
+        # Get the field we want to map for the rearrangement ID for each record.
         rearrange_id_field =  self.getAIRRMap().getMapping("rearrangement_id",
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRearrangementClass())
+        # If we found a repository record, write a string repersentation of the ID 
+        # returned into the rearrangement_id field.
         if not rearrange_id_field is None:
             for record_id in record_ids:
                 self.repository.updateRearrangementField("_id", record_id,
-                                                         "rearrangement_id", str(record_id))
+                                                         rearrange_id_field, str(record_id))
 
         return True
 
