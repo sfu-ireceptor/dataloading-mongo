@@ -34,7 +34,8 @@ class MiXCR(Rearrangement):
             print("ERROR: Could not open MiXCR file ", filewithpath)
             return False
 
-        # Get root filename from the path, should be a file if the path is file, so not checking again 8-)
+        # Get root filename from the path, should be a file if the path is file,
+        # so not checking again 8-)
         filename = os.path.basename(filewithpath)
 
         if filewithpath.endswith(".gz"):
@@ -93,15 +94,15 @@ class MiXCR(Rearrangement):
             print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
 
-        # Extract the fields that are of interest for this file. Essentiall all non null fields
-        # in the file. This is a boolean array that is T everywhere there is a notnull field in
-        # the column of interest.
+        # Extract the fields that are of interest for this file. Essentiall all non null
+        # fields in the file. This is a boolean array that is T everywhere there is a
+        # notnull field in the column of interest.
         map_column = airr_map.getRearrangementMapColumn(filemap_tag)
         fields_of_interest = map_column.notnull()
 
         # We select the rows in the mapping that contain fields of interest for MiXCR.
         # At this point, file_fields contains N columns that contain our mappings for the
-        # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited to have
+        # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited to 
         # only data that is relevant to MiXCR
         file_fields = airr_map.getRearrangementRows(fields_of_interest)
 
@@ -110,11 +111,12 @@ class MiXCR(Rearrangement):
         mixcrColumns = []
         columnMapping = {}
         if self.verbose():
-            print("Info: Dumping expected " + self.getAnnotationTool() + "(" + filemap_tag +
-                  ") to repository mapping")
+            print("Info: Dumping expected %s (%s) to repository mapping"
+                  %(self.getAnnotationTool(),filemap_tag))
         for index, row in file_fields.iterrows():
             if self.verbose():
-                print("Info:    " + str(row[filemap_tag]) + " -> " + str(row[repository_tag]))
+                print("Info:    %s -> %s"
+                      %(str(row[filemap_tag]), str(row[repository_tag])))
             # If the repository column has a value for the IMGT field, track the field
             # from both the IMGT and repository side.
             if not pd.isnull(row[repository_tag]):
@@ -125,15 +127,17 @@ class MiXCR(Rearrangement):
                     print("Info:    Repository does not support " +
                           str(row[filemap_tag]) + ", not inserting into repository")
 
-	# Get a Pandas reader iterator for the file. When reading the file we only want to
-        # read in the mixcrColumns we care about. We want to read in only a fixed number of 
-        # records so we don't have any memory contraints reading really large files. And
-        # we don't want to map empty strings to Pandas NaN values. This causes an issue as
-        # missing strings get read as a NaN value, which is interpreted as a string. One can
-        # then not tell the difference between a "nan" string and a "NAN" Junction sequence.
+	# Get a Pandas iterator for the file. When reading the file we only want to
+        # read in the columns we care about. We want to read in only a fixed number of 
+        # of records so we don't have any memory contraints reading really large files. 
+        # And we don't want to map empty strings to Pandas NaN values. This causes an
+        # issue as missing strings get read as a NaN value, which is interpreted as
+        # a string. One can then not tell the difference between a "nan" string and
+        # a "NAN" Junction sequence.
         if self.verbose():
             print("Info: Preparing the file reader...", flush=True)
-        df_reader = pd.read_csv(file_handle, sep='\t', chunksize=chunk_size, na_filter=False)
+        df_reader = pd.read_csv(file_handle, sep='\t', chunksize=chunk_size,
+                                na_filter=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
         total_records = 0
@@ -141,35 +145,40 @@ class MiXCR(Rearrangement):
 
             if self.verbose():
                 print("Info: Processing raw data frame...", flush=True)
-            # Remap the column names. We need to remap because the columns may be in a differnt
-            # order in the file than in the column mapping. We leave any non-mapped columns in the
-            # data frame as we don't want to discard data.
+            # Remap the column names. We need to remap because the columns may be in 
+            # a different order in the file than in the column mapping. We leave any
+            # non-mapped columns in the data frame as we don't want to discard data.
             for mixcr_column in df_chunk.columns:
                 if mixcr_column in columnMapping:
                     mongo_column = columnMapping[mixcr_column]
                     if self.verbose():
-                        print("Info: Mapping " + self.getAnnotationTool() + " field in file: " +
-                              mixcr_column + " -> " + mongo_column)
-                    df_chunk.rename({mixcr_column:mongo_column}, axis='columns', inplace=True)
+                        print("Info: Mapping %s field in file: %s -> %s"
+                              %(self.getAnnotationTool(), mixcr_column, mongo_column))
+                    df_chunk.rename({mixcr_column:mongo_column},
+                                    axis='columns', inplace=True)
                 else:
                     if self.verbose():
-                        print("Info: No mapping for " + self.getAnnotationTool() + " input file column " +
-                              mixcr_column + ", storing in repository as is")
+                        print("Info: No mapping for %s column %s, storing as is"
+                              %(self.getAnnotationTool(), mixcr_column))
             # Check to see which desired MiXCR mappings we don't have...
             for mixcr_column, mongo_column in columnMapping.items():
                 if not mongo_column in df_chunk.columns:
                     if self.verbose():
-                        print("Info: Missing data in input " + self.getAnnotationTool() + 
-                              " file for " + mixcr_column)
+                        print("Info: Missing data in input %s file for %s"
+                              %(self.getAnnotationTool(), mixcr_column))
             
             # Build the substring array that allows index for fast searching of
             # Junction AA substrings. Also calculate junction AA length
-            junction_aa = airr_map.getMapping("junction_aa", ireceptor_tag, repository_tag)
-            ir_substring = airr_map.getMapping("ir_substring", ireceptor_tag, repository_tag)
-            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length", ireceptor_tag, repository_tag)
+            junction_aa = airr_map.getMapping("junction_aa",
+                                              ireceptor_tag, repository_tag)
+            ir_substring = airr_map.getMapping("ir_substring",
+                                               ireceptor_tag, repository_tag)
+            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length",
+                                               ireceptor_tag, repository_tag)
             if junction_aa in df_chunk:
                 if self.verbose():
-                    print("Info: Computing junction amino acids substrings...", flush=True)
+                    print("Info: Computing junction amino acids substrings...",
+                          flush=True)
                 df_chunk[ir_substring] = df_chunk[junction_aa].apply(Rearrangement.get_substring)
                 if self.verbose():
                     print("Info: Computing junction amino acids length...", flush=True)
@@ -177,12 +186,12 @@ class MiXCR(Rearrangement):
 
             # MiXCR doesn't have junction nucleotide length, we want it in our repository.
             junction = airr_map.getMapping("junction", ireceptor_tag, repository_tag)
-            junction_length = airr_map.getMapping("junction_length", ireceptor_tag, repository_tag)
+            junction_length = airr_map.getMapping("junction_length",
+                                                  ireceptor_tag, repository_tag)
             if junction in df_chunk:
                 if self.verbose():
                     print("Info: Computing junction length...", flush=True)
                 df_chunk[junction_length] = df_chunk[junction].apply(str).apply(len)
-
 
             # We need to look up the "known parameter" from an iReceptor perspective (the 
             # field name in the iReceptor column mapping and map that to the correct field
@@ -208,8 +217,8 @@ class MiXCR(Rearrangement):
             self.processGene(df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
             self.processGene(df_chunk, j_call, j_call, ir_jgene_gene, ir_jgene_family)
             self.processGene(df_chunk, d_call, d_call, ir_dgene_gene, ir_dgene_family)
-            # If we don't already have a locus (that is the data file didn't provide one) then
-            # calculate the locus based on the v_call array.
+            # If we don't already have a locus (that is the data file didn't provide one)
+            # then calculate the locus based on the v_call array.
             locus = airr_map.getMapping("locus", ireceptor_tag, repository_tag)
             if not locus in df_chunk:
                 df_chunk[locus] = df_chunk[v_call].apply(Rearrangement.getLocus)
@@ -249,7 +258,8 @@ class MiXCR(Rearrangement):
             records = json.loads(df_chunk.T.to_json()).values()
             self.repositoryInsertRearrangements(records)
             t_end = time.perf_counter()
-            print("Info: Inserted records, time =", (t_end - t_start), "seconds", flush=True)
+            print("Info: Inserted records, time =", (t_end - t_start),
+                  "seconds", flush=True)
 
             # Keep track of the total number of records processed.
             total_records = total_records + num_records
