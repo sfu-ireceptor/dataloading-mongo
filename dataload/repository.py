@@ -89,9 +89,12 @@ class Repository:
     # where the search_name was found in the field search_field.
     # Return None on error, return empty array if not found.
     def getRepertoireIDs(self, repertoire_field, search_field, search_name):
+        # Build the query
         query =  {search_field: {'$regex': search_name}}
         idarray = []
         try:
+            # Perform the query and build an array of the resulting values of the fields
+            # requested.
             repertoire_cursor = self.repertoire.find(query, {repertoire_field: 1})
             for repertoire in repertoire_cursor:
                 idarray.append(repertoire[repertoire_field])
@@ -106,9 +109,11 @@ class Repository:
     # where the search_name was found in the field search_field.
     # Return None on error, return empty array if not found.
     def getRepertoires(self, search_field, search_name):
+        # Build the query
         query =  {search_field: {'$eq': search_name}}
         rep_array = []
         try:
+            # Execute the query and then extract the array of the values returned.
             repertoire_cursor = self.repertoire.find(query)
             for repertoire in repertoire_cursor:
                 rep_array.append(repertoire)
@@ -119,9 +124,8 @@ class Repository:
         return rep_array
 
     # Write the set of JSON records provided to the "rearrangements" collection.
-    # This is hiding the Mongo implementation. Probably should refactor the
-    # repository implementation completely.
-    # Return True on success False on failure.
+    # This is hiding the repository implementation.
+    # Return a list of the ids on success None on failure.
     def insertRearrangements(self, json_records):
         if not self.skipload:
             try:
@@ -145,10 +149,12 @@ class Repository:
     # this and just talk about reperotire IDs, so this is hidden in the
     # Rearrangement class...
     def countRearrangements(self, repertoire_field, repertoire_id):
+        # Check for valid fields
         if repertoire_field is None or repertoire_id is None:
             print("ERROR: Invalid repertoire field (%s) or repertoire_id (%s)"%
                   (repertoire_field, repertoire_id))
             return -1
+        # Build the query and try to perform it. 
         query = {repertoire_field:{'$eq':repertoire_id}}
         try:
             rearrangement_count = self.rearrangement.find(query).count()
@@ -157,6 +163,7 @@ class Repository:
                   (repertoire_field, repertoire_id))
             return -1
 
+        # If sucessful return the count.
         return rearrangement_count
 
     # Update the update_field to update_value wherever search_field is equal to

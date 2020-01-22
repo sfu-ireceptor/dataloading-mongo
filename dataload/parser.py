@@ -155,6 +155,7 @@ class Parser:
 
     @staticmethod
     def str_to_bool(string_value):
+        # Null values are OK, as are string variations of various types...
         if pd.isnull(string_value):
             return None
         elif not isinstance(string_value, (str)):
@@ -168,7 +169,10 @@ class Parser:
 
     @staticmethod
     def int_to_bool(int_value):
-        if not isinstance(int_value, (int)):
+        # Null values are OK as are 1/0, nothing else...
+        if pd.isnull(int_value):
+            return None
+        elif not isinstance(int_value, (int)):
             raise TypeError("Can't convert non-integer value " + str(int_value))
         elif int_value == 1:
             return True
