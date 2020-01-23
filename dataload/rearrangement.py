@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import timezone
 import re
 import os
+import time
 import pandas as pd
 import numpy as np
 from parser import Parser
@@ -295,12 +296,16 @@ class Rearrangement(Parser):
 
     # Method to map a dataframe to the repository type mapping.
     def mapToRepositoryType(self, df):
+        # time this function
+        t_start = time.perf_counter()
+
         # Get the general information we need to do the mapping
         airr_type_tag = "airr_type"
         repo_type_tag = "ir_repository_type"
         repository_tag = self.getRepositoryTag()
         map_class = self.airr_map.getRearrangementClass()
 
+        column_types = df.dtypes
         # For each column in the data frame, we want to convert it to the type
         # required by the repository.
         for (column, column_data) in df.iteritems():
@@ -309,9 +314,78 @@ class Rearrangement(Parser):
                                                  airr_type_tag, map_class)
             repo_type = self.airr_map.getMapping(column, repository_tag,
                                                  repo_type_tag, map_class)
+            #print("Info: Mapped column %s to repository (%s, %s, %s)"%
+            #      (column, airr_type, repo_type, type(df[column][0])))
             # Try to do the conversion
             try:
                 oldtype =  type(df[column][0])
+                #print("#### column %s repository type = %s (%s)"%(column, repo_type, oldtype))
+                # Need to convert to boolean for the repository
+                if repo_type == "boolean":
+                    df[column]= column_data.apply(Parser.to_boolean)
+                    if self.verbose():
+                        print("Info: Mapped column %s to bool in repository (%s, %s, %s, %s)"%
+                              (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                #elif repo_type == "integer":
+                #    df[column]= column_data.apply(Parser.to_integer)
+                #    if self.verbose():
+                #        print("Info: Mapped column %s to int in repository (%s, %s, %s, %s)"%
+                #              (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                elif repo_type == "number":
+                    df[column]= column_data.apply(Parser.to_number)
+                    if self.verbose():
+                        print("Info: Mapped column %s to number in repository (%s, %s, %s, %s)"%
+                              (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                elif repo_type == "string":
+                    df[column]= column_data.apply(Parser.to_string)
+                    if self.verbose():
+                        print("Info: Mapped column %s to string in repository (%s, %s, %s, %s)"%
+                              (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                else:
+                    # String in repository, float on input, convert float to string
+                    print("Warning: No mapping for type %s storing as is, %s (type = %s)."
+                          %(repo_type, column, type(column_data[0])))
+            # Catch any errors
+            except TypeError as err:
+                print("ERROR: Could not map column %s to repository (%s, %s, %s, %s)"%
+                      (column, airr_type, repo_type, oldtype, type(df[column][1])))
+                print("ERROR: %s"%(err))
+                return False
+
+        t_end = time.perf_counter()
+        if self.verbose():
+            print("Info: Conversion to repository type took %f s"%(t_end - t_start),
+                  flush=True)
+
+        return True
+
+    # Method to map a dataframe to the repository type mapping.
+    def mapToRepositoryType2(self, df):
+        # time this function
+        t_start = time.perf_counter()
+
+        # Get the general information we need to do the mapping
+        airr_type_tag = "airr_type"
+        repo_type_tag = "ir_repository_type"
+        repository_tag = self.getRepositoryTag()
+        map_class = self.airr_map.getRearrangementClass()
+
+        column_types = df.dtypes
+        print(column_types)
+        # For each column in the data frame, we want to convert it to the type
+        # required by the repository.
+        for (column, column_data) in df.iteritems():
+            # Get both the AIRR type for the column and the Repository type.
+            airr_type = self.airr_map.getMapping(column, repository_tag,
+                                                 airr_type_tag, map_class)
+            repo_type = self.airr_map.getMapping(column, repository_tag,
+                                                 repo_type_tag, map_class)
+            #print("Info: Mapped column %s to repository (%s, %s, %s)"%
+            #      (column, airr_type, repo_type, type(df[column][0])))
+            # Try to do the conversion
+            try:
+                oldtype =  type(df[column][0])
+                print("#### column %s type = %s %s"%(column, column_types[column], oldtype))
                 # Need to convert to boolean for the repository
                 if repo_type == "boolean":
                     # Boolean in repository, already a boolean
@@ -350,20 +424,52 @@ class Rearrangement(Parser):
                     # int in repository, already int
                     if isinstance(column_data[0],(int, np.int64)):
                         continue
-                    print("Warning: No mapping for integer storing as is, column = %s, type = %s."
-                          %(column, type(column_data[0])))
+                    # int in repository, float on input, convert float to int 
+                    elif isinstance(column_data[0],(float)): 
+                        df[column] = column_data.apply(Parser.float_to_int)
+                        if self.verbose():
+                            print("Info: Mapped integer column %s to repository (%s, %s, %s, %s)"%
+                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                    # int in repository, string on input, convert string to int
+                    elif isinstance(column_data[0],(str)): 
+                        df[column] = column_data.apply(Parser.str_to_int)
+                        if self.verbose():
+                            print("Info: Mapped integer column %s to repository (%s, %s, %s, %s)"%
+                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                    else:
+                        print("Warning: No mapping for integer storing as is, %s (type = %s)."
+                              %(column, type(column_data[0])))
                 elif repo_type == "number":
                     # number in repository, already float
                     if isinstance(column_data[0],(float, np.float64)):
                         continue
-                    print("Warning: No mapping for float storing as is, column = %s, type = %s."
-                          %(column, type(column_data[0])))
+                    # float in repository, int on input, convert int to float
+                    elif isinstance(column_data[0],(int)): 
+                        df[column] = column_data.apply(float)
+                        if self.verbose():
+                            print("Info: Mapped float column %s to repository (%s, %s, %s, %s)"%
+                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                    # float in repository, string on input, convert string to float
+                    elif isinstance(column_data[0],(str)): 
+                        df[column] = column_data.apply(Parser.str_to_float)
+                        if self.verbose():
+                            print("Info: Mapped float column %s to repository (%s, %s, %s, %s)"%
+                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                    else:
+                        # String in repository, float on input, convert float to string
+                        print("Warning: No mapping for float storing as is, %s (type = %s)."
+                              %(column, type(column_data[0])))
             # Catch any errors
             except TypeError as err:
                 print("ERROR: Could not map column %s to repository (%s, %s, %s, %s)"%
                       (column, airr_type, repo_type, oldtype, type(df[column][1])))
                 print("ERROR: %s"%(err))
                 return False
+
+        t_end = time.perf_counter()
+        if self.verbose():
+            print("Info: Conversion to repository type took %f s"%(t_end - t_start),
+                  flush=True)
 
         return True
 
