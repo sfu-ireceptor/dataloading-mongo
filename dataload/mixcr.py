@@ -251,6 +251,11 @@ class MiXCR(Rearrangement):
             df_chunk[ir_created_at] = now_str
             df_chunk[ir_updated_at] = now_str
 
+            # Transform the data frame so that it meets the repository type requirements
+            if not self.mapToRepositoryType(df_chunk):
+                print("ERROR: Unable to map data to the repository")
+                return False
+
             # Insert the chunk of records into Mongo.
             num_records = len(df_chunk)
             print("Info: Inserting", num_records, "records into Mongo...", flush=True)

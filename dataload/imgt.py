@@ -611,6 +611,11 @@ class IMGT(Rearrangement):
         mongo_concat[ir_created_at] = now_str
         mongo_concat[ir_updated_at] = now_str
 
+        # Transform the data frame so that it meets the repository type requirements
+        if not self.mapToRepositoryType(mongo_concat):
+            print("ERROR: Unable to map data to the repository")
+            return False
+
         # Convert the mongo data frame dats int JSON.
         if self.verbose():
             print("Info: Creating JSON from Dataframe", flush=True) 
