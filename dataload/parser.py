@@ -7,6 +7,7 @@ from datetime import timezone
 import re
 import os
 import pandas as pd
+import numpy as np
 
 
 class Parser:
@@ -154,6 +155,75 @@ class Parser:
         return repo_field
 
     @staticmethod
+    def to_string(value):
+        # Some string values are lists of strings, so we return the list.
+        # For now we don't check the contents of the list for string type.
+        if isinstance(value, (list)):
+            return value
+        # Null values are OK
+        elif pd.isnull(value):
+            return np.nan
+        # If its a string, return it
+        elif isinstance(value, (str)):
+            return value
+        # Convert to string, if it generates an error that is OK as errors
+        # are expected as failure mode for this method.
+        else:
+            return str(value)
+
+        # If we get here something bad happened
+        raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
+
+    @staticmethod
+    def to_number(value):
+        # Some string values are lists of strings, so we return the list.
+        # For now we don't check the contents of the list for string type.
+        if isinstance(value, (list)):
+            raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
+        # Null values are OK
+        elif pd.isnull(value):
+            return np.nan
+        # If its a float or an integer, return it
+        elif isinstance(value, (float, int)):
+            return float(value)
+        # If its a string, try and convert it, handling the error
+        elif isinstance(value, (str)):
+            # If it is an empty string, treat that has a Null
+            if value == "":
+                return np.nan
+            # Try and convert the string and if it fails, handle the error.
+            try:
+                return float(value)
+            except Exception as err:
+                raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
+               
+        # If we get here something bad happened
+        raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
+    @staticmethod
+    def to_boolean(value):
+        # Null values are OK
+        if pd.isnull(value):
+            return np.nan
+        elif isinstance(value, (bool)):
+            return value
+        elif isinstance(value, (str)):
+            if value in ["T","t","True","TRUE","true","1"]:
+            	return True
+            elif value in ["F","f","False","FALSE","false","0"]:
+                return False
+            else:
+                raise TypeError("Can't convert string value %s to boolean"%(value))
+        elif isinstance(value, (int)):
+            if value in [1]:
+            	return True
+            elif value in [0]:
+                return False
+            else:
+                raise TypeError("Can't convert integer value %d to boolean"%(value))
+        # If we get here we failed...
+        raise TypeError("Can't convert value %s (%s) to boolean"%(str(value), type(value)))
+
+    @staticmethod
     def str_to_bool(string_value):
         # Null values are OK, as are string variations of various types...
         if pd.isnull(string_value):
@@ -183,12 +253,70 @@ class Parser:
  
     @staticmethod
     def float_to_str(float_value):
-        if not isinstance(float_value, (float)):
-            raise TypeError("Can't convert non-float value " + str(float_value))
-        elif pd.isnull(float_value):
+        # Pandas null, return null
+        if pd.isnull(float_value):
             return None
+        # We expect a float!!!
+        elif not isinstance(float_value, (float)):
+            raise TypeError("Can't convert non-float value " + str(float_value))
+        # Convert away
         else:
             return str(float_value)
+
+    @staticmethod
+    def str_to_float(str_value):
+        # Pandas null, None, or empty string map to a null value.
+        if pd.isnull(str_value) or str_value is None or str_value == "":
+            return None
+        # If it ain't string, we have a problem...
+        elif not isinstance(str_value, (str)):
+            raise TypeError("Can't convert non-float value " + str(str_value))
+        # Convert away...
+        else:
+            return float(str_value)
+
+    @staticmethod
+    def str_to_int(str_value):
+        # Pandas null, None, or empty string map to a null value.
+        if pd.isnull(str_value) or str_value is None or str_value == "":
+            return None
+        # If it ain't string, we have a problem...
+        elif not isinstance(str_value, (str)):
+            raise TypeError("str_to_int: Can't convert non-string value " + str(str_value))
+        # Convert away...
+        else:
+            float_value = float(str_value)
+            if float(int(str_value)) != float_value:
+                raise TypeError("str_to_int: Can't convert a non integer float to an integer, " +
+                                str_value)
+            return int(str_value)
+
+    @staticmethod
+    def float_to_int(float_value):
+        # Pandas null or None map to a null value.
+        if float_value is None or pd.isnull(float_value):
+            return None
+        # If it ain't float, we have a problem...
+        elif not isinstance(float_value, (float)):
+            # OK, this is really weird... In and ideal world this function would
+            # always take a float, so we wouldn't need the test below. This method
+            # would typically get used on a Pandas data frame column, which are 
+            # supposed to be all the same type (correct me if I am wrong). For
+            # some mysterious reason, when this is called from 
+            # Rearrangement.mapToRepositoryType where the type of the first
+            # element of a column is a float, somehow other values in the 
+            # data frame have different types (an empty string rather than None).
+            # This takes care of this case - not sure why this happens!
+            if isinstance(float_value, (str)) and float_value == "":
+                return None
+            raise TypeError("Can't convert non-float value '%s' (%s)"
+                            %(str(float_value), type(float_value)))
+        # Convert away...
+        else:
+            if float(int(float_value)) != float_value:
+                raise TypeError("Can't convert a non integer float to an integer, " +
+                                str(float_value))
+            return int(float_value)
 
 
     # Utility function to map a key of a specific value to the correct type for
