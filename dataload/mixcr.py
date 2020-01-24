@@ -84,9 +84,6 @@ class MiXCR(Rearrangement):
         # Define the number of records to iterate over
         chunk_size = self.getRepositoryChunkSize()
 
-        # Query for the sample and create an array of sample IDs
-        filename = filename.replace(".gz", "")
-
         # Get the single, unique repertoire link id for the filename we are loading. If
         # we can't find one, this is an error and we return failure.
         repertoire_link_id = self.getRepertoireInfo(filename)
