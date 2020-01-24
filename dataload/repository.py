@@ -84,13 +84,14 @@ class Repository:
         self.rearrangement = self.mongo_db[self.rearrangement_collection]
 
     # Look for the search_name given in the repertoire collection in the search_field in
-    # the repository. NOTE: This is a regurlar expression search (string contains).
+    # the repository. NOTE: This is an exact match on an array element. The field
+    # being searched must be an array.
     # Return an array of IDs which are the IDs from repertoire_field
     # where the search_name was found in the field search_field.
     # Return None on error, return empty array if not found.
     def getRepertoireIDs(self, repertoire_field, search_field, search_name):
-        # Build the query
-        query =  {search_field: {'$regex': search_name}}
+        # Build the query (old string query = {search_field: {'$regex': search_name}}
+        query =  {search_field: search_name}
         idarray = []
         try:
             # Perform the query and build an array of the resulting values of the fields
@@ -99,7 +100,8 @@ class Repository:
             for repertoire in repertoire_cursor:
                 idarray.append(repertoire[repertoire_field])
         except Exception as err:
-            print("ERROR: Search for repertoire field failed, field = %s"%(str(err)))
+            print("ERROR: Search for repertoire field failed, field = %s"%(search_field))
+            print("ERROR: Error message = %s"%(str(err)))
             return None
             
         return idarray
