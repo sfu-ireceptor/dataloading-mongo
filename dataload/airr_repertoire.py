@@ -41,28 +41,27 @@ class AIRRRepertoire(Repertoire):
             else:
                 raise TypeError("AIRR type error for " + key)
         elif isinstance(value, dict):
-            # We need to handle the AIRR ontology terms. If we get one we want 
-            # to use the value of the ontology term in our repository for now.
-            # We also store the id and value separately as two non AIRR keywords.
-            type_info = self.getAIRRMap().getMapping(key, self.getiReceptorTag(),
-                                                  "airr_type",
-                                                  self.getAIRRMap().getRepertoireClass())
-            if type_info == "ontology":
-                # TODO: need to implement type checking on ontology fields.
-                #if self.validAIRRFieldType(key, value, False):
-                #    dictionary[repository_key] = value['value']
-                #else:
-                #    raise TypeError(key)
-                #rep_key = self.fieldToRepository(key, rep_class)
-                #rep_value = self.valueToRepository(key, column, value['value'], rep_class)
-                #dictionary[rep_key] = rep_value
-                value_key = key+"_value"
+            # We need to handle the AIRR ontology terms. Ontologies have two fields in
+            # their dictionary, a value and an id.
+            if value.get('value') and value.get('id'):
+                # In an ontology, the dictionary contains two fields, a value and an id.
+                # We store this in the repository as the value field being the key and
+                # the id field as having an _id suffix added to the key
+                value_key = key
                 id_key = key+"_id"
-                rep_value = self.valueToRepository(value_key, column,
-                                                   value['value'], rep_class)
-                dictionary[self.fieldToRepository(value_key,rep_class)] = rep_value
-                rep_value = self.valueToRepository(id_key, column, value['id'], rep_class)
-                dictionary[self.fieldToRepository(id_key, rep_class)] = rep_value
+
+                # Check types of both the value and the id, convert the data type, and
+                # add to the dictionary.
+                if (self.validAIRRFieldType(value_key, value['value'], False) and
+                    self.validAIRRFieldType(id_key, value['id'], False)):
+                    rep_value = self.valueToRepository(value_key, column,
+                                                       value['value'], rep_class)
+                    dictionary[self.fieldToRepository(value_key,rep_class)] = rep_value
+                    rep_value = self.valueToRepository(id_key, column,
+                                                       value['id'], rep_class)
+                    dictionary[self.fieldToRepository(id_key, rep_class)] = rep_value
+                else:
+                    raise TypeError(key)
             else:
                 for sub_key, sub_value in value.items():
                     self.ir_flatten(sub_key, sub_value, dictionary)
@@ -77,13 +76,13 @@ class AIRRRepertoire(Repertoire):
 
             # We flatten this explicitly as a special case. We want to store the list
             # of strings.
-            #if key == "keywords_study" or "key" == "data_processing_files":
-            if key == "keywords_study":
+            if key == "keywords_study" or key == "data_processing_files":
                 # TODO: Need to implement type checking on this field...
-                #if self.validAIRRFieldType(key, value, False):
-                #    dictionary[repository_key] = value
-                #else:
-                #    raise TypeError(key)
+                
+                if self.validAIRRFieldType(key, value, False):
+                    dictionary[repository_key] = value
+                else:
+                    raise TypeError(key)
                 rep_key = self.fieldToRepository(key, rep_class)
                 rep_value = self.valueToRepository(key, column, value, rep_class)
                 dictionary[rep_key] = rep_value
