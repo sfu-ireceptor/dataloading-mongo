@@ -81,7 +81,7 @@ class IRRepertoire(Repertoire):
         map_column = self.getAIRRMap().getRepertoireMapColumn(airr_tag)
         # Get a boolean column that flags columns of interest. Exclude nulls.
         fields_of_interest = map_column.notnull()
-        # Afer the following, airr_fields contains N columns (e.g. iReceptor, AIRR, VQuest) 
+        # Afer the following airr_fields contains N columns (e.g. iReceptor, AIRR) 
         # that contain the AIRR Repertoire mappings. 
         airr_fields = self.getAIRRMap().getRepertoireRows(fields_of_interest)
 
