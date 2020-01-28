@@ -91,6 +91,37 @@ class Rearrangement(Parser):
         repertoire_link_id = idarray[0]
         return repertoire_link_id
 
+    # Method to check the existence of the AIRR required fields in a data frame that is
+    # ready to be written to the repository.
+    # Inputs:
+    #    - dataframe: Data frame to check. The columns of the data frame are named
+    #      with the repository names, not the AIRR names, so we have to translate
+    #    - airr_fields: An array of rearrangement field named and their mappings
+    def checkAIRRRequired(self, dataframe, airr_fields):
+        # Itearte over the AIRR fields provided.
+        for index, row in airr_fields.iterrows():
+            # If the row is required by the AIRR standard
+            if row["airr_required"] == "TRUE" or row["airr_required"] == True:
+                repository_field = row[self.getRepositoryTag()]
+                # If the repository representation of the AIRR column is not
+                # in the data we are going to write to the repository, then
+                # we have an error.
+                if not repository_field in dataframe.columns:
+                    # If the row is missing, but is nullable, create it as a row with
+                    # nulls...
+                    if row["airr_nullable"]:
+                        print("Warning: Nullable required AIRR field %s missing, setting to null"
+                              %(row[self.getAIRRTag()]))
+                        dataframe[repository_field] = np.nan
+                    else:
+    
+                        print("ERROR: Required AIRR field %s (%s) missing"%
+                              (row[self.getAIRRTag()],repository_field))
+                        return False
+        return True
+
+
+
     # Method to check and set rearrangement fields if they need to be...
     def checkIDFields(self, dataframe, repertoire_link_id):
         # Get mapping of the ID fields we want to generate.
