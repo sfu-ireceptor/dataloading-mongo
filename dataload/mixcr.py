@@ -4,6 +4,7 @@
 import sys
 import os.path
 import pandas as pd
+import numpy as np 
 import json
 import gzip
 import time
@@ -62,13 +63,12 @@ class MiXCR(Rearrangement):
         # Get the AIRR Map object for this class (for convenience).
         airr_map = self.getAIRRMap()
 
-        # Set the tag for the repository that we are using. Note this should
-        # be refactored so that it is a parameter provided so that we can use
-        # multiple repositories.
+        # Set the tag for the repository that we are using.
         repository_tag = self.getRepositoryTag()
-
         # Get the tag to use for iReceptor specific mappings
         ireceptor_tag = self.getiReceptorTag()
+        # Set the tag for the AIRR column
+        airr_tag = self.getAIRRTag()
 
         # Get the fields to use for finding repertoire IDs, either using those IDs
         # directly or by looking for a repertoire ID based on a rearrangement file
@@ -90,6 +90,15 @@ class MiXCR(Rearrangement):
         if repertoire_link_id is None:
             print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
+
+        # Get the column of values from the AIRR tag. We only want the
+        # Rearrangement related fields.
+        map_column = self.getAIRRMap().getRearrangementMapColumn(airr_tag)
+        # Get a boolean column that flags columns of interest. Exclude nulls.
+        fields_of_interest = map_column.notnull()
+        # Afer the following airr_fields contains N columns (e.g. iReceptor, AIRR)
+        # that contain the AIRR Repertoire mappings.
+        airr_fields = self.getAIRRMap().getRearrangementRows(fields_of_interest)
 
         # Extract the fields that are of interest for this file. Essentiall all non null
         # fields in the file. This is a boolean array that is T everywhere there is a
@@ -114,8 +123,8 @@ class MiXCR(Rearrangement):
             if self.verbose():
                 print("Info:    %s -> %s"
                       %(str(row[filemap_tag]), str(row[repository_tag])))
-            # If the repository column has a value for the IMGT field, track the field
-            # from both the IMGT and repository side.
+            # If the repository column has a value for the MiXCR field, track the field
+            # from both the MiXCR and repository side.
             if not pd.isnull(row[repository_tag]):
                 mixcrColumns.append(row[filemap_tag])
                 columnMapping[row[filemap_tag]] = row[repository_tag]
@@ -236,6 +245,10 @@ class MiXCR(Rearrangement):
             # Set the relevant IDs for the record being inserted. If it fails, don't 
             # load any data.
             if not self.checkIDFields(df_chunk, repertoire_link_id):
+                return False
+
+            # Check to make sure all AIRR required columns exist
+            if not self.checkAIRRRequired(df_chunk, airr_fields):
                 return False
 
             # Create the created and update values for this block of records. Note that

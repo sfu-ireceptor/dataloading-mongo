@@ -194,7 +194,7 @@ class IMGT(Rearrangement):
         # Set the tag for the iReceptor ID that we use.
         ireceptor_tag = self.getiReceptorTag()
 
-        # Set the tag for the calculation flag mapping that we are using. Ths is essentially
+        # Set the tag for the calculation flag mapping that we are using. Ths is 
         # the look up into the columns of the AIRR Mapping that we are using for this.
         calculate_tag = self.imgt_calculate_map
 
@@ -225,6 +225,15 @@ class IMGT(Rearrangement):
         tar.extractall(self.getScratchFolder())
         tar.close()
 
+        # Get the column of values from the AIRR tag. We only want the
+        # Rearrangement related fields.
+        map_column = self.getAIRRMap().getRearrangementMapColumn(self.getAIRRTag())
+        # Get a boolean column that flags columns of interest. Exclude nulls.
+        fields_of_interest = map_column.notnull()
+        # Afer the following airr_fields contains N columns (e.g. iReceptor, AIRR)
+        # that contain the AIRR Repertoire mappings.
+        airr_fields = self.getAIRRMap().getRearrangementRows(fields_of_interest)
+
         # Get the list of relevant vQuest files. Choose the vquest_file column,
         # drop the NAs, and grab the unique members that remain. This gives us
         # the list of relevant vQuest file names from the configuration file
@@ -250,9 +259,9 @@ class IMGT(Rearrangement):
             fields_of_interest = imgt_file_column.isin([vquest_file])
 
             # We select rows in the mapping that contain fields of interest for this file.
-            # At this point, file_fields contains N columns that contain our mappings for the
-            # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited to 
-            # have only data that is relevant to this specific vquest file.
+            # At this point, file_fields contains N columns that contain our mappings for
+            # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited 
+            # to have only data that is relevant to this specific vquest file.
             file_fields = airr_map.getRearrangementRows(fields_of_interest)
 
             # We need to build the set of fields that the repository can store. We don't
@@ -291,18 +300,20 @@ class IMGT(Rearrangement):
                                       flush=True)
                 else:
                     if self.verbose():
-                        print("Info:    Repository does not support " + vquest_file + "/" + 
-                              str(row[filemap_tag]) + ", not inserting into repository", flush=True)
+                        print("Info:    Repository does not support " + vquest_file +
+                              "/" + str(row[filemap_tag]) + 
+                              ", not inserting into repository", flush=True)
 
             # Use the vquest column in our mapping to select the columns we want from the 
             # possibly quite large vquest data frame.
             mongo_dataframe = vquest_dataframe[vquest_fields]
-            # We now have a data frame that has only the vquest data we want from this file. 
-            # We now replace the vquest column names with the repository column names from
-            # the map
+            # We now have a data frame that has only the vquest data we want from this
+            # file. We now replace the vquest column names with the repository column
+            # names from the map
             mongo_dataframe.columns = mongo_fields
-            # We now have a data frame with vquest data in it with AIRR compliant column names.
-            # Store all of this in a dictionay based on the file name so we can use it later.
+            # We now have a data frame with vquest data in it with AIRR compliant column
+            # names. Store all of this in a dictionay based on the file name so we can
+            # use it later.
             filedict[vquest_file] = {filemap_tag: file_fields[filemap_tag],
                                      repository_tag: file_fields[repository_tag],
                                      'vquest_dataframe': vquest_dataframe,
@@ -325,15 +336,16 @@ class IMGT(Rearrangement):
             print("Info: Done building the initial data frame", flush=True) 
 
         # First, we want to keep track of some of the data from the IMGT Parameters file.
-        # Create a dictionary with keys the first column of the parameter file and the values
-        # the second column in the parameter file.
+        # Create a dictionary with keys the first column of the parameter file and the 
+        # values in the second column in the parameter file.
         Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt', sep='\t')
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
-        # Need to grab some data out of the parameters dictionary. This is not really necessary
-        # as this information should be stored in the repertoire metadata, but for completeness
-        # we err on the side of having more information. Note that this is quite redundant as 
-        # it is storing the same information for each rearrangement...
+        # Need to grab some data out of the parameters dictionary. This is not really
+        # necessary as this information should be stored in the repertoire metadata,
+        #  but for completeness we err on the side of having more information.
+        # Note that this is quite redundant as it is storing the same information
+        # for each rearrangement...
         mongo_concat['vquest_annotation_date'] = parameter_dictionary['Date']
         mongo_concat['vquest_tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
         mongo_concat['vquest_reference_version'] = parameter_dictionary[
@@ -375,7 +387,6 @@ class IMGT(Rearrangement):
         if not self.checkIDFields(mongo_concat, repertoire_link_id):
             return False
 
-
         # Generate the substring field, which we use to heavily optmiize junction AA
         # searches. Technically, this should probably be an ir_ field, but because
         # it is fundamental to the indexes that already exist, we won't change it for
@@ -389,15 +400,18 @@ class IMGT(Rearrangement):
 
         # We want to keep the original vQuest vdj_string data, so we capture that in the
         # ir_vdjgene_string variables.
-        # We need to look up the "known parameter" from an iReceptor perspective (the field
-        # name in the ireceptor_tag, column mapping and map that to the correct field name
-        # for the repository we are writing to.
+        # We need to look up the "known parameter" from an iReceptor perspective - the
+        # field name in the ireceptor_tag column mapping and map that to the correct
+        # field name for the repository we are writing to.
         v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
         d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
         j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
-        ir_vgene_gene = airr_map.getMapping("ir_vgene_gene", ireceptor_tag, repository_tag)
-        ir_dgene_gene = airr_map.getMapping("ir_dgene_gene", ireceptor_tag, repository_tag)
-        ir_jgene_gene = airr_map.getMapping("ir_jgene_gene", ireceptor_tag, repository_tag)
+        ir_vgene_gene = airr_map.getMapping("ir_vgene_gene",
+                                            ireceptor_tag, repository_tag)
+        ir_dgene_gene = airr_map.getMapping("ir_dgene_gene",
+                                            ireceptor_tag, repository_tag)
+        ir_jgene_gene = airr_map.getMapping("ir_jgene_gene",
+                                            ireceptor_tag, repository_tag)
         ir_vgene_family = airr_map.getMapping("ir_vgene_family", 
                                               ireceptor_tag, repository_tag)
         ir_dgene_family = airr_map.getMapping("ir_dgene_family", 
@@ -407,13 +421,13 @@ class IMGT(Rearrangement):
         mongo_concat["vquest_vgene_string"] = mongo_concat[v_call]
         mongo_concat["vquest_jgene_string"] = mongo_concat[j_call]
         mongo_concat["vquest_dgene_string"] = mongo_concat[d_call]
-        # Process the IMGT VQuest v/d/j strings and generate the required columns the repository
-        # needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
+        # Process the IMGT VQuest v/d/j strings and generate the required columns the
+        # repository needs, which are [vdj]_call, ir_[vdj]gene_gene, ir_[vdj]gene_family
         self.processGene(mongo_concat, v_call, v_call, ir_vgene_gene, ir_vgene_family)
         self.processGene(mongo_concat, j_call, j_call, ir_jgene_gene, ir_jgene_family)
         self.processGene(mongo_concat, d_call, d_call, ir_dgene_gene, ir_dgene_family)
-        # If we don't already have a locus (that is the data file didn't provide one) then
-        # calculate the locus based on the v_call array.
+        # If we don't already have a locus (that is the data file didn't provide one) 
+        # then calculate the locus based on the v_call array.
         locus = airr_map.getMapping("locus", ireceptor_tag, repository_tag)
         if not locus in mongo_concat:
             if self.verbose():
@@ -602,6 +616,10 @@ class IMGT(Rearrangement):
                     else:
                         print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
                               (vquest_calc_fields[index], value), flush=True)
+
+        # Check to make sure all AIRR required columns exist
+        if not self.checkAIRRRequired(mongo_concat, airr_fields):
+            return False
 
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
