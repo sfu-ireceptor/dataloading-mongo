@@ -335,6 +335,7 @@ class Rearrangement(Parser):
         repo_type_tag = "ir_repository_type"
         repository_tag = self.getRepositoryTag()
         map_class = self.airr_map.getRearrangementClass()
+        ir_map_class = self.airr_map.getIRRearrangementClass()
 
         column_types = df.dtypes
         # For each column in the data frame, we want to convert it to the type
@@ -345,6 +346,12 @@ class Rearrangement(Parser):
                                                  airr_type_tag, map_class)
             repo_type = self.airr_map.getMapping(column, repository_tag,
                                                  repo_type_tag, map_class)
+            # If we can't find it in the AIRR fields, check the IR fields.
+            if airr_type is None:
+                airr_type = self.airr_map.getMapping(column, repository_tag,
+                                                 airr_type_tag, ir_map_class)
+                repo_type = self.airr_map.getMapping(column, repository_tag,
+                                                 repo_type_tag, ir_map_class)
             #print("Info: Mapped column %s to repository (%s, %s, %s)"%
             #      (column, airr_type, repo_type, type(df[column][0])))
             # Try to do the conversion
