@@ -100,14 +100,14 @@ class MiXCR(Rearrangement):
         # that contain the AIRR Repertoire mappings.
         airr_fields = self.getAIRRMap().getIRRearrangementRows(fields_of_interest)
 
-        # Extract the fields that are of interest for this file. Essentiall all non null
-        # fields in the file. This is a boolean array that is T everywhere there is a
-        # notnull field in the column of interest.
+        # Extract the fields that are of interest for this file. Essentially all non
+        # null fields in the file. This is a boolean array that is T everywhere there
+        # is a notnull field in the column of interest.
         map_column = airr_map.getIRRearrangementMapColumn(filemap_tag)
         fields_of_interest = map_column.notnull()
 
         # We select the rows in the mapping that contain fields of interest for MiXCR.
-        # At this point, file_fields contains N columns that contain our mappings for the
+        # At this point, file_fields contains N columns that contain our mappings for
         # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited to 
         # only data that is relevant to MiXCR
         file_fields = airr_map.getIRRearrangementRows(fields_of_interest)
@@ -179,18 +179,20 @@ class MiXCR(Rearrangement):
                                               ireceptor_tag, repository_tag)
             ir_substring = airr_map.getMapping("ir_substring",
                                                ireceptor_tag, repository_tag)
-            ir_junction_aa_length = airr_map.getMapping("ir_junction_aa_length",
+            ir_junc_aa_len = airr_map.getMapping("ir_junction_aa_length",
                                                ireceptor_tag, repository_tag)
             if junction_aa in df_chunk:
                 if self.verbose():
                     print("Info: Computing junction amino acids substrings...",
                           flush=True)
-                df_chunk[ir_substring] = df_chunk[junction_aa].apply(Rearrangement.get_substring)
+                df_chunk[ir_substring] = df_chunk[junction_aa].apply(
+                                                 Rearrangement.get_substring)
                 if self.verbose():
                     print("Info: Computing junction amino acids length...", flush=True)
-                df_chunk[ir_junction_aa_length] = df_chunk[junction_aa].apply(str).apply(len)
+                df_chunk[ir_junc_aa_len] = df_chunk[junction_aa].apply(str).apply(len)
 
-            # MiXCR doesn't have junction nucleotide length, we want it in our repository.
+            # MiXCR doesn't have junction nucleotide length, we want it in our
+            # repository.
             junction = airr_map.getMapping("junction", ireceptor_tag, repository_tag)
             junction_length = airr_map.getMapping("junction_length",
                                                   ireceptor_tag, repository_tag)
@@ -199,9 +201,9 @@ class MiXCR(Rearrangement):
                     print("Info: Computing junction length...", flush=True)
                 df_chunk[junction_length] = df_chunk[junction].apply(str).apply(len)
 
-            # We need to look up the "known parameter" from an iReceptor perspective (the 
-            # field name in the iReceptor column mapping and map that to the correct field
-            # name for the repository we are writing to.
+            # We need to look up the field from an iReceptor perspective. We want the 
+            # field name in the iReceptor column mapping and map that to the correct
+            # field name for the repository we are writing to.
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
@@ -223,19 +225,20 @@ class MiXCR(Rearrangement):
             self.processGene(df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
             self.processGene(df_chunk, j_call, j_call, ir_jgene_gene, ir_jgene_family)
             self.processGene(df_chunk, d_call, d_call, ir_dgene_gene, ir_dgene_family)
-            # If we don't already have a locus (that is the data file didn't provide one)
-            # then calculate the locus based on the v_call array.
+            # If we don't already have a locus (that is the data file didn't provide
+            # one) then calculate the locus based on the v_call array.
             locus = airr_map.getMapping("locus", ireceptor_tag, repository_tag)
             if not locus in df_chunk:
                 df_chunk[locus] = df_chunk[v_call].apply(Rearrangement.getLocus)
 
             # Assign each record the constant fields for all records in the chunk
-            productive = airr_map.getMapping("productive", ireceptor_tag, repository_tag)
+            productive = airr_map.getMapping("productive",
+                                             ireceptor_tag, repository_tag)
             df_chunk[productive] = True
 
-            rep_rearrangement_link_field = airr_map.getMapping(rearrangement_link_field,
-                                                               ireceptor_tag,
-                                                               repository_tag)
+            rep_rearrangement_link_field = airr_map.getMapping(
+                                             rearrangement_link_field,
+                                             ireceptor_tag, repository_tag)
             if not rep_rearrangement_link_field is None:
                 df_chunk[rep_rearrangement_link_field] = repertoire_link_id
             else:
