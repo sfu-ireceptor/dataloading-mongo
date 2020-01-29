@@ -11,6 +11,7 @@ class AIRRMap:
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
+        self.ir_rearrangement_class = "IR_Rearrangement"
 
         # Keep track of the mapfile being used.
         self.mapfile = ""
@@ -57,6 +58,12 @@ class AIRRMap:
         labels = self.airr_mappings['ir_class'].isin([self.rearrangement_class])
         # Get all of the rows that have the rearrangement class labels.
         self.airr_rearrangement_map = self.airr_mappings.loc[labels]
+
+        # Get the labels for all of the fields that are in the airr rearrangements class.
+        labels = self.airr_mappings['ir_class'].isin([self.rearrangement_class,
+                                                      self.ir_rearrangement_class])
+        # Get all of the rows that have the rearrangement class labels.
+        self.ir_rearrangement_map = self.airr_mappings.loc[labels]
 
         # Get the labels for all of the fields that are in the airr repertoire class.
         labels = self.airr_mappings['ir_class'].isin([self.repertoire_class])
@@ -149,6 +156,20 @@ class AIRRMap:
     # Rearrangement table size.
     def getRearrangementRows(self, extract_flags):
         return self.airr_rearrangement_map.loc[extract_flags]
+
+    # Return a full column of the Rearrangment mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getIRRearrangementMapColumn(self, column_name):
+        if column_name in self.ir_rearrangement_map:
+            return self.ir_rearrangement_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the rearrangement table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Rearrangement table size.
+    def getIRRearrangementRows(self, extract_flags):
+        return self.ir_rearrangement_map.loc[extract_flags]
 
     # Return a full column of the Repertoire mapping based on the name given.
     # Return None if the column is not in the mapping.
