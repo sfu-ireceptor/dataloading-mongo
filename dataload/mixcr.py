@@ -93,24 +93,24 @@ class MiXCR(Rearrangement):
 
         # Get the column of values from the AIRR tag. We only want the
         # Rearrangement related fields.
-        map_column = self.getAIRRMap().getRearrangementMapColumn(airr_tag)
+        map_column = self.getAIRRMap().getIRRearrangementMapColumn(airr_tag)
         # Get a boolean column that flags columns of interest. Exclude nulls.
         fields_of_interest = map_column.notnull()
         # Afer the following airr_fields contains N columns (e.g. iReceptor, AIRR)
         # that contain the AIRR Repertoire mappings.
-        airr_fields = self.getAIRRMap().getRearrangementRows(fields_of_interest)
+        airr_fields = self.getAIRRMap().getIRRearrangementRows(fields_of_interest)
 
         # Extract the fields that are of interest for this file. Essentiall all non null
         # fields in the file. This is a boolean array that is T everywhere there is a
         # notnull field in the column of interest.
-        map_column = airr_map.getRearrangementMapColumn(filemap_tag)
+        map_column = airr_map.getIRRearrangementMapColumn(filemap_tag)
         fields_of_interest = map_column.notnull()
 
         # We select the rows in the mapping that contain fields of interest for MiXCR.
         # At this point, file_fields contains N columns that contain our mappings for the
         # the specific formats (e.g. ireceptor, airr, vquest). The rows are limited to 
         # only data that is relevant to MiXCR
-        file_fields = airr_map.getRearrangementRows(fields_of_interest)
+        file_fields = airr_map.getIRRearrangementRows(fields_of_interest)
 
         # We need to build the set of fields that the repository can store. We don't
         # want to extract fields that the repository doesn't want.
