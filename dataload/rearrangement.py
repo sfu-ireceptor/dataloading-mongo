@@ -357,11 +357,12 @@ class Rearrangement(Parser):
                     if self.verbose():
                         print("Info: Mapped column %s to bool in repository (%s, %s, %s, %s)"%
                               (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                #elif repo_type == "integer":
-                #    df[column]= column_data.apply(Parser.to_integer)
-                #    if self.verbose():
-                #        print("Info: Mapped column %s to int in repository (%s, %s, %s, %s)"%
-                #              (column, airr_type, repo_type, oldtype, type(df[column][0])))
+                elif repo_type == "integer":
+                    df[column]= column_data.apply(Parser.to_integer)
+                    df[column] = df[column].astype("Int64")
+                    if self.verbose():
+                        print("Info: Mapped column %s to int in repository (%s, %s, %s, %s)"%
+                              (column, airr_type, repo_type, oldtype, type(df[column][0])))
                 elif repo_type == "number":
                     df[column]= column_data.apply(Parser.to_number)
                     if self.verbose():
