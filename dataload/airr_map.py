@@ -89,6 +89,9 @@ class AIRRMap:
     def getRearrangementClass(self):
         return self.rearrangement_class
 
+    def getIRRearrangementClass(self):
+        return self.ir_rearrangement_class
+
     # Utility function to determine if the mapping has a specific column
     def hasColumn(self, column_name):
         if column_name in self.airr_mappings:
@@ -108,6 +111,8 @@ class AIRRMap:
            mapping = self.airr_repertoire_map
         elif map_class == self.ir_repertoire_class: 
            mapping = self.ir_repertoire_map
+        elif map_class == self.ir_rearrangement_class: 
+           mapping = self.ir_rearrangement_map
         else:
             print("Warning: Invalid maping class %s"%(map_class))
             return None
