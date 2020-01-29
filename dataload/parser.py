@@ -179,7 +179,8 @@ class Parser:
         # Some string values are lists of strings, so we return the list.
         # For now we don't check the contents of the list for string type.
         if isinstance(value, (list)):
-            raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
+            raise TypeError("Can't convert value %s (%s) to number"
+                            %(str(value), type(value)))
         # Null values are OK
         elif pd.isnull(value):
             return np.nan
@@ -195,10 +196,46 @@ class Parser:
             try:
                 return float(value)
             except Exception as err:
-                raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
-               
+                raise TypeError("Can't convert value %s (%s) to string"
+                                 %(str(value), type(value)))
         # If we get here something bad happened
-        raise TypeError("Can't convert value %s (%s) to string"%(str(value), type(value)))
+        raise TypeError("Can't convert value %s (%s) to string"
+                        %(str(value), type(value)))
+
+    @staticmethod
+    def to_integer(value):
+        # Some string values are lists of strings, so we return an error. We
+        # don't check for lists of integers.
+        if isinstance(value, (list)):
+            raise TypeError("Can't convert value %s (%s) to integer"
+                            %(str(value), type(value)))
+        # Null values are OK
+        elif pd.isnull(value):
+            return np.nan
+        # If its a integer, return it
+        elif isinstance(value, int):
+            return value
+        # If its a float, try and convert it.
+        elif isinstance(value, float):
+            if int(value) == value:
+                return int(value)
+            else:
+                raise TypeError("Can't convert value %f (%s) to integer"
+                                %(value, type(value)))
+        # If its a string, try and convert it, handling the error
+        elif isinstance(value, (str)):
+            # If it is an empty string, treat that has a Null
+            if value == "":
+                return np.nan
+            # Try and convert the string and if it fails, handle the error.
+            try:
+                return int(value)
+            except Exception as err:
+                raise TypeError("Can't convert value %s (%s) to integer"
+                                 %(str(value), type(value)))
+        # If we get here something bad happened
+        raise TypeError("Can't convert value %s (%s) to integer"%(str(value), type(value)))
+
     @staticmethod
     def to_boolean(value):
         # Null values are OK
