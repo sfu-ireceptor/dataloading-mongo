@@ -154,7 +154,6 @@ class Rearrangement(Parser):
         # and it should be of length 1
         repertoires = self.repository.getRepertoires(repertoire_link_field,
                                                      repertoire_link_id)
-        print(repertoires)
         if not len(repertoires) == 1:
             print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
             return False
