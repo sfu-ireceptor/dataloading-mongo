@@ -124,6 +124,8 @@ class Rearrangement(Parser):
 
     # Method to check and set rearrangement fields if they need to be...
     def checkIDFields(self, dataframe, repertoire_link_id):
+        # Get the link field.
+        repertoire_link_field = self.getRepertoireLinkIDField()
         # Get mapping of the ID fields we want to generate.
         rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
                                               self.getAIRRTag(),
@@ -148,13 +150,36 @@ class Rearrangement(Parser):
             print("ERROR: Can not load data with preset field %s"%(sample_id_field))
             return False
 
-        # If we have a field, set it.
+        # Look up the repertoire data for the record of interest. This is an array
+        # and it should be of length 1
+        repertoires = self.repository.getRepertoires(repertoire_link_field,
+                                                     repertoire_link_id)
+        print(repertoires)
+        if not len(repertoires) == 1:
+            print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
+            return False
+        repertoire = repertoires[0]
+
+        # If we have a field, set it. First, use the exisiting values if we have
+        # them in the reperotire record, if not use the link ID as a default as 
+        # we always need one...
         if not rep_id_field is None:
-            dataframe[rep_id_field] = repertoire_link_id
+            if rep_id_field in repertoires[0]:
+                dataframe[rep_id_field] = repertoire[rep_id_field]
+            else:
+                dataframe[rep_id_field] = repertoire_link_id
+
         if not data_id_field is None:
-            dataframe[data_id_field] = repertoire_link_id
+            if data_id_field in repertoires[0]:
+                dataframe[data_id_field] = repertoire[data_id_field]
+            else:
+                dataframe[data_id_field] = repertoire_link_id
+
         if not sample_id_field is None:
-            dataframe[sample_id_field] = repertoire_link_id
+            if sample_id_field in repertoires[0]:
+                dataframe[sample_id_field] = repertoire[sample_id_field]
+            else:
+                dataframe[sample_id_field] = repertoire_link_id
         return True
 
     # Method to set the Annotation Tool for the class.
