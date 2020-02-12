@@ -32,7 +32,9 @@ class Repertoire(Parser):
 
         # If the value is null and the field is nullable or there is no nullable
         # entry in the AIRR mapping (meaning NULL is OK) then return True.
-        if pd.isnull(value) and (field_nullable == None or field_nullable):
+        if (not isinstance(value, (list))and
+            pd.isnull(value) and
+            (field_nullable == None or field_nullable)):
             return True
 
         # If we get here, we have an AIRR field, so no matter what we 
@@ -47,13 +49,20 @@ class Repertoire(Parser):
         elif isinstance(value, (float,int,np.floating,np.integer)) and field_type == "number":
             # We need to accept integers and floats as numbers.
             valid_type = True
+        elif isinstance(value, (list)) and field_type == "array":
+            # List is a special case, we only have arrays of strings.
+            # Iterate and check each value
+            valid_type = True
+            for element in value:
+               if not isinstance(element, (str)):
+                   valid_type = False
         elif isinstance(value, (str)) and field_type == "ontology":
             # Ontology is a special case, as we store the ontology
             # field value in the name directly as a string.
             valid_type = True
 
         if self.verbose():
-            if pd.isnull(value):
+            if not isinstance(value, (list)) and pd.isnull(value):
                 print("Info: Field %s type ERROR, null value, field is non-nullable"%
                       (key))
             elif not valid_type:
