@@ -80,12 +80,11 @@ class AIRRRepertoire(Repertoire):
                 # TODO: Need to implement type checking on this field...
                 
                 if self.validAIRRFieldType(key, value, False):
-                    dictionary[repository_key] = value
+                    rep_key = self.fieldToRepository(key, rep_class)
+                    rep_value = self.valueToRepository(key, column, value, rep_class)
+                    dictionary[rep_key] = rep_value
                 else:
                     raise TypeError(key)
-                rep_key = self.fieldToRepository(key, rep_class)
-                rep_value = self.valueToRepository(key, column, value, rep_class)
-                dictionary[rep_key] = rep_value
             else:
                 # If we are handling a data processing element list, we have a hint as 
                 # to which element is the most important, as we can use the
