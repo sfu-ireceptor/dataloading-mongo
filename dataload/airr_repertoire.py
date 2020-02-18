@@ -144,6 +144,10 @@ class AIRRRepertoire(Repertoire):
             print("ERROR: AIRR repertoire validation failed for file %s - %s" %
                   (filename, err))
             return False
+        except Exception as err:
+            print("ERROR: AIRR repertoire validation failed for file %s - %s" %
+                  (filename, err))
+            return False
 
         # Get the fields to use for finding repertoire IDs, either using those IDs
         # directly or by looking for a repertoire ID based on a rearrangement file
