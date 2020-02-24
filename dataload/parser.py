@@ -162,6 +162,13 @@ class Parser:
             return len(value)
 
     @staticmethod
+    def null_integer_to_0(value):
+        if pd.isnull(value) or value is None:
+            return 0
+        else:
+            return value
+
+    @staticmethod
     def to_string(value):
         # Some string values are lists of strings, so we return the list.
         # For now we don't check the contents of the list for string type.
