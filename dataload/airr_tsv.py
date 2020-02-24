@@ -13,6 +13,7 @@ import json
 import gzip
 import airr
 
+from parser import Parser
 from rearrangement import Rearrangement
 from airr.io import RearrangementReader
 from airr.schema import ValidationError
