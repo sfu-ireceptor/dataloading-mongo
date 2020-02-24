@@ -203,7 +203,8 @@ class AIRR_TSV(Rearrangement):
                     if self.verbose():
                         print("Info: Computing junction amino acids length...",
                               flush=True)
-                    airr_df[ir_junc_aa_len] = airr_df[junction_aa].apply(str).apply(len)
+                    airr_df[ir_junc_aa_len] = airr_df[junction_aa].apply(str).apply(
+                                Parser.len_null_to_0)
 
             # We need to look up the "known parameter" from an iReceptor perspective (the 
             # field name in the iReceptor column mapping and map that to the correct 

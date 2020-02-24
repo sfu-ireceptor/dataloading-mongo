@@ -155,6 +155,13 @@ class Parser:
         return repo_field
 
     @staticmethod
+    def len_null_to_0(value):
+        if pd.isnull(value) or value is None or not isinstance(value,(str)):
+            return 0
+        else:
+            return len(value)
+
+    @staticmethod
     def to_string(value):
         # Some string values are lists of strings, so we return the list.
         # For now we don't check the contents of the list for string type.
