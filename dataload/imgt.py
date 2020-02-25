@@ -14,6 +14,7 @@ import pandas as pd
 from Bio.Seq import translate
 
 from rearrangement import Rearrangement
+from parser import Parser
 
 # Compute the np2 value from its components parts based on IMGT specification.
 # For IGH, TRB and TRD sequences with 1 D-REGION :concatenation of nt sequences
@@ -449,7 +450,8 @@ class IMGT(Rearrangement):
                                                  ireceptor_tag,
                                                  repository_tag)
         if junction_aa in mongo_concat and (junction_aa_length is None or not junction_aa_length in mongo_concat):
-            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(len)
+            mongo_concat[junction_aa_length] = mongo_concat[junction_aa].apply(
+                                                              Parser.len_null_to_null)
 
         # AIRR fields that need to be built from existing IMGT
         # generated fields. These fields are calculated based on

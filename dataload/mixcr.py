@@ -10,6 +10,7 @@ import gzip
 import time
 
 from rearrangement import Rearrangement
+from parser import Parser
 
 class MiXCR(Rearrangement):
     
@@ -189,7 +190,8 @@ class MiXCR(Rearrangement):
                                                  Rearrangement.get_substring)
                 if self.verbose():
                     print("Info: Computing junction amino acids length...", flush=True)
-                df_chunk[ir_junc_aa_len] = df_chunk[junction_aa].apply(str).apply(len)
+                df_chunk[ir_junc_aa_len] = df_chunk[junction_aa].apply(
+                                                         Parser.len_null_to_null)
 
             # MiXCR doesn't have junction nucleotide length, we want it in our
             # repository.
