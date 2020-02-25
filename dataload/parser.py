@@ -162,6 +162,13 @@ class Parser:
             return len(value)
 
     @staticmethod
+    def len_null_to_null(value):
+        if pd.isnull(value) or value is None or not isinstance(value,(str)):
+            return np.nan
+        else:
+            return len(value)
+
+    @staticmethod
     def null_integer_to_0(value):
         if pd.isnull(value) or value is None:
             return 0
