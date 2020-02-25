@@ -381,34 +381,36 @@ class Rearrangement(Parser):
                 # Get the type of the first element of the column 
                 oldtype = type(column_data.iloc[0])
 
-                # Need to convert to boolean for the repository
                 if repo_type == "boolean":
+                    # Need to convert to boolean for the repository
                     df[column]= column_data.apply(Parser.to_boolean)
                     if self.verbose():
                         print("Info: Mapped column %s to bool in repository (%s, %s, %s, %s)"%
                               (column, airr_type, repo_type, oldtype,
                                type(df[column].iloc[0])))
                 elif repo_type == "integer":
+                    # Need to convert to integer for the repository
                     df[column]= column_data.apply(Parser.to_integer)
-                    df[column] = df[column].astype("Int64")
                     if self.verbose():
                         print("Info: Mapped column %s to int in repository (%s, %s, %s, %s)"%
                               (column, airr_type, repo_type, oldtype,
                                type(df[column].iloc[0])))
                 elif repo_type == "number":
+                    # Need to convert to number (float) for the repository
                     df[column]= column_data.apply(Parser.to_number)
                     if self.verbose():
                         print("Info: Mapped column %s to number in repository (%s, %s, %s, %s)"%
                               (column, airr_type, repo_type, oldtype,
                                type(df[column].iloc[0])))
                 elif repo_type == "string":
+                    # Need to convert to string for the repository
                     df[column]= column_data.apply(Parser.to_string)
                     if self.verbose():
                         print("Info: Mapped column %s to string in repository (%s, %s, %s, %s)"%
                               (column, airr_type, repo_type, oldtype,
                                type(df[column].iloc[0])))
                 else:
-                    # String in repository, float on input, convert float to string
+                    # No mapping for the repository, which is OK, we don't make any changes
                     print("Warning: No mapping for type %s storing as is, %s (type = %s)."
                           %(repo_type,column,type(column_data.iloc[0])))
             # Catch any errors
