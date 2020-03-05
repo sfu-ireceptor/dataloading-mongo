@@ -107,8 +107,6 @@ class AIRR_TSV(Rearrangement):
 
         # Get root filename from the path
         filename = os.path.basename(path)
-        # May need to strip off any gzip 'archive' file extension
-        filename = filename.replace(".gz","")
 
         # Get the single, unique repertoire link id for the filename we are loading. If
         # we can't find one, this is an error and we return failure.
