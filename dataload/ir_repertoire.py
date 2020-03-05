@@ -54,6 +54,14 @@ class IRRepertoire(Repertoire):
             return False
 
         # Set the tag for the AIRR type column
+        airr_array_tag = "airr_is_array"
+        # Check to see if we have the columns needed in the mapping, if not exit.
+        if not self.getAIRRMap().hasColumn(airr_array_tag):
+            print("ERROR: Could not find AIRR type mapping (%s) in mapping file"%
+                  (airr_array_tag))
+            return False
+
+        # Set the tag for the AIRR type column
         airr_type_tag = "airr_type"
         # Check to see if we have the columns needed in the mapping, if not exit.
         if not self.getAIRRMap().hasColumn(airr_type_tag):
@@ -207,8 +215,11 @@ class IRRepertoire(Repertoire):
             field_type = self.getAIRRMap().getMapping(curation_file_column,
                                            airr_tag, airr_type_tag,
                                            self.getAIRRMap().getIRRepertoireClass())
-            # Skip ontology fields and array fields for now.
-            if not field_type in ["ontology", "array"]:
+            is_array = self.getAIRRMap().getMapping(curation_file_column,
+                                           airr_tag, airr_array_tag,
+                                           self.getAIRRMap().getIRRepertoireClass())
+            # Skip array fields for now.
+            if not is_array:
                 value = column_data[0]
                 if not self.validAIRRFieldType(curation_file_column, value, False):
                     if self.verbose():

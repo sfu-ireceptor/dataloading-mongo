@@ -383,15 +383,18 @@ class Parser:
         # Define the columns to use for the mappings
         airr_type_tag = "airr_type"
         airr_nullable_tag = "airr_nullable"
+        airr_array_tag = "airr_is_array"
         repository_type_tag = "ir_repository_type"
 
         # Get the types of the fields, both the AIRR type and the repository type
         airr_field_type = self.getAIRRMap().getMapping(field, field_column,
-                                                       airr_type_tag, map_class)
+                                                airr_type_tag, map_class)
         repository_field_type = self.getAIRRMap().getMapping(field, field_column,
-                                                             repository_type_tag, map_class)
+                                                repository_type_tag, map_class)
         field_nullable = self.getAIRRMap().getMapping(field, field_column,
-                                                      airr_nullable_tag, map_class)
+                                                airr_nullable_tag, map_class)
+        is_array = self.getAIRRMap().getMapping(field, field_column,
+                                                airr_array_tag, map_class)
 
         # Check for a null value on a nullable field, if it happens this is an error
         # so raise an exception. Note if we could not find a mapping for the
@@ -403,7 +406,32 @@ class Parser:
         # Do a default the conversion for the value
         rep_value = value
 
-        if repository_field_type == "string":
+        # Handle arrays first... We want to do this as the field_type of an
+        # array is a string, which can mess us up.
+        if is_array:
+            # Handle arrays, a null value is OK...
+            if value is None:
+                rep_value = None
+            elif isinstance(value, list):
+                # Currently, the spec only supports arrays of strings. If any of the
+                # elements are not string, raise a type error.
+                for item in value:
+                    self.valueToRepository(field, field_column, item, map_class)
+                # Otherwise, return the array of strings...
+                rep_value = value
+            elif isinstance(value, str):
+                # Assume a comma separated list of strings, create the array and return it.
+                rep_value = value.split(',')
+                if isinstance(rep_value, list):
+                    rep_value = [x.strip() for x in rep_value]
+                else:
+                    raise TypeError("Unable to convert a ',' separated string to an array (" +
+                                     value + ")")
+            else:
+                if self.verbose():
+                    print("Info: Unable to convert field %s = %s (%s, %s, %s), not converted"%
+                          (field, value, airr_field_type, repository_field_type, type(value)))
+        elif repository_field_type == "string":
             # We don't want null strings, we want empty strings.
             if value is None:
                 rep_value = ""
@@ -474,32 +502,6 @@ class Parser:
                 rep_value = None
             else:
                 rep_value = float(value)
-        elif repository_field_type == "array":
-            # A null value is OK...
-            if value is None:
-                rep_value = None
-            elif isinstance(value, list):
-                # Currently, the spec only supports arrays of strings. If any of the
-                # elements are not string, raise a type error.
-                for item in value:
-                    if not isinstance(item, str):
-                        raise TypeError("Invalid array value " + str(item) +
-                                            " for field " + field + " expected a string")
-                # Otherwise, return the array of strings...
-                rep_value = value
-            elif isinstance(value, str):
-                # Assume a comma separated list of strings, create the array and return it.
-                rep_value = value.split(',')
-                if isinstance(rep_value, list):
-                    rep_value = [x.strip() for x in rep_value]
-                    #map(str.strip, rep_value)
-                else:
-                    raise TypeError("Unable to convert a ',' separated string to an array (" +
-                                     value + ")")
-            else:
-                if self.verbose():
-                    print("Info: Unable to convert field %s = %s (%s, %s, %s), not converted"%
-                          (field, value, airr_field_type, repository_field_type, type(value)))
         else:
             if self.verbose():
                 print("Info: Unable to convert field %s = %s (%s, %s, %s), not converted"%

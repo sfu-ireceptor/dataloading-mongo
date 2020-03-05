@@ -21,6 +21,8 @@ class Repertoire(Parser):
                                "airr_type", self.getAIRRMap().getRepertoireClass())
         field_nullable = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
                                "airr_nullable", self.getAIRRMap().getRepertoireClass())
+        is_array = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
+                               "airr_is_array", self.getAIRRMap().getRepertoireClass())
         # If we are not doing strict typing, then if the key is not an AIRR
         # key (field_type == None) then we return True. This allows us to
         # check AIRR keys only and skip non-AIRR keys. If strict checking is
@@ -49,17 +51,13 @@ class Repertoire(Parser):
         elif isinstance(value, (float,int,np.floating,np.integer)) and field_type == "number":
             # We need to accept integers and floats as numbers.
             valid_type = True
-        elif isinstance(value, (list)) and field_type == "array":
+        elif isinstance(value, (list)) and is_array:
             # List is a special case, we only have arrays of strings.
             # Iterate and check each value
             valid_type = True
             for element in value:
-               if not isinstance(element, (str)):
-                   valid_type = False
-        elif isinstance(value, (str)) and field_type == "ontology":
-            # Ontology is a special case, as we store the ontology
-            # field value in the name directly as a string.
-            valid_type = True
+                if not self.validAIRRFieldType(key, element, strict):
+                    valid_type = False
 
         if self.verbose():
             if not isinstance(value, (list)) and pd.isnull(value):
