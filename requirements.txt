@@ -1,3 +1,6 @@
 pandas
 pymongo
 airr
+requests
+xlrd
+biopython
