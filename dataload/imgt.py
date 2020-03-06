@@ -222,9 +222,14 @@ class IMGT(Rearrangement):
         # Open the tar file, extract the data, and close the tarfile. 
         # This leaves us with a folder with all of the individual vQUest
         # files extracted in this location.
-        tar = tarfile.open(filewithpath)
-        tar.extractall(self.getScratchFolder())
-        tar.close()
+
+        try:
+            tar = tarfile.open(filewithpath)
+            tar.extractall(self.getScratchFolder())
+            tar.close()
+        except Exception as err:
+            print("ERROR: Unable to open IMGT tar file %s" % (filewithpath))
+            return False
 
         # Get the column of values from the AIRR tag. We only want the
         # Rearrangement related fields.
