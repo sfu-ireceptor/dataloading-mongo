@@ -334,10 +334,10 @@ class IRRepertoire(Repertoire):
                 try:
                     rep_value = self.valueToRepository(key, repository_tag, value, rep_class)
                 except TypeError as error:
-                    print("ERROR: %s"%(error))
+                    print("ERROR: could not convert field %s, %s"%(key, error))
                     return False
                 except Exception as error:
-                    print("ERROR: %s"%(error))
+                    print("ERROR: could not convert field %s, %s"%(key, error))
                     return False
                 # If the conversion worked for this key, store the converted value
                 converted_record[key] = rep_value
