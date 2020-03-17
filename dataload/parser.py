@@ -406,6 +406,11 @@ class Parser:
         # Do a default the conversion for the value
         rep_value = value
 
+        #print("Info: Converting field %s %s"%(field, value))
+        #print("Info:    field type %s %s"%(airr_field_type, repository_field_type))
+        #print("Info:    nullable %s"%(str(field_nullable)))
+        #print("Info:    is_array %s"%(str(is_array)))
+
         # Handle arrays first... We want to do this as the field_type of an
         # array is a string, which can mess us up.
         if is_array:

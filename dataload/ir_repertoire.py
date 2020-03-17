@@ -336,6 +336,9 @@ class IRRepertoire(Repertoire):
                 except TypeError as error:
                     print("ERROR: %s"%(error))
                     return False
+                except Exception as error:
+                    print("ERROR: %s"%(error))
+                    return False
                 # If the conversion worked for this key, store the converted value
                 converted_record[key] = rep_value
 
