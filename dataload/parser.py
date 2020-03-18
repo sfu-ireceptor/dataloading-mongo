@@ -439,7 +439,7 @@ class Parser:
         elif repository_field_type == "string":
             # We don't want null strings, we want empty strings.
             if value is None:
-                rep_value = ""
+                rep_value = None 
             else:
                 rep_value = str(value)
         elif repository_field_type == "boolean":
