@@ -43,7 +43,7 @@ class AIRRRepertoire(Repertoire):
         elif isinstance(value, dict):
             # We need to handle the AIRR ontology terms. Ontologies have two fields in
             # their dictionary, a value and an id.
-            if value.get('value') and value.get('id'):
+            if 'value' in value and 'id' in value:
                 # In an ontology, the dictionary contains two fields, a value and an id.
                 # We store this in the repository as the value field being the key and
                 # the id field as having an _id suffix added to the key
