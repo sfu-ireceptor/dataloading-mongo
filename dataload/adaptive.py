@@ -14,6 +14,69 @@ from parser import Parser
 
 class Adaptive(Rearrangement):
     
+    # Static method to convert an Adaptive frame_type field to a
+    # true/false productive value.
+    @staticmethod
+    def mapProductive(frame_type):
+        # Only "In" for "in frame" are productive
+        if frame_type == "In":
+            return True
+        else:
+            return False
+
+    # Static method to convert an Adaptive frame_type field to a
+    # true/false stop_codon value
+    @staticmethod
+    def mapStopCodon(frame_type):
+        # If frame_type contains "Stop" it contains a stop_codon.
+        if frame_type == "Stop":
+            return True
+        else:
+            return False
+
+    # Static method to convert an Adaptive frame_type field to a
+    # true/false vj_in_frame value
+    @staticmethod
+    def mapInFrame(frame_type):
+        # If frame_type contains "In" it is in frame, assume all
+        # else is out of frame. This implies that if the sequence
+        # has a stop codon we are setting the sequence to be out of
+        # frame, which I am not 100% sure is correct... But best we
+        # can do I believe.
+        if frame_type == "In":
+            return True
+        else:
+            return False
+
+    # Static method to convert an Adaptive gene call to something that is
+    # consistent with IMGT nomenclature.
+    @staticmethod
+    def convertGeneCall(gene_call):
+        # Change the TCR with TR as per IMGT nomenclature
+        gene_call = gene_call.replace("TCR", "TR")
+        # Get rid of the 0 prefix in the gene if necessary
+        gene_call = gene_call.replace("-0", "-")
+        # Get rid of the 0 prefix on the gene family if necessary
+        gene_call = gene_call.replace("TRBV0", "TRBV")
+        gene_call = gene_call.replace("TRAV0", "TRAV")
+        gene_call = gene_call.replace("TRBD0", "TRBD")
+        gene_call = gene_call.replace("TRAD0", "TRAD")
+        gene_call = gene_call.replace("TRBJ0", "TRBJ")
+        gene_call = gene_call.replace("TRAJ0", "TRAJ")
+
+        gene_call = gene_call.replace("IGHV0", "IGHV")
+        gene_call = gene_call.replace("IGLV0", "IGLV")
+        gene_call = gene_call.replace("IGKV0", "IGKV")
+        gene_call = gene_call.replace("IGHD0", "IGHD")
+        gene_call = gene_call.replace("IGLD0", "IGLD")
+        gene_call = gene_call.replace("IGKD0", "IGKD")
+        gene_call = gene_call.replace("IGHJ0", "IGHJ")
+        gene_call = gene_call.replace("IGLJ0", "IGLJ")
+        gene_call = gene_call.replace("IGKJ0", "IGKJ")
+
+        return gene_call
+        
+
     def __init__( self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Rearrangement.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
         # The annotation tool used for the Adaptive parser is of course Adaptive
@@ -203,8 +266,6 @@ class Adaptive(Rearrangement):
             # We need to look up the field from an iReceptor perspective. We want the 
             # field name in the iReceptor column mapping and map that to the correct
             # field name for the repository we are writing to.
-            ############### FIX - We need to ensure the the gene calls use the right
-            # gene nomenclature.
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
@@ -221,6 +282,12 @@ class Adaptive(Rearrangement):
             ir_jgene_family = airr_map.getMapping("ir_jgene_family", 
                                                 ireceptor_tag, repository_tag)
 
+            # Process the v/d/j_call conversion. Adaptive does not use the IMGT 
+            # nomenclature so we need to conver their v/d/j_call values to something
+            # that is AIRR compatible.
+            df_chunk[v_call] = df_chunk[v_call].apply(Adaptive.convertGeneCall)
+            df_chunk[d_call] = df_chunk[d_call].apply(Adaptive.convertGeneCall)
+            df_chunk[j_call] = df_chunk[d_call].apply(Adaptive.convertGeneCall)
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
             self.processGene(df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
@@ -229,14 +296,23 @@ class Adaptive(Rearrangement):
             # If we don't already have a locus (that is the data file didn't provide
             # one) then calculate the locus based on the v_call array.
             locus = airr_map.getMapping("locus", ireceptor_tag, repository_tag)
-            if not locus in df_chunk:
+            if not locus in df_chunk and v_call in df_chunk:
                 df_chunk[locus] = df_chunk[v_call].apply(Rearrangement.getLocus)
 
             # Assign each record the constant fields for all records in the chunk
-            ############### FIX - this can be calculated from the productive
+            # For Adaptive productive, stop_codon, and vj_in_frame can be calculated
+            # from the "frame_type" field which is mapped to productive in the mapping.
             productive = airr_map.getMapping("productive",
                                              ireceptor_tag, repository_tag)
-            df_chunk[productive] = True
+            vj_in_frame = airr_map.getMapping("vj_in_frame",
+                                             ireceptor_tag, repository_tag)
+            stop_codon = airr_map.getMapping("stop_codon",
+                                             ireceptor_tag, repository_tag)
+            if not stop_codon is None:
+                df_chunk[stop_codon] = df_chunk[productive].apply(Adaptive.mapStopCodon)
+            if not vj_in_frame is None:
+                df_chunk[vj_in_frame] = df_chunk[productive].apply(Adaptive.mapInFrame)
+            df_chunk[productive] = df_chunk[productive].apply(Adaptive.mapProductive)
 
             rep_rearrangement_link_field = airr_map.getMapping(
                                              rearrangement_link_field,
