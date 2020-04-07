@@ -29,24 +29,28 @@ class Adaptive(Rearrangement):
     @staticmethod
     def mapStopCodon(frame_type):
         # If frame_type contains "Stop" it contains a stop_codon.
+        # If it is in frame, then there is no stop codon. 
+        # Otherwise return None as we don't know.
         if frame_type == "Stop":
             return True
-        else:
+        elif frame_type == "In":
             return False
+        else:
+            return None
 
     # Static method to convert an Adaptive frame_type field to a
     # true/false vj_in_frame value
     @staticmethod
     def mapInFrame(frame_type):
-        # If frame_type contains "In" it is in frame, assume all
-        # else is out of frame. This implies that if the sequence
-        # has a stop codon we are setting the sequence to be out of
-        # frame, which I am not 100% sure is correct... But best we
-        # can do I believe.
+        # If frame_type contains "In" then vj_in_frame is True
+        # If it is "Out" then vj_in_frame is False
+        # Otherwise we don't know what it is so return Null
         if frame_type == "In":
             return True
-        else:
+        elif frame_type == "Out":
             return False
+        else:
+            return None
 
     # Static method to convert an Adaptive gene call to something that is
     # consistent with IMGT nomenclature.
@@ -287,7 +291,7 @@ class Adaptive(Rearrangement):
             # that is AIRR compatible.
             df_chunk[v_call] = df_chunk[v_call].apply(Adaptive.convertGeneCall)
             df_chunk[d_call] = df_chunk[d_call].apply(Adaptive.convertGeneCall)
-            df_chunk[j_call] = df_chunk[d_call].apply(Adaptive.convertGeneCall)
+            df_chunk[j_call] = df_chunk[j_call].apply(Adaptive.convertGeneCall)
             # Build the v_call field, as an array if there is more than one gene
             # assignment made by the annotator.
             self.processGene(df_chunk, v_call, v_call, ir_vgene_gene, ir_vgene_family)
