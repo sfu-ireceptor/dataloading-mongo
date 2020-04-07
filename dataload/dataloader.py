@@ -20,6 +20,7 @@ from airr_repertoire import AIRRRepertoire
 from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
+from adaptive import Adaptive
 
 # Get the command line arguments...
 def getArguments():
@@ -96,6 +97,15 @@ def getArguments():
         const="MiXCR",
         dest="type",
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool."
+    )
+
+    # Processing Adaptive data
+    type_group.add_argument(
+        "--adaptive",
+        action='store_const',
+        const="Adaptive",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file as produced by the Adaptive ImmuneAccess platform."
     )
 
     # Processing AIRR TSV annotation data, typically (but not limited to) from IgBLAST
@@ -254,6 +264,11 @@ if __name__ == "__main__":
         # process AIRR TSV
         print("Info: Processing AIRR TSV annotation data file: ", options.filename)
         parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
+                          airr_map, repository)
+    elif options.type == "Adaptive":
+        # process Adaptive
+        print("Info: Processing Adaptive annotation data file: ", options.filename)
+        parser = Adaptive(options.verbose, options.database_map, options.database_chunk,
                           airr_map, repository)
     elif options.type == "ir_general":
         # process a general file (non annotation tool specific)

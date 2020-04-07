@@ -538,14 +538,15 @@ class IMGT(Rearrangement):
 
                 # We need locus to define np1 and np2
                 locus_field = airr_map.getMapping("locus", ireceptor_tag, repository_tag)
-                vquest_df[locus_field] = mongo_concat[locus_field]
-                vquest_array.append(locus_field)
+                if not locus_field is None:
+                    vquest_df[locus_field] = mongo_concat[locus_field]
+                    vquest_array.append(locus_field)
 
-                # Call the correct conversion function
-                if value == "np1":
-                    mongo_concat[repository_field] = vquest_df.apply(compute_np1, axis=1)
-                elif value == "np2":
-                    mongo_concat[repository_field] = vquest_df.apply(compute_np2, axis=1)
+                    # Call the correct conversion function
+                    if value == "np1":
+                        mongo_concat[repository_field] = vquest_df.apply(compute_np1, axis=1)
+                    elif value == "np2":
+                        mongo_concat[repository_field] = vquest_df.apply(compute_np2, axis=1)
             elif value == 'd_sequence_start' or value == 'd_sequence_end':
                 # These are numerical start/end fields, built from one of two possible
                 # source fields. Again, we assume that either field, but not

@@ -560,7 +560,7 @@ class Rearrangement(Parser):
             return False
         # Get the field we want to map for the rearrangement ID for each record.
         rearrange_id_field =  self.getAIRRMap().getMapping("rearrangement_id",
-                                              self.getAIRRTag(),
+                                              self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRearrangementClass())
         # If we found a repository record, write a string repersentation of the ID 
