@@ -40,6 +40,10 @@ def getArguments():
         "--skipload",
         action="store_true",
         help="Run the program without actually lodaing data into the repository. This option will allow testing of the entire load process without changing the repository.")
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Run the program in update mode rather than insert mode. This only works for repertoires.")
 
     # Add configuration options 
     config_group = parser.add_argument_group("Configuration file options", "")
@@ -221,7 +225,7 @@ if __name__ == "__main__":
                             options.database,
                             options.repertoire_collection,
                             options.rearrangement_collection,
-                            options.skipload)
+                            options.skipload, options.update)
     # Check on the successful creation of the repository
     if repository is None or not repository:
         sys.exit(1)

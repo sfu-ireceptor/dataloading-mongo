@@ -170,10 +170,19 @@ class Repertoire(Parser):
         # repertoire_id's (combined with their data_processing_id and 
         # sample_processing_id) should be unique.
         rep_array = self.repositoryGetRepertoires(rep_id_field, repertoire_id)
-        # The number of repertoires should be 0 other wise it already exists. Fail if
-        # the number is not 0.
         num_repertoires = len(rep_array)
-        # Print an error if record already exists.
+        # If we are updating, we want one, and only one record.
+        if self.repository.updateOnly():
+            print("REPERTOIRE UPDATE")
+            print(rep_array)
+            if num_repertoires != 1:
+                print("ERROR: Repertoire update requires a single record, found %d"%
+                      (num_repertoires))
+                return None
+            return None
+
+        # The number of repertoires should be 0 other wise it already exists. Fail if
+        # the number is not 0. Print an error if record already exists.
         if not num_repertoires == 0:
             duplicate = True
             for rep in rep_array:
