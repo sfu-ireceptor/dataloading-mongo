@@ -4,7 +4,7 @@ FROM mongo:3
 COPY . /app
 
 # download mapping file
-ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey/AIRR-iReceptorMapping.txt /app/config/
+ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey-v3/AIRR-iReceptorMapping.txt /app/config/
 
 # set working directory
 WORKDIR /root
