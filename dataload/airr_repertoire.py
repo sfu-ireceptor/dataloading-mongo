@@ -43,7 +43,7 @@ class AIRRRepertoire(Repertoire):
         elif isinstance(value, dict):
             # We need to handle the AIRR ontology terms. Ontologies have two fields in
             # their dictionary, a value and an id.
-            if 'value' in value and 'id' in value:
+            if 'label' in value and 'id' in value:
                 # In an ontology, the dictionary contains two fields, a value and an id.
                 # We store this in the repository as the value field being the key and
                 # the id field as having an _id suffix added to the key
@@ -52,10 +52,10 @@ class AIRRRepertoire(Repertoire):
 
                 # Check types of both the value and the id, convert the data type, and
                 # add to the dictionary.
-                if (self.validAIRRFieldType(value_key, value['value'], False) and
+                if (self.validAIRRFieldType(value_key, value['label'], False) and
                     self.validAIRRFieldType(id_key, value['id'], False)):
                     rep_value = self.valueToRepository(value_key, column,
-                                                       value['value'], rep_class)
+                                                       value['label'], rep_class)
                     dictionary[self.fieldToRepository(value_key,rep_class)] = rep_value
                     rep_value = self.valueToRepository(id_key, column,
                                                        value['id'], rep_class)
