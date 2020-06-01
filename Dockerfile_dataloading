@@ -8,7 +8,7 @@ RUN pip install -r /requirements.txt
 COPY . /app
 
 # download mapping file
-ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey-v1.3-dataload/AIRR-iReceptorMapping.txt /app/config/
+ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey-v3/AIRR-iReceptorMapping.txt /app/config/
 
 # set working directory
 WORKDIR /root
