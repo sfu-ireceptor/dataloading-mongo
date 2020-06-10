@@ -67,6 +67,10 @@ Data loading into a Mongo repository is faster if you load the data without inde
 
 Note that if you are using the iRecepetor Turnkey's data loading scripts, the dropping and creation of indexes for efficient bulk data loading of large rearragnement data sets is handled for you.
 
+# Data loading examples
+
+The [iReceptor Data Loading and Curation github repository](https://github.com/sfu-ireceptor/dataloading-curation) has examples on how to load the various types of Repertoire and Rearrangement data sets.
+
 # Data loading help
 
 ```
