@@ -6,7 +6,8 @@ repository after you have loaded the data.
 
 ## Usage 
 
-python3 ./AIRR-repertoire-checks.py -h
+` python3 ./AIRR-repertoire-checks.py -h`
+
      DATA PROVENANCE TEST 
 
      usage: AIRR-repertoire-checks.py [-h] [-v]
