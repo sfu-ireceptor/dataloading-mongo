@@ -8,15 +8,13 @@ repository after you have loaded the data.
 
 Ensure you run `generate_facet_json.py` first to generate the appropriate repertoire_id JSON input files. 
 
-     usage: generate_facet_json.py [-h] [-v]
-                                   base_url entry_point path_to_json json_files
+     usage: generate_facet_json.py [-h] [-v] base_url entry_point path_to_json
 
      positional arguments:
        base_url       String containing URL to API server (e.g. https://airr-
                       api2.ireceptor.org)
        entry_point    Options: string 'rearragement' or string 'repertoire'
-       path_to_json   Options: string 'rearragement' or string 'repertoire'
-       json_files     Enter full path to JSON query containing repertoire ID's for
+       path_to_json   Enter full path to JSON query containing repertoire ID's for
                       a given study - this must match the value given for study_id
 
      optional arguments:
