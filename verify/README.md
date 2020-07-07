@@ -4,3 +4,54 @@ In order to ensure that data is loaded into an iReceptor repository correctly
 we provide you with a number of verification tests that you can perform on the
 repository after you have loaded the data. 
 
+## Usage 
+
+python3 ./AIRR-repertoire-checks.py -h
+     DATA PROVENANCE TEST 
+
+     usage: AIRR-repertoire-checks.py [-h] [-v]
+                                      mapping_file base_url entry_point json_files
+                                      master_md study_id facet_count annotation_dir
+                                      details_dir Coverage
+
+     positional arguments:
+       mapping_file    Indicate the full path to where the mapping file is found
+       base_url        String containing URL to API server (e.g. https://airr-
+                       api2.ireceptor.org)
+       entry_point     Options: string 'rearragement' or string 'repertoire'
+       json_files      Enter full path to JSON query containing repertoire ID's for
+                       a given study - this must match the value given for study_id
+       master_md       Full path to master metadata
+       study_id        Study ID (study_id) associated to this study
+       facet_count     Enter full path to JSON queries containing facet count
+                       request for each repertoire
+       annotation_dir  Enter full path to where annotation files associated with
+                       study_id
+       details_dir     Enter full path where you'd like to store content feedback
+                       in CSV format
+       Coverage        Sanity check levels: enter CC for content comparison, enter
+                       FC for facet count vs ir_curator count test, enter AT for
+                       AIRR type test
+
+     optional arguments:
+       -h, --help      show this help message and exit
+       -v, --verbose   Run the program in verbose mode.
+
+
+### Example
+
+     python3 AIRR-repertoire-checks.py "./MappingFiles/AIRR-iReceptorMapping-latest.txt" "https://ipa1.ireceptor.org" "repertoire" "./JSON-Files/repertoire/PRJNA493983_ipa5.json" "./MetadataFiles/master_metadata_UTF-latest.csv" "PRJEB9332" "./JSON-Files/facet_queries_for_sanity_tests/ipa1/PRJEB9332/" "./annotation/" "./ExtraFeedback/" "CC-FC-AT"
+
+## curlairripa Python Package 
+
+Open a command line, change directories to where the performance script is, and enter the following command
+
+`pip3 install -i https://test.pypi.org/simple/ curlairripa`
+
+Ensure the curlairripa.py file is on the same directory where the adc_api_performancetest.py file is located. 
+
+To use modules in that library:
+
+`from curlairripa import *`
+
+To see more information on the curlairripa Python package, go to [https://test.pypi.org/project/curlairripa/](https://test.pypi.org/project/curlairripa/)
