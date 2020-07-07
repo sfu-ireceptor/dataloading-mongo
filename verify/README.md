@@ -68,7 +68,9 @@ Once that has been completed, you can then run a repertoire sanity check with th
 
 Open a command line, change directories to where the performance script is, and enter the following command
 
-`pip3 install -i https://test.pypi.org/simple/ curlairripa`
+     git clone https://github.com/sfu-ireceptor/dataloading-mongo
+     cd verify/
+     pip3 install -i https://test.pypi.org/simple/ curlairripa
 
 Ensure the curlairripa.py file is on the same directory where the adc_api_performancetest.py file is located. 
 
