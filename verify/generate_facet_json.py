@@ -23,14 +23,9 @@ def getArguments():
         help="Options: string 'rearragement' or string 'repertoire'"
     )
     
-    # Path to new JSON files
-    parser.add_argument(
-        "path_to_json",
-        help="Options: string 'rearragement' or string 'repertoire'"
-    )
     
     parser.add_argument(
-            "json_files",
+            "path_to_json",
         help="Enter full path to JSON query containing repertoire ID's for a given study - this must match the value given for study_id"
     )
     
