@@ -6,6 +6,29 @@ repository after you have loaded the data.
 
 ## Usage 
 
+Ensure you run `generate_facet_json.py` first to generate the appropriate repertoire_id JSON input files. 
+
+     usage: generate_facet_json.py [-h] [-v]
+                                   base_url entry_point path_to_json json_files
+
+     positional arguments:
+       base_url       String containing URL to API server (e.g. https://airr-
+                      api2.ireceptor.org)
+       entry_point    Options: string 'rearragement' or string 'repertoire'
+       path_to_json   Options: string 'rearragement' or string 'repertoire'
+       json_files     Enter full path to JSON query containing repertoire ID's for
+                      a given study - this must match the value given for study_id
+
+     optional arguments:
+       -h, --help     show this help message and exit
+       -v, --verbose  Run the program in verbose mode.
+
+Example:
+
+     python 3./generate_facet_json.py "http://covid19-2.ireceptor.org" "repertoire" "./JSON-Files/repertoire/nofilters.json"
+
+Once that has been completed, you can then run a repertoire sanity check with the facet JSON as well as the repertoire ID input JSON files. 
+
      python3 ./AIRR-repertoire-checks.py -h
 
      DATA PROVENANCE TEST 
