@@ -27,9 +27,9 @@ Ensure you run `generate_facet_json.py` first to generate the appropriate repert
 
 Example:
 
-     python 3./generate_facet_json.py "http://covid19-2.ireceptor.org" "repertoire" "./JSON-Files/repertoire/nofilters.json" "NoID1"
+     python 3./generate_facet_json.py http://covid19-2.ireceptor.org "repertoire" "./JSON-Files/repertoire/nofilters.json" "NoID1"
      
-     python 3./generate_facet_json.py "http://covid19-2.ireceptor.org" "repertoire" "./JSON-Files/repertoire/nofilters.json" "PRJNA1234"
+     python 3./generate_facet_json.py http://covid19-2.ireceptor.org "repertoire" "./JSON-Files/repertoire/nofilters.json" "PRJNA1234"
 
 Once that has been completed, you can then run a repertoire sanity check with the facet JSON as well as the repertoire ID input JSON files. 
 
