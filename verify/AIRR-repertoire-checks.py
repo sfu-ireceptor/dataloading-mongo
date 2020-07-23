@@ -1,8 +1,8 @@
-######### PERFORMANCE TESTING PYTHON SCRIPT
-######### AUTHOR: LAURA GUTIERREZ FUNDERBURK
-######### SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
-######### CREATED ON: December 5 2019
-######### LAST MODIFIED ON: June 2 2020
+# REPERTOIRE SANITY TESTING PYTHON SCRIPT
+# AUTHOR: LAURA GUTIERREZ FUNDERBURK
+# SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
+# CREATED ON: December 5 2019
+# LAST MODIFIED ON: July 22 2020
 
 """
 Use
@@ -185,7 +185,7 @@ def ir_seq_count_imgt(data_df,repertoire_id,query_dict,query_url, header_dict,an
     files_found = []
     files_notfound = []
     
-    ir_file = data_df["data_processing_files"].tolist()[0].replace(" ","")  
+    ir_file = data_df["data_processing_files"].to_list()[0].replace(" ","")   
     line_one = ir_file.split(",")
     ir_rea = data_df[connecting_field].tolist()[0] 
     ir_sec = data_df["ir_curator_count"].tolist()[0]
@@ -225,6 +225,7 @@ def ir_seq_count_imgt(data_df,repertoire_id,query_dict,query_url, header_dict,an
         # Validate facet count is non-empty
     if json_normalize(json_data["Facet"]).empty == True:
         ir_seq_API = "NINAPI"
+        fac_count = pd.DataFrame({"repertoire_id":[0]})
     else:
         fac_count = json_normalize(json_data["Facet"])
         ir_seq_API = str(fac_count['count'][0])
@@ -268,14 +269,14 @@ def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict
     files_found = []
     files_notfound = []
     
-    ir_file = data_df["data_processing_files"].tolist()[0].replace(" ","")  
+    ir_file = data_df["data_processing_files"].to_list()[0].replace(" ","")   
     line_one = ir_file.split(",")
     ir_rea = data_df[connecting_field].tolist()[0] 
     ir_sec = data_df["ir_curator_count"].tolist()[0]
     files = os.listdir(annotation_dir)
     print(annotation_dir)
 
-    if "fmt" not in ir_file or "tsv" not in ir_file:
+    if "fmt" not in ir_file and "tsv" not in ir_file:
         number_lines.append(0)
         sum_all = "NFMD"
     else:   
@@ -311,6 +312,7 @@ def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict
     # Validate facet query is non-empty
     if json_normalize(json_data["Facet"]).empty == True:
         ir_seq_API = "NINAPI"
+        fac_count = pd.DataFrame({"repertoire_id":[0]})
     else:
         fac_count = json_normalize(json_data["Facet"])
         ir_seq_API = str(fac_count['count'][0]) 
@@ -399,6 +401,7 @@ def ir_seq_count_mixcr(data_df,repertoire_id,query_dict,query_url, header_dict,a
         
     if json_normalize(json_data["Facet"]).empty == True:
         ir_seq_API = "NINAPI"
+        fac_count = pd.DataFrame({"repertoire_id":[0]})
     else:
         fac_count = json_normalize(json_data["Facet"])
         ir_seq_API = str(fac_count['count'][0]) 
@@ -614,9 +617,13 @@ if __name__ == "__main__":
     # Get metadata and specific study
     master = master.loc[:, master.columns.notnull()]
     master = master.replace('\n',' ', regex=True)
-    master["study_id"] = master["study_id"].str.strip()
+    if "study_id" in master.columns and master['study_id'].isnull().sum()<1:
+        master["study_id"] = master["study_id"].str.strip()
 
-    data_df = master.loc[master['study_id'] == study_id]
+        data_df = master.loc[master['study_id'] == study_id]
+    else:
+        
+        data_df = master
     #data_df = data_df.replace('.00','', regex=True)
 
     input_unique_field_id = connecting_field

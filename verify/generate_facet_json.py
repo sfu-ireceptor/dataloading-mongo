@@ -1,3 +1,10 @@
+# FACET QUERY GENERATOR FOR REPERTOIRE SANITY TESTING PYTHON SCRIPT
+# AUTHOR: LAURA GUTIERREZ FUNDERBURK
+# SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
+# CREATED ON: June 2020
+# LAST MODIFIED ON: July 22 2020
+
+
 from curlairripa import *       # https://test.pypi.org/project/curlairripa/ 
 import time                     # time stamps
 import pandas as pd
@@ -29,6 +36,16 @@ def getArguments():
         help="Enter full path to JSON query containing repertoire ID's for a given study - this must match the value given for study_id"
     )
     
+    parser.add_argument(
+        "no_filters",
+        help="Enter full path to JSON query nofilters"
+    )
+    
+    parser.add_argument(
+        "study_id",
+        help="Enter study_id"
+    )
+    
     # Verbosity flag
     parser.add_argument(
         "-v",
@@ -46,8 +63,9 @@ if __name__ == "__main__":
     options = getArguments()
     base_url = options.base_url
     entry_pt = options.entry_point
-    query_files = options.json_files
     path_to_json = options.path_to_json
+    no_filters = options.no_filters
+    study_id = options.study_id
     
     query_url = base_url + "/airr/v1/" + entry_pt
     
@@ -63,7 +81,7 @@ if __name__ == "__main__":
     header_dict = getHeaderDict()
     
     # Process json file into JSON structure readable by Python
-    query_dict = process_json_files(force,verbose,query_files)
+    query_dict = process_json_files(force,verbose,no_filters)
     
     
     # Perform the query. Time it
@@ -74,25 +92,19 @@ if __name__ == "__main__":
     
     st_id = pd.json_normalize(json.loads(query_json),record_path="Repertoire")['study.study_id'].unique()
     
-    for item in st_id:
+    count = 0
+    
+    path = study_id + "/"
+    if os.path.isdir(str(path_to_json) + str(path))==False:
+        print("PATH DOES NOT EXIST")
+        os.mkdir(str(path_to_json) + str(path))
+    else:
+        print("PATH EXISTS")
         
-        os.chdir(path_to_json)
+    rep_ids = pd.json_normalize(json.loads(query_json),record_path="Repertoire")['repertoire_id'].to_list()
         
-        path =  item + "/"
-        
-        if os.path.exists(path):
+    for repid in rep_ids:
             
-            continue
-        
-        else:
-            
-            os.makedirs(path)
-        
-        
-        rep_ids = pd.json_normalize(json.loads(query_json),record_path="Repertoire")['repertoire_id'].to_list()
-        
-        for repid in rep_ids:
-            
-            with open(str(path_to_json) + str(path) + "facet_repertoire_id_" +repid + ".json","w" ) as f:
-                f.write('{"filters": {"op": "=", "content": {"field": "repertoire_id", "value": "' + str(repid)  + '"}}, "facets": "repertoire_id"}')
-            f.close()
+        with open(str(path_to_json) + str(path) + "facet_repertoire_id_" +repid + ".json","w" ) as f:
+            f.write('{"filters": {"op": "=", "content": {"field": "repertoire_id", "value": "' + str(repid)  + '"}}, "facets": "repertoire_id"}')
+        f.close()
