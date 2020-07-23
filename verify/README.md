@@ -8,7 +8,9 @@ repository after you have loaded the data.
 
 Ensure you run `generate_facet_json.py` first to generate the appropriate repertoire_id JSON input files. 
 
-     usage: generate_facet_json.py [-h] [-v] base_url entry_point path_to_json
+     usage: generate_facet_json.py [-h] [-v]
+                              base_url entry_point path_to_json no_filters
+                              study_id
 
      positional arguments:
        base_url       String containing URL to API server (e.g. https://airr-
@@ -16,6 +18,8 @@ Ensure you run `generate_facet_json.py` first to generate the appropriate repert
        entry_point    Options: string 'rearragement' or string 'repertoire'
        path_to_json   Enter full path to JSON query containing repertoire ID's for
                       a given study - this must match the value given for study_id
+       no_filters     Enter full path to JSON query nofilters
+       study_id       Enter study_id
 
      optional arguments:
        -h, --help     show this help message and exit
@@ -23,7 +27,9 @@ Ensure you run `generate_facet_json.py` first to generate the appropriate repert
 
 Example:
 
-     python 3./generate_facet_json.py "http://covid19-2.ireceptor.org" "repertoire" "./JSON-Files/repertoire/nofilters.json"
+     python 3./generate_facet_json.py "http://covid19-2.ireceptor.org" "repertoire" "./JSON-Files/repertoire/nofilters.json" "NoID1"
+     
+     python 3./generate_facet_json.py "http://covid19-2.ireceptor.org" "repertoire" "./JSON-Files/repertoire/nofilters.json" "PRJNA1234"
 
 Once that has been completed, you can then run a repertoire sanity check with the facet JSON as well as the repertoire ID input JSON files. 
 
