@@ -44,7 +44,7 @@ echo ""
 # $8 details_dir     Enter full path where you'd like to store content feedback in CSV format
 
 
-python3 /app/verify/AIRR-repertoire-checks.py "$5" "$0" "$1" "$3" "$6" "$4" "$2" "$7" "$8"  
+python3 /app/verify/AIRR-repertoire-checks.py "$5" "$0" "$1" "$3" "$6" "$4" "$2" "$7" "$8" "CC-FC"
 
 echo "End Script" 
 
