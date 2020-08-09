@@ -22,13 +22,13 @@ echo " "
 echo "Generate facet queries"
 echo ""
 
-# $0 base_url       String containing URL to API server (e.g. https://airr-api2.ireceptor.org)
-# $1 entry_point    Options: string 'rearragement' or string 'repertoire'
-# $2 path_to_json   Enter full path to JSON directory where facet JSON query files will be stored
-# $3 no_filters     Enter full path to JSON query nofilters
-# $4 study_id       Enter study_id
+# $1 base_url       String containing URL to API server (e.g. https://airr-api2.ireceptor.org)
+# $2 entry_point    Options: string 'rearragement' or string 'repertoire'
+# $3 path_to_json   Enter full path to JSON directory where facet JSON query files will be stored
+# $4 no_filters     Enter full path to JSON query nofilters
+# $5 study_id       Enter study_id
 
-python3 /app/verify/generate_facet_json.py "$0" "$1" "$2" "$3" "$4"
+python3 /app/verify/generate_facet_json.py "$1" "$2" "$3" "$4" "$5"
 
 echo "Begin sanity check"
 echo ""
@@ -44,7 +44,7 @@ echo ""
 # $8 details_dir     Enter full path where you'd like to store content feedback in CSV format
 
 
-python3 /app/verify/AIRR-repertoire-checks.py "$5" "$0" "$1" "$3" "$6" "$4" "$2" "$7" "$8" "CC-FC"
+python3 /app/verify/AIRR-repertoire-checks.py "$6" "$1" "$2" "$4" "$7" "$5" "$3" "$8" "$9" "CC-FC"
 
 echo "End Script" 
 
