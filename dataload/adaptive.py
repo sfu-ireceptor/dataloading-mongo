@@ -14,6 +14,81 @@ from parser import Parser
 
 class Adaptive(Rearrangement):
     
+    # Static method do map Adaptive missing data values to AIRR 
+    # null values.
+    @staticmethod
+    def mapMissingDatatoEmptyString(field_value):
+        # Adaptive has four different values that mean data is missing, 
+        # we need to map these to null.
+        if field_value in ["na","unknown","no data","unresolved"]:
+            return ""
+        else:
+            return field_value
+
+    # Static method do map Adaptive gene data values to AIRR values.
+    @staticmethod
+    def mapAdaptiveGene(resolved, allele_ties, gene_ties, family_ties):
+        new_resolved = resolved
+        # If there is an allele tie, then resolved is correct, and we
+        # need to split the resolved into the resolved gene and add the alleles.
+        if not allele_ties == "no data":
+            new_resolved = ""
+            # Create an array of alleles
+            alleles = allele_ties.split(",")
+            count = 0
+            # Build a new resolved string comma separated, with alleles
+            for allele in alleles:
+                # Comma separated for all but the first.
+                if count > 0:
+                    new_resolved = new_resolved + ","
+                # Concatenate the resolved gene and the allele
+                new_resolved = new_resolved + resolved + "*" + allele.strip()
+                count = count + 1
+        elif not gene_ties == "no data":
+            # If there is a gene_tie then we need to handle the case where one of
+            # the genes has a / in it. As far as I can tell this is redundant data
+            # in the examples that I have seen so we just throw away the stuff after
+            # the /. 
+            new_resolved = ""
+            # Split the gene on comma
+            genes = gene_ties.split(",")
+            count = 0
+            # For each gene...
+            for gene in genes:
+                # Comma separated except for the first.
+                if count > 0:
+                    new_resolved = new_resolved + ","
+                # If there is a /, fix it by throwing away everthing after it.
+                gene_fixed = gene
+                if "/" in gene:
+                    gene_list = gene.split("/")
+                    gene_fixed = gene_list[0]
+                # Add the fixed gene
+                new_resolved = new_resolved + gene_fixed.strip()
+                count = count + 1
+        elif "/" in resolved:
+            new_resolved = ""
+            # Sometimes the resolved field has a / in it to indicate more than one
+            # gene without the tie information (not sure why).
+            resolve_list = resolved.split("/")
+            # The stuff after the / doesn't have a locus so we need it. Remember that
+            # Adaptive loci are 5 chars (e.g. TCRBV)
+            allele = resolve_list[0]
+            locus = allele[0:5]
+            # For each allele in the split string.
+            count = 0
+            for allele in resolve_list:
+                # If it is not the first then we have to add the locus part,
+                # otherwise we just add the allele value.
+                if count > 0:
+                    new_resolved = new_resolved + "," + locus + allele.strip()
+                else:
+                    new_resolved = allele.strip()
+                count = count + 1
+            
+        # Return the newly resolved value.
+        return new_resolved
+
     # Static method to convert an Adaptive frame_type field to a
     # true/false productive value.
     @staticmethod
@@ -228,12 +303,19 @@ class Adaptive(Rearrangement):
                     df_chunk.rename({file_column:mongo_column},
                                     axis='columns', inplace=True)
                 else:
+                    new_column = "ad_" + file_column
                     if self.verbose():
-                        print("Info: No mapping for %s column %s, storing as is"
-                              %(self.getAnnotationTool(), file_column))
+                        print("Info: No mapping for %s column %s, storing as %s"
+                              %(self.getAnnotationTool(), file_column, new_column))
+                    df_chunk.rename({file_column:new_column},axis='columns',inplace=True)
+
             # Check to see which desired file mappings we don't have...
             for file_column, mongo_column in columnMapping.items():
-                if not mongo_column in df_chunk.columns:
+                
+                if mongo_column in df_chunk.columns:
+                    df_chunk[mongo_column] = df_chunk[mongo_column].apply(
+                                                 Adaptive.mapMissingDatatoEmptyString)
+                else:
                     if self.verbose():
                         print("Info: Missing data in input %s file for %s"
                               %(self.getAnnotationTool(), file_column))
@@ -250,6 +332,9 @@ class Adaptive(Rearrangement):
                 if self.verbose():
                     print("Info: Computing junction amino acids substrings...",
                           flush=True)
+                # We want to process the junction to get rid of missing data. Adaptive
+                # uses na in its junction column to indicate no junction we want this
+                # to be an empty string.
                 df_chunk[ir_substring] = df_chunk[junction_aa].apply(
                                                  Rearrangement.get_substring)
                 if self.verbose():
@@ -257,7 +342,7 @@ class Adaptive(Rearrangement):
                 df_chunk[ir_junc_aa_len] = df_chunk[junction_aa].apply(
                                                          Parser.len_null_to_null)
 
-            # MiXCR doesn't have junction nucleotide length, we want it in our
+            # Adaptive doesn't have junction nucleotide length, we want it in our
             # repository.
             junction = airr_map.getMapping("junction", ireceptor_tag, repository_tag)
             junction_length = airr_map.getMapping("junction_length",
@@ -289,6 +374,24 @@ class Adaptive(Rearrangement):
             # Process the v/d/j_call conversion. Adaptive does not use the IMGT 
             # nomenclature so we need to conver their v/d/j_call values to something
             # that is AIRR compatible.
+            gene_df_chunk = df_chunk[[v_call,"ad_v_allele_ties",
+                                     "ad_v_gene_ties","ad_v_family_ties"]]
+            df_chunk[v_call] = gene_df_chunk.apply(
+                              lambda x : Adaptive.mapAdaptiveGene(
+                                             x[0], x[1], x[2], x[3]), axis=1)
+
+            gene_df_chunk = df_chunk[[d_call,"ad_d_allele_ties",
+                                     "ad_d_gene_ties","ad_d_family_ties"]]
+            df_chunk[d_call] = gene_df_chunk.apply(
+                              lambda x : Adaptive.mapAdaptiveGene(
+                                             x[0], x[1], x[2], x[3]), axis=1)
+
+            gene_df_chunk = df_chunk[[j_call,"ad_j_allele_ties",
+                                     "ad_j_gene_ties","ad_j_family_ties"]]
+            df_chunk[j_call] = gene_df_chunk.apply(
+                              lambda x : Adaptive.mapAdaptiveGene(
+                                             x[0], x[1], x[2], x[3]), axis=1)
+
             df_chunk[v_call] = df_chunk[v_call].apply(Adaptive.convertGeneCall)
             df_chunk[d_call] = df_chunk[d_call].apply(Adaptive.convertGeneCall)
             df_chunk[j_call] = df_chunk[j_call].apply(Adaptive.convertGeneCall)
