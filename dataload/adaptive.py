@@ -163,7 +163,7 @@ class Adaptive(Rearrangement):
         # The default column in the AIRR Mapping file is mixcr. This can be 
         # overrideen by the user should they choose to use a differnt set of 
         # columns from the file.
-        self.setFileMapping("ir_general")
+        self.setFileMapping("adaptive")
 
     def process(self, filewithpath):
 
