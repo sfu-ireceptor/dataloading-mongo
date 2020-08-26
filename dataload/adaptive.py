@@ -29,9 +29,11 @@ class Adaptive(Rearrangement):
     @staticmethod
     def mapAdaptiveGene(resolved, allele_ties, gene_ties, family_ties):
         new_resolved = resolved
-        # If there is an allele tie, then resolved is correct, and we
-        # need to split the resolved into the resolved gene and add the alleles.
         if not allele_ties == "no data":
+            # If there is an allele tie, then resolved is correct, and we
+            # need to split the resolved into the resolved gene and add the alleles.
+            # e.g. v_resolved = TCRBV02-01, v_allele_ties = 01,03
+            # becomes: TCRBV02-01*01, TCRBV02-01*03
             new_resolved = ""
             # Create an array of alleles
             alleles = allele_ties.split(",")
@@ -44,13 +46,15 @@ class Adaptive(Rearrangement):
                 # Concatenate the resolved gene and the allele
                 new_resolved = new_resolved + resolved + "*" + allele.strip()
                 count = count + 1
-        elif not gene_ties == "no data":
+        elif not gene_ties == "no data" and not resolved == "unknown" :
             # If there is a gene_tie then we need to handle the case where one of
             # the genes has a / in it. As far as I can tell this is redundant data
             # in the examples that I have seen so we just throw away the stuff after
             # the /. 
+            # E.g. v_resolved = TCRBV12, v_gene_ties = TCRBV12-03/12-04,TCRBV12-04
+            # becomes TCRBV12-03,TCRBV12-04
             new_resolved = ""
-            # Split the gene on comma
+            # Split the gene ties on comma
             genes = gene_ties.split(",")
             count = 0
             # For each gene...
@@ -66,24 +70,35 @@ class Adaptive(Rearrangement):
                 # Add the fixed gene
                 new_resolved = new_resolved + gene_fixed.strip()
                 count = count + 1
+        elif not gene_ties == "no data" and resolved == "unknown" :
+            # Handle no v_resolved and gene_ties.
+            # E.g. d_resolved = unknown, d_gene_ties = TCRBD01-01,TCRBD02-01
+            # becomes TCRBD01-01,TCRBD02-01
+            new_resolved = gene_ties
         elif "/" in resolved:
+            # Handle a / in resolved with none of the other cases occuring
+            # E.g. TCRBV12-03/12-04*01
+            # becomes TCRBV12-03*01, TCRBV12-04*01
             new_resolved = ""
-            # Sometimes the resolved field has a / in it to indicate more than one
-            # gene without the tie information (not sure why).
-            resolve_list = resolved.split("/")
+            # Get the allele to be used for all genes (last three characters)
+            allele = resolved[len(resolved)-3:]
             # The stuff after the / doesn't have a locus so we need it. Remember that
             # Adaptive loci are 5 chars (e.g. TCRBV)
-            allele = resolve_list[0]
-            locus = allele[0:5]
-            # For each allele in the split string.
+            locus = resolved[0:5]
+            # Get rid of the allele
+            base_string = resolved.replace(allele, "")
+            # Get rid of the locus
+            base_string = base_string.replace(locus, "")
+            # Now we are left with a / separated list of gene numbers.
+            resolve_list = base_string.split("/")
             count = 0
-            for allele in resolve_list:
+            for gene in resolve_list:
                 # If it is not the first then we have to add the locus part,
                 # otherwise we just add the allele value.
                 if count > 0:
-                    new_resolved = new_resolved + "," + locus + allele.strip()
+                    new_resolved = new_resolved + "," + locus.strip() + gene + allele.strip()
                 else:
-                    new_resolved = allele.strip()
+                    new_resolved = locus.strip() + gene + allele.strip()
                 count = count + 1
             
         # Return the newly resolved value.
@@ -128,12 +143,19 @@ class Adaptive(Rearrangement):
             return None
 
     # Static method to convert an Adaptive gene call to something that is
-    # consistent with IMGT nomenclature.
+    # consistent with IMGT nomenclature. Sheesh, this is UGLY!!!
     @staticmethod
     def convertGeneCall(gene_call):
         # Change the TCR with TR as per IMGT nomenclature
         gene_call = gene_call.replace("TCR", "TR")
-        # Get rid of the 0 prefix in the gene if necessary
+        # Handle the incorrect mapping of orphon gene names
+        gene_call = gene_call.replace("-or", "/OR")
+        # Handle the leading 0 in orphon gene names
+        gene_call = gene_call.replace("/OR0", "/OR")
+        # Handle the use of _ rather than - in orphon gene names
+        gene_call = gene_call.replace("_", "-")
+        # Get rid of the 0 prefix in the gene if necessary. Note this has to 
+        # be done after the previous step or we miss the 0s that are with orphons
         gene_call = gene_call.replace("-0", "-")
         # Get rid of the 0 prefix on the gene family if necessary
         gene_call = gene_call.replace("TRBV0", "TRBV")
