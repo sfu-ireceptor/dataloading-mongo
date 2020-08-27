@@ -259,18 +259,27 @@ class Rearrangement(Parser):
             return gene_list
 
         # Split the string based on possible string delimeters.
-        gene_string = re.split(',| ', gene)
+        gene_string = re.split(',| |\|', gene)
         gene_orig_list = list(set(gene_string))
 
         # If there are no strings in the list, return the empty list.
         if len(gene_orig_list) == 0:
             return gene_list
         else:
-            # Only keep genes that start with either IG or TR.
-            for gene in gene_orig_list:
-                if gene.startswith("IG") or gene.startswith("TR"):
-                    gene_list.append(gene)
+            # In all cases, the first 4 characters contain the locus and the gene type
+            # We need this later.
+            locus_with_chain = gene[0:4]
 
+            # Iterate over the list
+            for current_gene in gene_orig_list:
+                # Keep genes that start with either IG or TR.
+                if current_gene.startswith("IG") or current_gene.startswith("TR"):
+                    gene_list.append(current_gene)
+                # Handle the case where a gene looks like IGHV3-23|3-23D
+                # We replicate the locus and chain, and then tack on the gene
+                elif "-" in current_gene:
+                    gene_list.append(locus_with_chain + current_gene)
+                
             return gene_list
 
     # function  to extract just the gene from V/D/J-GENE fields   
