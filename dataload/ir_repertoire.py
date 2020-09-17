@@ -82,7 +82,6 @@ class IRRepertoire(Repertoire):
         # name.
         repertoire_id_field = self.getRepertoireLinkIDField()
         rearrangement_file_field = self.getRearrangementFileField()
-        rearrangement_count_field = self.getRearrangementCountField()
 
         # Get the column of values from the AIRR tag. We only want the
         # Repertoire related fields.
@@ -264,18 +263,6 @@ class IRRepertoire(Repertoire):
                     print("Info: No mapping for file column %s, storing in repository as is"
                           %(curation_file_column))
 
-        # Get the mapping for the sequence count field for the repository and 
-        # initialize the sequeunce count to 0. If we can't find a mapping for this
-        # field then we can't do anything. 
-        count_field = self.getAIRRMap().getMapping(rearrangement_count_field,
-                                                   ireceptor_tag,
-                                                   repository_tag)
-        if count_field is None:
-            print("Warning: Could not find %s field in repository, not initialized"
-                  %(rearrangement_count_field, repository_tag))
-        else:
-            df[count_field] = 0
-
         # Ensure that we have a correct file name to link fields. If not return.
         # This is a fatal error as we can not link any data to this set of samples,
         # so there is no point adding the samples...
@@ -298,11 +285,6 @@ class IRRepertoire(Repertoire):
             print("ERROR: Will not be able to link repertoire to rearrangement annotations")
             return False
 
-        # Add a created_at and updated_at field in the repository.
-        now_str = Parser.getDateTimeNowUTC()
-        df["ir_created_at"] = now_str
-        df["ir_updated_at"] = now_str
-
         # Check to make sure all of our columns are unique.
         if len(df.columns) != len(df.columns.unique()):
             print("ERROR: Duplicate column name in data to be written")
@@ -312,7 +294,7 @@ class IRRepertoire(Repertoire):
                     print("ERROR: found %d occurences of column %s"%(count, column))
             return False
         
-        # Conver to JSON
+        # Convert to JSON
         records = json.loads(df.T.to_json()).values()
         record_list = list(records)
         
