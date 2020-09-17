@@ -225,7 +225,8 @@ if __name__ == "__main__":
                             options.database,
                             options.repertoire_collection,
                             options.rearrangement_collection,
-                            options.skipload, options.update)
+                            options.skipload, options.update,
+                            options.verbose)
     # Check on the successful creation of the repository
     if repository is None or not repository:
         sys.exit(1)
@@ -243,6 +244,13 @@ if __name__ == "__main__":
 
     # Start timing the file loading
     t_start = time.perf_counter()
+
+    # We can only update for Repertoires
+    if (options.update and not 
+           (options.type == "iReceptor Repertoire" or 
+            options.type == "AIRR Repertoire")):
+        print("Error: Update is only possible on Repertoire metadata")
+        sys.exit(1)
 
     if options.type == "iReceptor Repertoire":
         # process iReceptor Repertoire metadata 
@@ -297,10 +305,13 @@ if __name__ == "__main__":
         parser.setAnnotationTool(options.annotation_tool)
 
     parse_ok = parser.process(options.filename)
+    operation = "loaded"
+    if options.update:
+        operation = "updated"
     if parse_ok:
-        print("Info: " + options.type + " file " + options.filename + " loaded successfully")
+        print("Info: %s file %s %s successfully"%(options.type,options.filename,operation))
     else:
-        print("ERROR: " + options.type + " file " + options.filename + " not loaded correctly")
+        print("ERROR: %s file %s not %s successfully"%(options.type,options.filename,operation))
 
     # time end
     t_end = time.perf_counter()
