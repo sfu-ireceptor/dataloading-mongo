@@ -3,7 +3,7 @@ import urllib.parse
 import pymongo
 
 class Repository:
-    def __init__(self, user, password, host, port, database, repertoire_collection, rearrangement_collection, skipload):
+    def __init__(self, user, password, host, port, database, repertoire_collection, rearrangement_collection, skipload, update, verbose=False):
         """Create an interface to the Mongo repository
 
         Keyword arguments:
@@ -15,7 +15,8 @@ class Repository:
           - repertoire_collection: name of the repertoire collection in the database
           - rearrangement_collection: name of the rearrangement collection in the database
           - skipload: flag to determine if we skip the data load operation.
-
+          - update: flag to determine if we are updating rather than inserting
+            (repertoire only).
         """
 
         self.username = user
@@ -26,6 +27,8 @@ class Repository:
         self.repertoire_collection = repertoire_collection
         self.rearrangement_collection = rearrangement_collection
         self.skipload = skipload
+        self.update = update
+        self.verbose = verbose
 
         self.repertoire = None
         self.rearrangement = None
@@ -77,11 +80,15 @@ class Repository:
             # worked. So this is not an error case as it OK to have an empty database.
             pass
 
-
         # Set Mongo db name and keep track of the mongo entry points to make queries.
         self.mongo_db = self.mongo_client[self.database]
         self.repertoire = self.mongo_db[self.repertoire_collection]
         self.rearrangement = self.mongo_db[self.rearrangement_collection]
+
+
+    # Return the update flag so clients can determine if we are in update mode or not.
+    def updateOnly(self):
+        return self.update
 
     # Look for the search_name given in the repertoire collection in the search_field in
     # the repository. NOTE: This is an exact match on an array element. The field
@@ -175,9 +182,51 @@ class Repository:
             update = {"$set": {update_field:update_value}}
             self.repertoire.update( {search_field:search_value}, update)
 
+    # Update a repertoire document in the repertoire collection. Takes a single 
+    # field and a value for that field, searches for it, and if it finds one
+    # record it updates that record with the document provided. This is a non
+    # destructive update, as it will add and overwrite fields, but it does not 
+    # delete any fields that are existing that are not overwritten.
+    def updateRepertoire( self, search_field, search_value, doc):
+        try:
+            # Get the number of records. We expect there to be 1, error if not.
+            num_records = self.repertoire.count_documents({search_field:search_value})
+            if num_records != 1:
+                print("ERROR: Could not find a single record (found %d), update failed"%
+                      (num_records))
+                return None
+            # Get the old record
+            cursor = self.repertoire.find({search_field:search_value})
+            try:
+                old_doc = cursor.next()
+            except Exception as err:
+                print("ERROR: Repository repertoire update failed, %s"%(err))
+                return None
+
+            # For each field in the new document, replace the old value with the
+            # the new value. If it is the same, don't do anything.
+            for (k, v) in doc.items():
+                # Get the old value if it exists.
+                old_value = None
+                if k in old_doc:
+                    old_value = old_doc[k]
+                # If the old and new are different, do an update.
+                if old_value != v:
+                    if self.verbose:
+                        print("Info: Updating %s: %s => %s"%(k,old_value,v))
+                    # Don't do anything if we are skipping loading.
+                    if not self.skipload:
+                        self.updateField(search_field, search_value, k, v)
+            #results = self.repertoire.update({search_field:search_value},{"$set":doc})
+        except Exception as err:
+            print("ERROR: Repository repertoire update failed, %s"%(err))
+            return None
+        # Return the value of the field that determined which record to update.
+        return search_value
+
     # Insert a repertoire document into the repertoire collection. Generates a 
     # unique identifier for the record and stores that ID in the field provided
-    # in the link_field field for refernce without having to access the internal
+    # in the link_field field for reference without having to access the internal
     # _id.  Returns the string value of the record ID on success, return 
     # None on failure.
     def insertRepertoire( self, doc, link_field ):

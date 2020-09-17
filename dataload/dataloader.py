@@ -40,6 +40,10 @@ def getArguments():
         "--skipload",
         action="store_true",
         help="Run the program without actually lodaing data into the repository. This option will allow testing of the entire load process without changing the repository.")
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Run the program in update mode rather than insert mode. This only works for repertoires.")
 
     # Add configuration options 
     config_group = parser.add_argument_group("Configuration file options", "")
@@ -221,7 +225,8 @@ if __name__ == "__main__":
                             options.database,
                             options.repertoire_collection,
                             options.rearrangement_collection,
-                            options.skipload)
+                            options.skipload, options.update,
+                            options.verbose)
     # Check on the successful creation of the repository
     if repository is None or not repository:
         sys.exit(1)
@@ -239,6 +244,13 @@ if __name__ == "__main__":
 
     # Start timing the file loading
     t_start = time.perf_counter()
+
+    # We can only update for Repertoires
+    if (options.update and not 
+           (options.type == "iReceptor Repertoire" or 
+            options.type == "AIRR Repertoire")):
+        print("Error: Update is only possible on Repertoire metadata")
+        sys.exit(1)
 
     if options.type == "iReceptor Repertoire":
         # process iReceptor Repertoire metadata 
@@ -293,10 +305,13 @@ if __name__ == "__main__":
         parser.setAnnotationTool(options.annotation_tool)
 
     parse_ok = parser.process(options.filename)
+    operation = "loaded"
+    if options.update:
+        operation = "updated"
     if parse_ok:
-        print("Info: " + options.type + " file " + options.filename + " loaded successfully")
+        print("Info: %s file %s %s successfully"%(options.type,options.filename,operation))
     else:
-        print("ERROR: " + options.type + " file " + options.filename + " not loaded correctly")
+        print("ERROR: %s file %s not %s successfully"%(options.type,options.filename,operation))
 
     # time end
     t_end = time.perf_counter()

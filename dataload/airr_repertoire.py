@@ -166,24 +166,6 @@ class AIRRRepertoire(Repertoire):
                     print("ERROR: %s"%(error))
                     return False
 
-            # Add repository specific fields to each repertoire as required.
-            # Add a created_at and updated_at field in the repository.
-            now_str = Repertoire.getDateTimeNowUTC()
-            repertoire_dict['ir_created_at'] = now_str
-            repertoire_dict['ir_updated_at'] = now_str
-
-            # Get the mapping for the sequence count field for the repository and 
-            # initialize the sequeunce count to 0. If we can't find a mapping for this
-            # field then we can't do anything. 
-            ir_count_field = self.getRearrangementCountField() 
-            repo_count_field = self.getAIRRMap().getMapping(ir_count_field,
-                                                            ireceptor_tag, repository_tag)
-            if repo_count_field is None:
-                print("Warning: Could not find %s field in %s, field not initialized"
-                      % ( ir_count_field, repository_tag ))
-            else:
-                repertoire_dict[repo_count_field] = 0
-
             # Ensure that we have a correct file name to link fields. If we can't find it 
             # this is a fatal error as we can not link any data to this set repertoire,
             # so there is no point adding the repertoire...
