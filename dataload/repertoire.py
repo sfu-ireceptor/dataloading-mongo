@@ -99,7 +99,7 @@ class Repertoire(Parser):
             idarray = []
         else:
             # Finally we search for and get a list of the repertoires that have the files.
-            idarray = self.repositoryGetRepertoireIDs(rearrangement_file_field, file_names)
+            idarray = self.repositoryGetRepertoireIDs(file_repository_field, file_names)
 
         # If idarray is None, there was a problem with the query.
         if idarray is None:
@@ -119,8 +119,8 @@ class Repertoire(Parser):
         sample_tag = self.getAIRRMap().getMapping("sample_id", self.getiReceptorTag(),
                                                   self.getRepositoryTag())
         sample = "NULL" if not sample_tag in json_document else json_document[sample_tag]
-        # Print an error if record already exists.
-        if not num_repertoires == 0:
+        # Print an error if record already exists and we are NOT updating the record.
+        if not self.repository.updateOnly() and not num_repertoires == 0:
             print("ERROR: Unable to write repertoire, already exists in the repository")
             print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
             print("ERROR:     File field %s contains rearrangement files %s"%
@@ -165,80 +165,134 @@ class Repertoire(Parser):
                 sample_processing_id = None
         else: sample_processing_id = None
 
-        # Check to see if there are any repertoires with the same repertoire_id as
-        # we are trying to insert... If there are, then we may have an error as 
-        # repertoire_id's (combined with their data_processing_id and 
-        # sample_processing_id) should be unique.
+        # Get the number of repertoires for the current repertoire_id.
         rep_array = self.repositoryGetRepertoires(rep_id_field, repertoire_id)
         num_repertoires = len(rep_array)
+
         # If we are updating, we want one, and only one record.
         if self.repository.updateOnly():
-            print("REPERTOIRE UPDATE")
-            print(rep_array)
-            if num_repertoires != 1:
-                print("ERROR: Repertoire update requires a single record, found %d"%
-                      (num_repertoires))
+            # If we areupdating we want the record to be unique. repertoire_id is
+            # not sufficient so we have to check and see if the repertoire_id,
+            # data_processing_id, and sample_processing_id is unique
+            if num_repertoires == 0:
+                print("ERROR: Could not find Reperotire %s to update"%(repertoire_id))
                 return None
-            return None
+            elif num_repertoires == 1:
+                rep = rep_array[0]
+                link_repository_value = rep[link_repository_field]
+            elif num_repertoires > 1:
+                link_repository_value = None
+                for rep in rep_array:
+                    # If we found the correct repertoire, keep track of its "link_field"
+                    # as that is the unique repository identifier we use to update that field.
+                    if (rep[sample_id_field]==sample_processing_id and 
+                        rep[data_id_field]==data_processing_id and
+                        rep[rep_id_field]==repertoire_id):
+                        if link_repository_value == None:
+                            link_repository_value = rep[link_repository_field]
+                        else:
+                            print("ERROR: Found more than one repertoire with:")
+                            print("ERROR:     repertoire_id = %s"%(repertoire_id))
+                            print("ERROR:     sample_processing_id = %s"%(sample_processing_id))
+                            print("ERROR:     data_processing_id = %s"%(data_processing_id))
+                            return None
 
-        # The number of repertoires should be 0 other wise it already exists. Fail if
-        # the number is not 0. Print an error if record already exists.
-        if not num_repertoires == 0:
-            duplicate = True
-            for rep in rep_array:
-                #print("new = -%s- -%s- -%s-"%
-                #      (repertoire_id, data_processing_id, sample_processing_id))
-                #print("current = -%s- -%s- -%s-"%
-                #      (rep[rep_id_field],
-                #       rep[data_id_field],
-                #       rep[sample_id_field]))
-                if (data_id_field in rep and
-                        not rep[data_id_field] == data_processing_id and
-                        not rep[data_id_field] == "" and
-                        not data_processing_id is None and
-                        not data_processing_id == ""):
-                    #print("DIFFERENT DATA_PROC")
-                    duplicate = False
-                elif (sample_id_field in rep and
-                        not rep[sample_id_field] == sample_processing_id and
-                        not rep[sample_id_field] == "" and
-                        not sample_processing_id is None and
-                        not sample_processing_id == ""):
-                    #print("DIFFERENT SAMPLE_PROC")
-                    duplicate = False
-            if duplicate:
-                print("ERROR: Unable to confirm uniqieness of repertoire in repository")
-                print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
-                print("ERROR:     Trying to write a record with fields:")
-                print("ERROR:         %s = %s"% (rep_id_field, repertoire_id))
-                print("ERROR:         %s = %s"% (data_id_field, data_processing_id))
-                print("ERROR:         %s = %s"% (sample_id_field, sample_processing_id))
-                print("ERROR:     Unable to differentiate from repository record:")
-                print("ERROR:         %s = %s"% (rep_id_field, rep[rep_id_field]))
-                print("ERROR:         %s = %s"% (data_id_field, rep[data_id_field]))
-                print("ERROR:         %s = %s"% (sample_id_field, rep[sample_id_field]))
+            # Store in our internal field the update time.
+            json_document["ir_updated_at"] = self.getDateTimeNowUTC()
+
+            if self.verbose():
+                print("Info: Updating Repertoire:")
+                print("Info:     %s = %s"% (link_repository_field, link_repository_value))
+                print("Info:     %s = %s"% (rep_id_field, repertoire_id))
+                print("Info:     %s = %s"% (data_id_field, data_processing_id))
+                print("Info:     %s = %s"% (sample_id_field, sample_processing_id))
+            record_id = self.repository.updateRepertoire(link_repository_field,
+                                                         link_repository_value,
+                                                         json_document)
+            return record_id
+        else:
+
+            # If we are inserting, we want the new record to not exist. If we are
+            # updating we want the record to be unique. repertoire_id is not sufficient
+            # so we have to check and see if the repertoire_id, data_processing_id, and
+            # sample_processing_id to confirm uniqueness (update) or missing (insert). 
+            if not num_repertoires == 0:
+                duplicate = True
+                for rep in rep_array:
+                    #print("new = -%s- -%s- -%s-"%
+                    #      (repertoire_id, data_processing_id, sample_processing_id))
+                    #print("current = -%s- -%s- -%s-"%
+                    #      (rep[rep_id_field],
+                    #       rep[data_id_field],
+                    #       rep[sample_id_field]))
+                    # Check if the repertoire found has a different data_processing_id, if
+                    # so then this is not a conflict for insertion.
+                    if (data_id_field in rep and
+                            not rep[data_id_field] == data_processing_id and
+                            not rep[data_id_field] == "" and
+                            not data_processing_id is None and
+                            not data_processing_id == ""):
+                        #print("DIFFERENT DATA_PROC")
+                        duplicate = False
+                    # Check if the repertoire found has a different sample_processing_id, if
+                    # so then this is not a conflict for insertion.
+                    elif (sample_id_field in rep and
+                            not rep[sample_id_field] == sample_processing_id and
+                            not rep[sample_id_field] == "" and
+                            not sample_processing_id is None and
+                            not sample_processing_id == ""):
+                        #print("DIFFERENT SAMPLE_PROC")
+                        duplicate = False
+    
+                if duplicate:
+                    print("ERROR: Unable to confirm uniqieness of repertoire in repository")
+                    print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
+                    print("ERROR:     Trying to write a record with fields:")
+                    print("ERROR:         %s = %s"% (rep_id_field, repertoire_id))
+                    print("ERROR:         %s = %s"% (data_id_field, data_processing_id))
+                    print("ERROR:         %s = %s"% (sample_id_field, sample_processing_id))
+                    print("ERROR:     Unable to differentiate from repository record:")
+                    print("ERROR:         %s = %s"% (rep_id_field, rep[rep_id_field]))
+                    print("ERROR:         %s = %s"% (data_id_field, rep[data_id_field]))
+                    print("ERROR:         %s = %s"% (sample_id_field, rep[sample_id_field]))
+                    return None
+
+            # Store in our internal field the creation and update time.
+            json_document["ir_updated_at"] = self.getDateTimeNowUTC()
+            json_document["ir_created_at"] = self.getDateTimeNowUTC()
+
+            # Initialize the internal rearrangement count field to 0
+            rearrangement_count_field = self.getRearrangementCountField()
+            count_field = self.getAIRRMap().getMapping(rearrangement_count_field,
+                                                       self.getiReceptorTag(),
+                                                       self.getRepositoryTag())
+            if count_field is None:
+                print("Warning: Could not find %s field in repository, not initialized"
+                      %(rearrangement_count_field, repository_tag))
+            else:
+                json_document[count_field] = 0
+
+            # Try to write the record and return record_id as appropriate.
+            record_id = self.repository.insertRepertoire(json_document, link_repository_field)
+            if record_id is None:
+                print("ERROR: Unable to write repertoire record to repository")
                 return None
 
-        # Try to write the record and return record_id as appropriate.
-        record_id = self.repository.insertRepertoire(json_document, link_repository_field)
-        if record_id is None:
-            print("ERROR: Unable to write repertoire record to repository")
-            return None
+            # Update the _id fields if they were empty to force uniqueness. To do this we use
+            # the record_id which is guaranteed to be unique in the repository.
+            if repertoire_id is None:
+                self.repository.updateField(link_repository_field, record_id,
+                                            rep_id_field, str(record_id))
+            if data_processing_id is None:
+                self.repository.updateField(link_repository_field, record_id,
+                                            data_id_field, str(record_id))
+            if sample_processing_id is None:
+                self.repository.updateField(link_repository_field, record_id,
+                                            sample_id_field, str(record_id))
+            if self.verbose:
+                print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
+                      (study, sample, file_names))
 
-        # Update the _id fields if they were empty to force uniqueness. To do this we use
-        # the record_id which is guaranteed to be unique in the repository.
-        if repertoire_id is None:
-            self.repository.updateField(link_repository_field, record_id,
-                                        rep_id_field, str(record_id))
-        if data_processing_id is None:
-            self.repository.updateField(link_repository_field, record_id,
-                                        data_id_field, str(record_id))
-        if sample_processing_id is None:
-            self.repository.updateField(link_repository_field, record_id,
-                                        sample_id_field, str(record_id))
-        if self.verbose:
-            print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
-                  (study, sample, file_names))
+            # Return the record ID
+            return record_id
 
-        # Return the record ID
-        return record_id
