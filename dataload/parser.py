@@ -67,21 +67,27 @@ class Parser:
         # the two types of parsed files. repertoire_link_id field is the ID of
         # record in the repertoire collection. Rearrangements are associated with
         # this ID through the field identified by the rearrangement_linkid_field.
-        # The rearrangement_file_field is the field in the repertoire where file
+        # The repertoire_file_field is the field in the repertoire where file
         # names for rearrangement files are stored. This is the main lookup
         # mechanism when a rearrangement file is loaded against a repertoire.
         # Finally ir_sequence_count it the internal field that the repository
         # uses to cache the could of all the sequences that belong to a specific
         # repertoire record.
         self.repertoire_linkid_field = "ir_annotation_set_metadata_id"
-        self.rearrangement_file_field = "ir_rearrangement_file_name"
+        self.repertoire_file_field = "ir_rearrangement_file_name"
         self.rearrangement_count_field = "ir_sequence_count"
 
-        # Finally, we need to keep track of the field (identified by an iReceptor 
+        # We need to keep track of the field (identified by an iReceptor 
         # field name) in the rearrangement collection that points to the
         # Repertoire ID field in the repertoire collection. This should exist in
         # each rearrangement record.
         self.rearrangement_linkid_field = "ir_annotation_set_metadata_id_rearrangement"
+
+        # We need to keep track of the field (identified by an iReceptor 
+        # field name) in the clone collection that points to the
+        # Repertoire ID field in the repertoire collection. This should exist in
+        # each clone record.
+        self.clone_linkid_field = "ir_annotation_set_metadata_id_clone"
 
     # Sanity check for validity for the parser...
     def checkValidity(self):
@@ -97,14 +103,17 @@ class Parser:
     def getRepertoireLinkIDField(self):
         return self.repertoire_linkid_field
 
-    def getRearrangementFileField(self):
-        return self.rearrangement_file_field
+    def getRepertoireFileField(self):
+        return self.repertoire_file_field
 
     def getRearrangementCountField(self):
         return self.rearrangement_count_field
 
     def getRearrangementLinkIDField(self):
         return self.rearrangement_linkid_field
+
+    def getCloneLinkIDField(self):
+        return self.clone_linkid_field
 
     # Utility method to return the tag used by the mapping for the repository.
     def getRepositoryTag(self):

@@ -77,9 +77,9 @@ class Repertoire(Parser):
         # the rearrangement file field and check to see if the file field
         # already exists in another record or not...
         # First get the file field we use to connect rearrangments and reperotires
-        rearrangement_file_field = self.getRearrangementFileField()
+        repertoire_file_field = self.getRepertoireFileField()
         # Then get the repository field
-        file_repository_field = self.getAIRRMap().getMapping(rearrangement_file_field,
+        file_repository_field = self.getAIRRMap().getMapping(repertoire_file_field,
                                                         self.getiReceptorTag(),
                                                         self.getRepositoryTag())
         # Also get the field that links repertoires to rearrangements
@@ -124,7 +124,7 @@ class Repertoire(Parser):
             print("ERROR: Unable to write repertoire, already exists in the repository")
             print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
             print("ERROR:     File field %s contains rearrangement files %s"%
-                  (rearrangement_file_field, file_names))
+                  (repertoire_file_field, file_names))
             print("ERROR:     Files found in records with record IDs %s"%(str(idarray)))
             return None
 

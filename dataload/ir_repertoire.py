@@ -81,7 +81,7 @@ class IRRepertoire(Repertoire):
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
         repertoire_id_field = self.getRepertoireLinkIDField()
-        rearrangement_file_field = self.getRearrangementFileField()
+        repertoire_file_field = self.getRepertoireFileField()
 
         # Get the column of values from the AIRR tag. We only want the
         # Repertoire related fields.
@@ -266,7 +266,7 @@ class IRRepertoire(Repertoire):
         # Ensure that we have a correct file name to link fields. If not return.
         # This is a fatal error as we can not link any data to this set of samples,
         # so there is no point adding the samples...
-        repository_file_field = self.getAIRRMap().getMapping(rearrangement_file_field,
+        repository_file_field = self.getAIRRMap().getMapping(repertoire_file_field,
                                                              ireceptor_tag,
                                                              repository_tag)
         # If we can't find a mapping for this field in the repository mapping, then
@@ -274,14 +274,14 @@ class IRRepertoire(Repertoire):
         # then we should exit.
         if repository_file_field is None or len(repository_file_field) == 0:
             print("Warning: No repository mapping for the rearrangement file field (%s)"
-                  %(rearrangement_file_field))
-            repository_file_field = rearrangement_file_field
+                  %(repertoire_file_field))
+            repository_file_field = repertoire_file_field
 
         # If we can't find the file field for the rearrangement field in the repository
         # abort, as we won't be able to link the repertoire to the rearrangement.
         if not repository_file_field in df.columns:
             print("ERROR: Could not find a rearrangement file field in the metadata (%s)"
-                  %(rearrangement_file_field))
+                  %(repertoire_file_field))
             print("ERROR: Will not be able to link repertoire to rearrangement annotations")
             return False
 

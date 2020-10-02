@@ -186,7 +186,6 @@ class IMGT(Rearrangement):
         # name.
         repertoire_link_field = self.getRepertoireLinkIDField()
         rearrangement_link_field = self.getRearrangementLinkIDField()
-        rearrangement_file_field = self.getRearrangementFileField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using.

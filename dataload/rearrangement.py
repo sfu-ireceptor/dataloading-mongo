@@ -51,11 +51,11 @@ class Rearrangement(Parser):
         # name.
         repertoire_link_field = self.getRepertoireLinkIDField()
         rearrangement_link_field = self.getRearrangementLinkIDField()
-        rearrangement_file_field = self.getRearrangementFileField()
+        repertoire_file_field = self.getRepertoireFileField()
 
         # Get the sample ID of the data we are processing. We use the file name for
         # this at the moment, but this may not be the most robust method.
-        file_field = airr_map.getMapping(rearrangement_file_field,
+        file_field = airr_map.getMapping(repertoire_file_field,
                                          ireceptor_tag, repository_tag)
         idarray = []
         if file_field is None:
