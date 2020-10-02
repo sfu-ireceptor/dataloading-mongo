@@ -239,7 +239,7 @@ class Adaptive(Rearrangement):
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
         repertoire_link_field = self.getRepertoireLinkIDField()
-        rearrangement_link_field = self.getRearrangementLinkIDField()
+        rearrangement_link_field = self.getAnnotationLinkIDField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using. 

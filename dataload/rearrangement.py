@@ -30,6 +30,13 @@ class Rearrangement(Parser):
         # for specific file types should explicitly set this to the correct
         # column.
         self.file_mapping = ""
+        # We need to keep track of the field (identified by an iReceptor
+        # field name) in the rearrangement collection that points to the
+        # Repertoire ID field in the repertoire collection. This should exist in
+        # each rearrangemnt record. This overrides the Annotation class value for
+        # this field.
+        self.annotation_linkid_field = "ir_annotation_set_metadata_id_rearrangement"
+
 
     # Method to calculate the LINK ID for the repertoire that has the filename
     # provided. This should return one and only one record, so will fail if it
@@ -50,7 +57,7 @@ class Rearrangement(Parser):
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
         repertoire_link_field = self.getRepertoireLinkIDField()
-        rearrangement_link_field = self.getRearrangementLinkIDField()
+        rearrangement_link_field = self.getAnnotationLinkIDField()
         repertoire_file_field = self.getRepertoireFileField()
 
         # Get the sample ID of the data we are processing. We use the file name for
@@ -586,7 +593,7 @@ class Rearrangement(Parser):
     # want to hide this and just talk about reperotire IDs, so this is hidden in the 
     # Rearrangement class...
     def repositoryCountRearrangements(self, repertoire_id):
-        repertoire_field = self.airr_map.getMapping(self.getRearrangementLinkIDField(),
+        repertoire_field = self.airr_map.getMapping(self.getAnnotationLinkIDField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
         return self.repository.countRearrangements(repertoire_field, repertoire_id)

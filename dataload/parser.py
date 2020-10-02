@@ -55,12 +55,12 @@ class Parser:
         # (identified by a specific iReceptor field) and it is this field 
         # that must be unique across all of the repertoires in the repository. As
         # a result, it is possible to specify a ID to which all of the
-        # rearrangements in a specific file should be associated.
+        # rearrangements or clones in a specific file should be associated.
         #
-        # Secondly, it is possible to use the rearrangement file name of the file 
+        # Secondly, it is possible to use the reperotire file name of the file 
         # being loaded to identify the repertoire to which the rearrangements
-        # belong. The file name for rearrangements is stored in a field (again,
-        # identified by a specific iReceptor field).
+        # and clones belong. The file name for rearrangements and cloens is stored
+        # in a field (again, identified by a specific iReceptor field).
         #
         # Below, we keep track of these important fields. This is
         # maintained by the Parser class because these are the fields that link
@@ -68,8 +68,8 @@ class Parser:
         # record in the repertoire collection. Rearrangements are associated with
         # this ID through the field identified by the rearrangement_linkid_field.
         # The repertoire_file_field is the field in the repertoire where file
-        # names for rearrangement files are stored. This is the main lookup
-        # mechanism when a rearrangement file is loaded against a repertoire.
+        # names for rearrangement and clone files are stored. This is the main lookup
+        # mechanism when a rearrangement or clone file is loaded against a repertoire.
         # Finally ir_sequence_count it the internal field that the repository
         # uses to cache the could of all the sequences that belong to a specific
         # repertoire record.
@@ -78,16 +78,10 @@ class Parser:
         self.rearrangement_count_field = "ir_sequence_count"
 
         # We need to keep track of the field (identified by an iReceptor 
-        # field name) in the rearrangement collection that points to the
-        # Repertoire ID field in the repertoire collection. This should exist in
-        # each rearrangement record.
-        self.rearrangement_linkid_field = "ir_annotation_set_metadata_id_rearrangement"
-
-        # We need to keep track of the field (identified by an iReceptor 
-        # field name) in the clone collection that points to the
-        # Repertoire ID field in the repertoire collection. This should exist in
-        # each clone record.
-        self.clone_linkid_field = "ir_annotation_set_metadata_id_clone"
+        # field name) in the annotation collection that points to the
+        # Repertoire ID field in the repertoire collection. This should be
+        # set by the subclass (Rearrangement or Clone).
+        self.annotation_linkid_field = ""
 
     # Sanity check for validity for the parser...
     def checkValidity(self):
@@ -109,11 +103,8 @@ class Parser:
     def getRearrangementCountField(self):
         return self.rearrangement_count_field
 
-    def getRearrangementLinkIDField(self):
-        return self.rearrangement_linkid_field
-
-    def getCloneLinkIDField(self):
-        return self.clone_linkid_field
+    def getAnnotationLinkIDField(self):
+        return self.annotation_linkid_field
 
     # Utility method to return the tag used by the mapping for the repository.
     def getRepositoryTag(self):
