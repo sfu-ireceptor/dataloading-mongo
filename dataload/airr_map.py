@@ -6,12 +6,14 @@ class AIRRMap:
     def __init__(self, verbose):
         # Set up initial class mappings from the file. These are defined in the
         # MiAIRR Standard.
-        self.rearrangement_class = "Rearrangement"
         self.repertoire_class = "Repertoire"
+        self.rearrangement_class = "Rearrangement"
+        self.clone_class = "Clone"
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
         self.ir_rearrangement_class = "IR_Rearrangement"
+        self.ir_rearrangement_class = "IR_Clone"
 
         # Keep track of the mapfile being used.
         self.mapfile = ""
@@ -22,10 +24,16 @@ class AIRRMap:
         self.airr_mappings = []
         # AIRR rearrangement mappings only
         self.airr_rearrangement_map = []
+        # AIRR clone mappings only
+        self.airr_clone_map = []
         # AIRR repertoire mappings only
         self.airr_repertiore_map = []
         # AIRR and IR repertoire mapping only
         self.ir_repertiore_map = []
+        # AIRR and IR rearrangement mappings only
+        self.ir_rearrangement_map = []
+        # AIRR and IR clone mappings only
+        self.ir_clone_map = []
         
     # Read in a map file given a file name.
     def readMapFile(self, mapfile):
@@ -64,6 +72,17 @@ class AIRRMap:
                                                       self.ir_rearrangement_class])
         # Get all of the rows that have the rearrangement class labels.
         self.ir_rearrangement_map = self.airr_mappings.loc[labels]
+
+        # Get the labels for all of the fields that are in the airr clone class.
+        labels = self.airr_mappings['ir_class'].isin([self.clone_class])
+        # Get all of the rows that have the clone class labels.
+        self.airr_clone_map = self.airr_mappings.loc[labels]
+
+        # Get the labels for all of the fields that are in the airr and IR clone class.
+        labels = self.airr_mappings['ir_class'].isin([self.clone_class,
+                                                      self.ir_clone_class])
+        # Get all of the rows that have the clone class labels.
+        self.ir_clone_map = self.airr_mappings.loc[labels]
 
         # Get the labels for all of the fields that are in the airr repertoire class.
         labels = self.airr_mappings['ir_class'].isin([self.repertoire_class])
@@ -107,12 +126,16 @@ class AIRRMap:
            mapping = self.airr_mappings
         elif map_class == self.rearrangement_class: 
            mapping = self.airr_rearrangement_map
+        elif map_class == self.clone_class: 
+           mapping = self.airr_clone_map
         elif map_class == self.repertoire_class: 
            mapping = self.airr_repertoire_map
         elif map_class == self.ir_repertoire_class: 
            mapping = self.ir_repertoire_map
         elif map_class == self.ir_rearrangement_class: 
            mapping = self.ir_rearrangement_map
+        elif map_class == self.ir_clone_class: 
+           mapping = self.ir_clone_map
         else:
             print("Warning: Invalid maping class %s"%(map_class))
             return None
@@ -175,6 +198,35 @@ class AIRRMap:
     # Rearrangement table size.
     def getIRRearrangementRows(self, extract_flags):
         return self.ir_rearrangement_map.loc[extract_flags]
+
+
+    # Return a full column of the Clone mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getCloneMapColumn(self, column_name):
+        if column_name in self.airr_clone_map:
+            return self.airr_clone_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the clone table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Clone table size.
+    def getCloneRows(self, extract_flags):
+        return self.airr_clone_map.loc[extract_flags]
+
+    # Return a full column of the Clone mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getIRCloneMapColumn(self, column_name):
+        if column_name in self.ir_clone_map:
+            return self.ir_clone_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the clone table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Clone table size.
+    def getIRCloneRows(self, extract_flags):
+        return self.ir_clone_map.loc[extract_flags]
 
     # Return a full column of the Repertoire mapping based on the name given.
     # Return None if the column is not in the mapping.
