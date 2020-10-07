@@ -355,16 +355,6 @@ class Rearrangement(Parser):
             print("Warning: locus with non IG and non TR found in " + str(v_call_array))
         return final_locus
 
-    # Hide the use of the scratch directory for temporary files from the subclasses.
-    def getScratchPath(self, fileName):
-        return join(self.getScratchFolder(), fileName)
-
-    def readScratchDf(self, fileName, sep=','):
-        return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False)
-
-    def readScratchDfNoHeader(self, fileName, sep=','):
-        return pd.read_csv(self.getScratchPath(fileName), sep, low_memory=False, header=None)
-
     # Method to map a dataframe to the repository type mapping.
     def mapToRepositoryType(self, df):
         # time this function

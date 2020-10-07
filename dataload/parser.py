@@ -555,8 +555,14 @@ class Parser:
         folderName = fileName[:fileName.index('.')]
         self.scratchFolder = self.getDataFolder(fileWithPath) + "/tmp_" + str(os.getpid()) + "_" + folderName + "/"
 
+    # Get the folder
     def getScratchFolder(self):
         return self.scratchFolder
+
+    # Get the folder with the filename appended.
+    def getScratchPath(self, fileName):
+        return join(self.getScratchFolder(), fileName)
+
 
     #####################################################################################
     # Hide the internal implementation of performing timing functions.

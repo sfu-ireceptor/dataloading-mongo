@@ -258,7 +258,9 @@ class IMGT(Rearrangement):
             if self.verbose():
                 print("Info: Processing file ", vquest_file, flush=True)
             # Read in the data frame for the file.
-            vquest_dataframe = self.readScratchDf(vquest_file, sep='\t')
+            #vquest_dataframe = self.readScratchDf(vquest_file, sep='\t')
+            vquest_dataframe = pd.read_csv(self.getScratchPath(vquest_file),
+                                           sep='\t', low_memory=False)
             # Extract the fields that are of interest for this file.
             imgt_file_column = airr_map.getRearrangementMapColumn(self.imgt_filename_map)
             fields_of_interest = imgt_file_column.isin([vquest_file])
@@ -343,7 +345,9 @@ class IMGT(Rearrangement):
         # First, we want to keep track of some of the data from the IMGT Parameters file.
         # Create a dictionary with keys the first column of the parameter file and the 
         # values in the second column in the parameter file.
-        Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt', sep='\t')
+        #Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt', sep='\t')
+        Parameters_11 = pd.read_csv(self.getScratchPath('11_Parameters.txt'),
+                                    sep='\t', low_memory=False, header=None)
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
         # Need to grab some data out of the parameters dictionary. This is not really
