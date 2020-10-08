@@ -256,7 +256,9 @@ class AIRR_TSV(Rearrangement):
             airr_df[ir_updated_at] = now_str
 
             # Transform the data frame so that it meets the repository type requirements
-            if not self.mapToRepositoryType(airr_df):
+            if not self.mapToRepositoryType(airr_df,
+                                            airr_map.getRearrangementClass(),
+                                            airr_map.getIRRearrangementClass()):
                 print("ERROR: Unable to map data to the repository")
                 return False
 
@@ -265,7 +267,7 @@ class AIRR_TSV(Rearrangement):
             print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
             records = json.loads(airr_df.T.to_json()).values()
-            self.repositoryInsertRearrangements(records)
+            self.repositoryInsertRecords(records)
             t_end = time.perf_counter()
             print("Info: Inserted records, time =", (t_end - t_start), "seconds",
                   flush=True)
@@ -279,7 +281,7 @@ class AIRR_TSV(Rearrangement):
         if self.verbose():
             print("Info: Getting the number of annotations for repertoire %s"%
                   (str(repertoire_link_id)))
-        annotation_count = self.repositoryCountRearrangements(repertoire_link_id)
+        annotation_count = self.repositoryCountRecords(repertoire_link_id)
         if annotation_count == -1:
             print("ERROR: invalid annotation count (%d), write failed." %
                   (annotation_count))

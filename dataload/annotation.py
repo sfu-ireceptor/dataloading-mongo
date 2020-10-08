@@ -347,8 +347,10 @@ class Annotation(Parser):
             print("Warning: locus with non IG and non TR found in " + str(v_call_array))
         return final_locus
 
-    # Method to map a dataframe to the repository type mapping.
-    def mapToRepositoryType(self, df):
+    # Method to map a dataframe to the repository type mapping. The method takes
+    # the mapping class and the iReceptor specific mapping class that it should
+    # use as this can be used to map both Rearrangement and Clone classes.
+    def mapToRepositoryType(self, df, map_class, ir_map_class):
         # time this function
         t_start = time.perf_counter()
 
@@ -356,8 +358,6 @@ class Annotation(Parser):
         airr_type_tag = "airr_type"
         repo_type_tag = "ir_repository_type"
         repository_tag = self.getRepositoryTag()
-        map_class = self.airr_map.getRearrangementClass()
-        ir_map_class = self.airr_map.getIRRearrangementClass()
 
         column_types = df.dtypes
         # For each column in the data frame, we want to convert it to the type
@@ -430,164 +430,25 @@ class Annotation(Parser):
 
         return True
 
-    # Method to map a dataframe to the repository type mapping.
-    def mapToRepositoryType2(self, df):
-        # time this function
-        t_start = time.perf_counter()
-
-        # Get the general information we need to do the mapping
-        airr_type_tag = "airr_type"
-        repo_type_tag = "ir_repository_type"
-        repository_tag = self.getRepositoryTag()
-        map_class = self.airr_map.getRearrangementClass()
-
-        column_types = df.dtypes
-        print(column_types)
-        # For each column in the data frame, we want to convert it to the type
-        # required by the repository.
-        for (column, column_data) in df.iteritems():
-            # Get both the AIRR type for the column and the Repository type.
-            airr_type = self.airr_map.getMapping(column, repository_tag,
-                                                 airr_type_tag, map_class)
-            repo_type = self.airr_map.getMapping(column, repository_tag,
-                                                 repo_type_tag, map_class)
-            #print("Info: Mapped column %s to repository (%s, %s, %s)"%
-            #      (column, airr_type, repo_type, type(df[column][0])))
-            # Try to do the conversion
-            try:
-                oldtype =  type(df[column][0])
-                print("#### column %s type = %s %s"%(column, column_types[column], oldtype))
-                # Need to convert to boolean for the repository
-                if repo_type == "boolean":
-                    # Boolean in repository, already a boolean
-                    if isinstance(column_data[0],(bool, np.bool_)):
-                        continue
-                    # Boolean in repository, string on input, do a str to boolean conversion
-                    elif isinstance(column_data[0], (str)):
-                        df[column]= column_data.apply(Parser.str_to_bool)
-                        if self.verbose():
-                            print("Info: Mapped column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                    # Boolean in repository, int on input, do an int to boolean conversion
-                    elif isinstance(column_data[0], (int)):
-                        df[column] = column_data.apply(Parser.int_to_bool)
-                        if self.verbose():
-                            print("Info: Mapped column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                # Need to convert to string for the repository
-                elif repo_type == "string":
-                    # String in repository, already string
-                    if isinstance(column_data[0],(str)):
-                        continue
-                    # String in repository, int on input, convert int to string
-                    elif isinstance(column_data[0],(int)): 
-                        df[column] = column_data.apply(str)
-                        if self.verbose():
-                            print("Info: Mapped integer column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                    # String in repository, float on input, convert float to string
-                    elif isinstance(column_data[0],(np.float64)): 
-                        df[column] = column_data.apply(Parser.float_to_str)
-                        if self.verbose():
-                            print("Info: Mapped float column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                elif repo_type == "integer":
-                    # int in repository, already int
-                    if isinstance(column_data[0],(int, np.int64)):
-                        continue
-                    # int in repository, float on input, convert float to int 
-                    elif isinstance(column_data[0],(float)): 
-                        df[column] = column_data.apply(Parser.float_to_int)
-                        if self.verbose():
-                            print("Info: Mapped integer column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                    # int in repository, string on input, convert string to int
-                    elif isinstance(column_data[0],(str)): 
-                        df[column] = column_data.apply(Parser.str_to_int)
-                        if self.verbose():
-                            print("Info: Mapped integer column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                    else:
-                        print("Warning: No mapping for integer storing as is, %s (type = %s)."
-                              %(column, type(column_data[0])))
-                elif repo_type == "number":
-                    # number in repository, already float
-                    if isinstance(column_data[0],(float, np.float64)):
-                        continue
-                    # float in repository, int on input, convert int to float
-                    elif isinstance(column_data[0],(int)): 
-                        df[column] = column_data.apply(float)
-                        if self.verbose():
-                            print("Info: Mapped float column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                    # float in repository, string on input, convert string to float
-                    elif isinstance(column_data[0],(str)): 
-                        df[column] = column_data.apply(Parser.str_to_float)
-                        if self.verbose():
-                            print("Info: Mapped float column %s to repository (%s, %s, %s, %s)"%
-                                  (column, airr_type, repo_type, oldtype, type(df[column][0])))
-                    else:
-                        # String in repository, float on input, convert float to string
-                        print("Warning: No mapping for float storing as is, %s (type = %s)."
-                              %(column, type(column_data[0])))
-            # Catch any errors
-            except TypeError as err:
-                print("ERROR: Could not map column %s to repository (%s, %s, %s, %s)"%
-                      (column, airr_type, repo_type, oldtype, type(df[column][1])))
-                print("ERROR: %s"%(err))
-                return False
-
-        t_end = time.perf_counter()
-        if self.verbose():
-            print("Info: Conversion to repository type took %f s"%(t_end - t_start),
-                  flush=True)
-
-        return True
-
     #####################################################################################
-    # Hide the repository implementation from the Rearrangement subclasses.
+    # All Annotation objects write documents to the repository. These methods provide
+    # mechanisms to do this that are null functions. These must be overridden by the
+    # subclasses to write documents to the repository correctly.
     #####################################################################################
 
-    # Write the set of JSON records provided to the "rearrangements" collection.
-    # This is hiding the Mongo implementation. Probably should refactor the 
-    # repository implementation completely.
-    def repositoryInsertRearrangements(self, json_records):
-        # Insert the JSON and get a list of IDs back. If no data returned, return an error
-        record_ids = self.repository.insertRearrangements(json_records)
-        if record_ids is None:
-            return False
-        # Get the field we want to map for the rearrangement ID for each record.
-        rearrange_id_field =  self.getAIRRMap().getMapping("rearrangement_id",
-                                              self.getiReceptorTag(),
-                                              self.getRepositoryTag(),
-                                              self.getAIRRMap().getRearrangementClass())
-        # If we found a repository record, write a string repersentation of the ID 
-        # returned into the rearrangement_id field.
-        if not rearrange_id_field is None:
-            for record_id in record_ids:
-                self.repository.updateRearrangementField("_id", record_id,
-                                                         rearrange_id_field, str(record_id))
+    # Stub method that doesn't write anything. Needs to be provided by the 
+    # subclasses.
+    def repositoryInsertRecords(self, json_records):
+        # This should never be called, return False as an error code.
+        return False
 
-        return True
+    # Stub method that doesn't count anything. Needs to be provided by the subclasses.
+    def repositoryCountRecords(self, repertoire_id):
+        # This method should never be called, return -1
+        return -1
 
-    # Count the number of rearrangements that belong to a specific repertoire. Note: In our
-    # early implementations, we had an internal field name called ir_project_sample_id. We
-    # want to hide this and just talk about reperotire IDs, so this is hidden in the 
-    # Rearrangement class...
-    def repositoryCountRearrangements(self, repertoire_id):
-        repertoire_field = self.airr_map.getMapping(self.getAnnotationLinkIDField(),
-                                                    self.ireceptor_tag,
-                                                    self.repository_tag)
-        return self.repository.countRearrangements(repertoire_field, repertoire_id)
-
-    # Update the cached sequence count for the given reperotire to be the given count.
+    # Stub method for updating the count for a repertoire. Needs to be provided
+    # by the subclass.
     def repositoryUpdateCount(self, repertoire_id, count):
-        repertoire_field = self.airr_map.getMapping(self.getRepertoireLinkIDField(),
-                                                    self.ireceptor_tag,
-                                                    self.repository_tag)
-        count_field = self.airr_map.getMapping(self.getRearrangementCountField(),
-                                                    self.ireceptor_tag,
-                                                    self.repository_tag)
-        self.repository.updateField(repertoire_field, repertoire_id,
-                                    count_field, count)
+        return False
 

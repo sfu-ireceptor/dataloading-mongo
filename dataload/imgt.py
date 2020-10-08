@@ -639,11 +639,13 @@ class IMGT(Rearrangement):
         mongo_concat[ir_updated_at] = now_str
 
         # Transform the data frame so that it meets the repository type requirements
-        if not self.mapToRepositoryType(mongo_concat):
+        if not self.mapToRepositoryType(mongo_concat,
+                                        airr_map.getRearrangementClass(),
+                                        airr_map.getIRRearrangementClass()):
             print("ERROR: Unable to map data to the repository")
             return False
 
-        # Convert the mongo data frame dats int JSON.
+        # Convert the mongo data frame data into JSON.
         if self.verbose():
             print("Info: Creating JSON from Dataframe", flush=True) 
         t_start_load_= time.perf_counter()
@@ -658,7 +660,7 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
         t_start = t_start_load = time.perf_counter()
-        self.repositoryInsertRearrangements(records)
+        self.repositoryInsertRecords(records)
         t_end = time.perf_counter()
         if self.verbose():
             print("Info: Inserted records, time = %f seconds (%f records/s)" %
@@ -668,7 +670,7 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
-        annotation_count = self.repositoryCountRearrangements(repertoire_link_id)
+        annotation_count = self.repositoryCountRecords(repertoire_link_id)
         if annotation_count == -1:
             print("ERROR: invalid annotation count (%d), write failed." %
                   (annotation_count))

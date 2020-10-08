@@ -180,7 +180,7 @@ class Repository:
     def updateField(self, search_field, search_value, update_field, update_value):
         if not self.skipload:
             update = {"$set": {update_field:update_value}}
-            self.repertoire.update( {search_field:search_value}, update)
+            return self.repertoire.update( {search_field:search_value}, update)
 
     # Update a repertoire document in the repertoire collection. Takes a single 
     # field and a value for that field, searches for it, and if it finds one
