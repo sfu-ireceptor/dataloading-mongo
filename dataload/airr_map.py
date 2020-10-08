@@ -111,6 +111,12 @@ class AIRRMap:
     def getIRRearrangementClass(self):
         return self.ir_rearrangement_class
 
+    def getCloneClass(self):
+        return self.rearrangement_class
+
+    def getIRCloneClass(self):
+        return self.ir_rearrangement_class
+
     # Utility function to determine if the mapping has a specific column
     def hasColumn(self, column_name):
         if column_name in self.airr_mappings:

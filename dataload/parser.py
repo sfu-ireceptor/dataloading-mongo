@@ -76,6 +76,7 @@ class Parser:
         self.repertoire_linkid_field = "ir_annotation_set_metadata_id"
         self.repertoire_file_field = "ir_rearrangement_file_name"
         self.rearrangement_count_field = "ir_sequence_count"
+        self.clone_count_field = "ir_clone_count"
 
         # We need to keep track of the field (identified by an iReceptor 
         # field name) in the annotation collection that points to the
@@ -102,6 +103,9 @@ class Parser:
 
     def getRearrangementCountField(self):
         return self.rearrangement_count_field
+
+    def getCloneCountField(self):
+        return self.clone_count_field
 
     def getAnnotationLinkIDField(self):
         return self.annotation_linkid_field

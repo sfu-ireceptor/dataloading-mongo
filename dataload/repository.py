@@ -3,7 +3,9 @@ import urllib.parse
 import pymongo
 
 class Repository:
-    def __init__(self, user, password, host, port, database, repertoire_collection, rearrangement_collection, skipload, update, verbose=False):
+    def __init__(self, user, password, host, port, database,
+                 repertoire_collection, rearrangement_collection, clone_collection,
+                 skipload, update, verbose=False):
         """Create an interface to the Mongo repository
 
         Keyword arguments:
@@ -26,12 +28,14 @@ class Repository:
         self.database = database
         self.repertoire_collection = repertoire_collection
         self.rearrangement_collection = rearrangement_collection
+        self.clone_collection = clone_collection
         self.skipload = skipload
         self.update = update
         self.verbose = verbose
 
         self.repertoire = None
         self.rearrangement = None
+        self.clone = None
 
         # Connect with Mongo db
         self.username = urllib.parse.quote_plus(self.username)
@@ -84,6 +88,7 @@ class Repository:
         self.mongo_db = self.mongo_client[self.database]
         self.repertoire = self.mongo_db[self.repertoire_collection]
         self.rearrangement = self.mongo_db[self.rearrangement_collection]
+        self.clone = self.mongo_db[self.clone_collection]
 
 
     # Return the update flag so clients can determine if we are in update mode or not.
@@ -174,6 +179,45 @@ class Repository:
 
         # If sucessful return the count.
         return rearrangement_count
+
+    # Write the set of JSON records provided to the "clones" collection.
+    # This is hiding the repository implementation.
+    # Return a list of the ids on success None on failure.
+    def insertClones(self, json_records):
+        if not self.skipload:
+            try:
+                record_ids = self.clone.insert(json_records)
+            except Exception as err:
+                print("ERROR: Unable to write records to repository, %s"%(err))
+                return None
+        return record_ids
+
+    # Update the update_field to update_value wherever search_field is equal to
+    # search value.
+    def updateCloneField(self, search_field, search_value, update_field, update_value):
+        if not self.skipload:
+            update = {"$set": {update_field:update_value}}
+            self.clone.update( {search_field:search_value}, update)
+
+    # Count the number of clones that belong to a specific repertoire. 
+    # Return -1 on error. 
+    def countClones(self, repertoire_field, repertoire_id):
+        # Check for valid fields
+        if repertoire_field is None or repertoire_id is None:
+            print("ERROR: Invalid repertoire field (%s) or repertoire_id (%s)"%
+                  (repertoire_field, repertoire_id))
+            return -1
+        # Build the query and try to perform it. 
+        query = {repertoire_field:{'$eq':repertoire_id}}
+        try:
+            clone_count = self.clone.find(query).count()
+        except Exception as err:
+            print("ERROR: Query failed for repertoire field (%s) or repertoire_id (%s)"%
+                  (repertoire_field, repertoire_id))
+            return -1
+
+        # If sucessful return the count.
+        return clone_count
 
     # Update the update_field to update_value wherever search_field is equal to
     # search value.

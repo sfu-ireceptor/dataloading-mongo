@@ -21,6 +21,8 @@ from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
 from adaptive import Adaptive
+# Clone loader clasases
+from mixcr_clone import MiXCR_Clone
 
 # Get the command line arguments...
 def getArguments():
@@ -130,6 +132,15 @@ def getArguments():
         help="The file to be loaded is a text (or compressed text) annotation file that uses a 'general' mapping that is non specific to an annotation tool. This feature allows for the creation of a generic rearrangement loading capability. This requires that an ir_general mapping be present in the AIRR Mapping configuration file being used by the data loader (see the --mapfile option)"
     )
 
+    # Processing MiXCR Clone data
+    type_group.add_argument(
+        "--mixcr-clone",
+        action='store_const',
+        const="MiXCR Clone",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR clone annotation tool."
+    )
+
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
         "--host",
@@ -190,6 +201,12 @@ def getArguments():
         default="sequence",
         help="The collection to use for storing and searching rearrangements (sequence annotations). This is the collection that data is inserted into when the --mixcr, --imgt, and --airr options are used to load files. Defaults to 'sequence', which is the collection in the iReceptor Turnkey repository."
     )
+    db_group.add_argument(
+        "--clone_collection",
+        dest="clone_collection",
+        default="clone",
+        help="The collection to use for storing and searching clones. This is the collection that data is inserted into when the --mixcr-clone option is used to load files. Defaults to 'clone', which is the collection in the iReceptor Turnkey repository."
+    )
 
     path_group = parser.add_argument_group("file options")
     path_group.add_argument(
@@ -225,6 +242,7 @@ if __name__ == "__main__":
                             options.database,
                             options.repertoire_collection,
                             options.rearrangement_collection,
+                            options.clone_collection,
                             options.skipload, options.update,
                             options.verbose)
     # Check on the successful creation of the repository
@@ -291,6 +309,11 @@ if __name__ == "__main__":
         # to map an arbitrary set of fields in a file to the repository. This requires that
         # an ir_general column exists in the AIRR Mapping file.
         parser.setFileMapping(options.type)
+    elif options.type == "MiXCR Clone":
+        # process mixcr clone data
+        print("Info: Processing MiXCR Clone data file: {}".format(options.filename))
+        parser = MiXCR_Clone(options.verbose, options.database_map,
+                             options.database_chunk, airr_map, repository)
     else:
         print("ERROR: unknown data type '{}'".format(options.type))
         sys.exit(4)
