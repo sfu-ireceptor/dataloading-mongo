@@ -13,7 +13,7 @@ class AIRRMap:
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
         self.ir_rearrangement_class = "IR_Rearrangement"
-        self.ir_rearrangement_class = "IR_Clone"
+        self.ir_clone_class = "IR_Clone"
 
         # Keep track of the mapfile being used.
         self.mapfile = ""
