@@ -102,8 +102,13 @@ class Repository:
     # where the search_name was found in the field search_field.
     # Return None on error, return empty array if not found.
     def getRepertoireIDs(self, repertoire_field, search_field, search_name):
-        # Build the query (old string query = {search_field: {'$regex': search_name}}
-        query =  {search_field: search_name}
+        # Build the query. This is primarily used for searching for repertoires that
+        # link to a specific file. Originally the field was a comma separated set of strings
+        # so we used query = {search_field: {'$regex': search_name}}. Now that we are
+        # using an array of stings we want to use an exact match. We can take advantage of
+        # the fact that Mongo will query each array element for an exact match with this
+        # query.
+        query = {search_field: {'$eq': search_name}} 
         idarray = []
         try:
             # Perform the query and build an array of the resulting values of the fields
