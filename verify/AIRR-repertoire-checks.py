@@ -800,7 +800,7 @@ if __name__ == "__main__":
             
             time.sleep(1)
             # Process json file into JSON structure readable by Python
-            query_dict = process_json_files(force,False,str(facet_ct) + "facet_repertoire_id_" + str(rowAPI['repertoire_id'].to_list()[0]) + ".json")
+            query_dict = process_json_files(force,False,str(facet_ct) + str(study_id) + "/facet_repertoire_id_" + str(rowAPI['repertoire_id'].to_list()[0]) + ".json")
 
             ir_file = rowMD["data_processing_files"].tolist()[0]  
             tool = rowMD["ir_rearrangement_tool"].to_list()[0]
