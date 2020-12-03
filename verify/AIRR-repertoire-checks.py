@@ -2,7 +2,7 @@
 # AUTHOR: LAURA GUTIERREZ FUNDERBURK
 # SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 # CREATED ON: December 5 2019
-# LAST MODIFIED ON: July 22 2020
+# LAST MODIFIED ON: Nov 3 2020
 
 """
 Use
@@ -35,6 +35,7 @@ import os, ssl
 from xlrd import open_workbook, XLRDError
 import subprocess
 import tarfile
+import math
 
 pd.set_option('display.max_columns', 500)
 
@@ -214,7 +215,7 @@ def ir_seq_count_imgt(data_df,repertoire_id,query_dict,query_url, header_dict,an
 
         # Leave static for now
     expect_pass = True
-    verbose = True
+    verbose = False
     force = True
        
         # Perform the query. 
@@ -223,11 +224,11 @@ def ir_seq_count_imgt(data_df,repertoire_id,query_dict,query_url, header_dict,an
     json_data = json.loads(query_json)
 
         # Validate facet count is non-empty
-    if json_normalize(json_data["Facet"]).empty == True:
+    if pd.json_normalize(json_data["Facet"]).empty == True:
         ir_seq_API = "NINAPI"
         fac_count = pd.DataFrame({"repertoire_id":[0]})
     else:
-        fac_count = json_normalize(json_data["Facet"])
+        fac_count = pd.json_normalize(json_data["Facet"])
         ir_seq_API = str(fac_count['count'][0])
         
         # Validate ir_curator_count is there
@@ -238,28 +239,34 @@ def ir_seq_count_imgt(data_df,repertoire_id,query_dict,query_url, header_dict,an
         message_mdf= "ir_curator_count not found in metadata"
         ir_sec = 0
         
-        # Compare the numbers
-    test_flag = set([str(ir_seq_API), str(sum_all), str(int(ir_sec))])
+    # Compare the numbers
+    # Check MD count is NaN
+    if math.isnan(ir_sec):
+        ir_sec = "Null"
+    else:
+        ir_sec = int(ir_sec)
+        
+    test_flag = set([str(ir_seq_API), str(sum_all), str(ir_sec)])
     if len(test_flag)==1:
         test_result = True
+        print(ir_rea + " returned TRUE (test passed), see CSV for details")
     else:
         test_result=False
+        print(ir_rea + " returned FALSE (test failed), see CSV for details")
         
-    print("\n")
-    print("Metadata file names: " + str(line_one))
-    print("Files found in server: " + str(files_found))
-    print("Files not found in server: " + str(files_notfound))
-    print(str(message_mdf))
-    print("Tested on : " + str(line_one) + "\n")
-    print("repertoire_id: ", str(ir_rea), "repertoire_id: ",fac_count['repertoire_id'][0])
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\tir_sequence_count \t\t\t#Lines Annotation F \tTest Result")
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\tAPI Facet Count \t Metadata ir_curator_count")
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\t" + str(ir_seq_API) +" \t\t " + str(int(ir_sec)) + "\t\t" + str(sum_all) + "\t\t\t" + str(test_result))
-    print("\n")
-    print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    result_suite = pd.DataFrame.from_dict({"MetadataFileNames":[line_one], 
+            "FilesFound":[files_found], 
+            "FilesNotFound":[files_notfound], 
+            "MessageMDF":[message_mdf], 
+            "RepertoireID(MD)":[ir_rea], 
+            "RepertoireID(JSON)":[fac_count['repertoire_id'][0]],
+            "FacetCountAPI":[ir_seq_API],
+           "ir_curator":[ir_sec],
+           "NoLinesAnnotation":[sum_all],
+           "TestResult": [test_result]})
+    
+    return result_suite
+
 
         
 def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict,annotation_dir):     
@@ -274,7 +281,6 @@ def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict
     ir_rea = data_df[connecting_field].tolist()[0] 
     ir_sec = data_df["ir_curator_count"].tolist()[0]
     files = os.listdir(annotation_dir)
-    print(annotation_dir)
 
     if "fmt" not in ir_file and "tsv" not in ir_file:
         number_lines.append(0)
@@ -301,7 +307,7 @@ def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict
                 
     # Leave static for now
     expect_pass = True
-    verbose = True
+    verbose = False
     force = True
         
     # Perform the query. 
@@ -310,11 +316,11 @@ def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict
     json_data = json.loads(query_json)
         
     # Validate facet query is non-empty
-    if json_normalize(json_data["Facet"]).empty == True:
+    if pd.json_normalize(json_data["Facet"]).empty == True:
         ir_seq_API = "NINAPI"
         fac_count = pd.DataFrame({"repertoire_id":[0]})
     else:
-        fac_count = json_normalize(json_data["Facet"])
+        fac_count = pd.json_normalize(json_data["Facet"])
         ir_seq_API = str(fac_count['count'][0]) 
         
     # Validate ir_curator_count exists
@@ -324,28 +330,35 @@ def ir_seq_count_igblast(data_df,repertoire_id,query_dict,query_url, header_dict
     else:
         message_mdf= "ir_curator_count not found in metadata"
         ir_sec = 0
+    
     # Run test
-    test_flag = set([str(ir_seq_API), str(sum_all), str(int(ir_sec))])
+    # Compare the numbers
+    # Check MD count is NaN
+    if math.isnan(ir_sec):
+        ir_sec = "Null"
+    else:
+        ir_sec = int(ir_sec)
+        
+    test_flag = set([str(ir_seq_API), str(sum_all), str(ir_sec)])
     if len(test_flag)==1:
         test_result = True
+        print(ir_rea + " returned TRUE (test passed), see CSV for details")
     else:
         test_result=False
+        print(ir_rea + " returned FALSE (test failed), see CSV for details")
         
-    print("\n")
-    print("Metadata file names: " + str(line_one))
-    print("Files found in server: " + str(files_found))
-    print("Files not found in server: " + str(files_notfound))
-    print(str(message_mdf))
-    print("Tested on : " + str(line_one) + "\n")
-    print("repertoire_id: ", str(ir_rea), "repertoire_id: ",fac_count['repertoire_id'][0])
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\tir_sequence_count \t\t\t#Lines Annotation F \tTest Result")
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\tAPI Facet Count \t Metadata ir_curator_count")
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\t" + str(ir_seq_API) +" \t\t " + str(int(ir_sec)) + "\t\t" + str(sum_all) + "\t\t\t" + str(test_result))
-    print("\n")
-    print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
+    result_suite = pd.DataFrame.from_dict({"MetadataFileNames":[line_one], 
+            "FilesFound":[files_found], 
+            "FilesNotFound":[files_notfound], 
+            "MessageMDF":[message_mdf], 
+            "RepertoireID(MD)":[ir_rea], 
+            "RepertoireID(JSON)":[fac_count['repertoire_id'][0]],
+            "FacetCountAPI":[ir_seq_API],
+           "ir_curator":[ir_sec],
+           "NoLinesAnnotation":[sum_all],
+           "TestResult": [test_result]})
+    
+    return result_suite
 
 
 def ir_seq_count_mixcr(data_df,repertoire_id,query_dict,query_url, header_dict,annotation_dir):
@@ -364,9 +377,7 @@ def ir_seq_count_mixcr(data_df,repertoire_id,query_dict,query_url, header_dict,a
     ir_rea = data_df[connecting_field].tolist()[0] 
     ir_sec = data_df["ir_curator_count"].tolist()[0]
     files = os.listdir(annotation_dir)
-    
-    print(annotation_dir) 
-    
+        
     if "txt" not in ir_file:
         number_lines.append(0)
         sum_all = "NFMD"
@@ -388,7 +399,7 @@ def ir_seq_count_mixcr(data_df,repertoire_id,query_dict,query_url, header_dict,a
 
         # Leave static for now
     expect_pass = True
-    verbose = True
+    verbose = False
     force = True
         
        
@@ -399,11 +410,11 @@ def ir_seq_count_mixcr(data_df,repertoire_id,query_dict,query_url, header_dict,a
     json_data = json.loads(query_json)
         # Validate query is non-empty
         
-    if json_normalize(json_data["Facet"]).empty == True:
+    if pd.json_normalize(json_data["Facet"]).empty == True:
         ir_seq_API = "NINAPI"
         fac_count = pd.DataFrame({"repertoire_id":[0]})
     else:
-        fac_count = json_normalize(json_data["Facet"])
+        fac_count = pd.json_normalize(json_data["Facet"])
         ir_seq_API = str(fac_count['count'][0]) 
         
     # Validate ir_curator_count exists
@@ -414,28 +425,34 @@ def ir_seq_count_mixcr(data_df,repertoire_id,query_dict,query_url, header_dict,a
         message_mdf= "ir_curator_count not found in metadata"
         ir_sec = 0 
             
-    test_flag = set([str(ir_seq_API), str(sum_all), str(int(ir_sec))])
+    # Run test
+    # Compare the numbers
+    # Check MD count is NaN
+    if math.isnan(ir_sec):
+        ir_sec = "Null"
+    else:
+        ir_sec = int(ir_sec)
+        
+    test_flag = set([str(ir_seq_API), str(sum_all), str(ir_sec)])
     if len(test_flag)==1:
         test_result = True
+        print(ir_rea + " returned TRUE (test passed), see CSV for details")
     else:
         test_result=False
+        print(ir_rea + " returned FALSE (test failed), see CSV for details")
         
-    print("\n")
-    print("Metadata file names: " + str(line_one))
-    print("Files found in server: " + str(files_found))
-    print("Files not found in server: " + str(files_notfound))
-    print(str(message_mdf))
-    print("Tested on : " + str(line_one) + "\n")
-    print("repertoire_id: ", str(ir_rea), "repertoire_id: ",fac_count['repertoire_id'][0])
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\tir_sequence_count \t\t\t#Lines Annotation F \tTest Result")
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\tAPI Facet Count \t Metadata ir_curator_count")
-    print(". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ")
-    print("\t\t\t\t" + str(ir_seq_API) +" \t\t " + str(int(ir_sec)) + "\t\t" + str(sum_all) + "\t\t\t" + str(test_result))
-    print("\n")
-    print(" - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-
+    result_suite = pd.DataFrame.from_dict({"MetadataFileNames":[line_one], 
+            "FilesFound":[files_found], 
+            "FilesNotFound":[files_notfound], 
+            "MessageMDF":[message_mdf], 
+            "RepertoireID(MD)":[ir_rea], 
+            "RepertoireID(JSON)":[fac_count['repertoire_id'][0]],
+            "FacetCountAPI":[ir_seq_API],
+           "ir_curator":[ir_sec],
+           "NoLinesAnnotation":[sum_all],
+           "TestResult": [test_result]})
+    
+    return result_suite
             
 def rename_cols(flattened_sub_df,field_name):
     
@@ -551,7 +568,7 @@ if __name__ == "__main__":
     query_dict = process_json_files(force,verbose,query_files)
     
     # Turn response into pandas dataframe 
-    json_response_df = json_normalize(query_dict)
+    json_response_df = pd.json_normalize(query_dict)
     
     # Perform the query. Time it
     start_time = time.time()
@@ -592,7 +609,7 @@ if __name__ == "__main__":
             verify_non_corrupt_file(master_md)
             master = get_dataframes_from_metadata(master_md)
         elif "csv" in master_md:
-            master = pd.read_csv(master_md ,encoding='utf8')
+            master = pd.read_csv(master_md,encoding='utf-8')
             master = master.loc[:, ~master.columns.str.contains('^Unnamed')]
 
             #grab the first row for the header
@@ -606,9 +623,11 @@ if __name__ == "__main__":
 
             master = pd.read_csv(master_md,encoding='utf8',sep="\t")
         elif "json" in master_md:
-            with open(master_md) as json_file:
-                master = json.load(json_file)
-                master  = flatten_json(master)
+            
+            florian_json = requests.get(master_md)
+            florian_json = florian_json.json()
+            master = flatten_json(florian_json)
+            
     except:
         print("Warning: Provided wrong type file: cannot read metadata.")
         sys.exit(0)
@@ -619,8 +638,10 @@ if __name__ == "__main__":
     master = master.replace('\n',' ', regex=True)
     if "study_id" in master.columns and master['study_id'].isnull().sum()<1:
         master["study_id"] = master["study_id"].str.strip()
-
+        master['study_id'] = master['study_id'].replace(" ","",regex=True)
         data_df = master.loc[master['study_id'] == study_id]
+        
+
     else:
         
         data_df = master
@@ -651,7 +672,9 @@ if __name__ == "__main__":
     
     print("================================================")
     
+    
     concat_version = flatten_json(DATA)
+    concat_version['study.study_id'] = concat_version['study.study_id'].replace(" ","",regex=True)
     
     print("Cross comparison - field names\n")
     field_names_in_mapping_not_in_API = []
@@ -767,16 +790,17 @@ if __name__ == "__main__":
     print("---------------------------------------------------------------------------------------------------------------")    
     if "FC" in cover_test:
         print("Facet count vs ir_curator_count vs line count comparison\n")
+        full_result_suite = []
         for item in unique_items:
-            print("---------------------------------------------------------------------------------------------------------------")
-            print("ITEM",item)
+            #print("---------------------------------------------------------------------------------------------------------------")
+            #print("ITEM",item)
             rowAPI = concat_version[concat_version['repertoire_id']==str(item)]
 
             rowMD = sub_data[sub_data[connecting_field]==item]
             
             time.sleep(1)
             # Process json file into JSON structure readable by Python
-            query_dict = process_json_files(force,verbose,str(facet_ct) + "facet_repertoire_id_" + str(rowAPI['repertoire_id'].to_list()[0]) + ".json")
+            query_dict = process_json_files(force,False,str(facet_ct) + "facet_repertoire_id_" + str(rowAPI['repertoire_id'].to_list()[0]) + ".json")
 
             ir_file = rowMD["data_processing_files"].tolist()[0]  
             tool = rowMD["ir_rearrangement_tool"].to_list()[0]
@@ -797,20 +821,24 @@ if __name__ == "__main__":
                 ############## CASE 1
                 if tool=="IMGT high-Vquest" or "vquest" in annotation_dir.lower():
                     
-                    ir_seq_count_imgt(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
+                    result_iter = ir_seq_count_imgt(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
+                    full_result_suite.append(result_iter)
                     
                 ############## CASE 2            
-                elif tool=="igblast" or "airr" in annotation_dir.lower():
-                    ir_seq_count_igblast(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
-               
+                elif tool=="igblast" or "airr" in annotation_dir.lower() or 'adaptive' in annotation_dir.lower():
+                    result_iter = ir_seq_count_igblast(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
+                    full_result_suite.append(result_iter)
+                
                 ############## CASE 3                       
                 elif tool=="MiXCR" or "mixcr" in annotation_dir.lower():   
-                    ir_seq_count_mixcr(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
-                    
+                    result_iter = ir_seq_count_mixcr(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
+                    full_result_suite.append(result_iter)
                 else:
                     
                     print("WARNING: Could not find appropriate annotation tool: please ensure that ir_rearrangement_tool or the path to your annotation files corresponds to igblast (airr), MiXCR or VQUEST")
-
+        final_result = pd.concat(full_result_suite)
+        final_result.to_csv(details_dir + str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv")
+        print("For details on sequence count refer to " + str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv")
             
     print("---------------------------------------------------------------------------------------------------------------")
     
