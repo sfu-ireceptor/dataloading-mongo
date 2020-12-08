@@ -420,6 +420,12 @@ $start_time = microtime(true);
                 output_stats($repertoire_id_field, $sample_id, $stats_cgene_exists_productive, "c_gene_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_cfamily_exists_productive, "c_family_exists_productive", $out_file);
 
+                // Output the junction stats.
+                output_stats($repertoire_id_field, $sample_id, $stats_junction, "junction_length", $out_file);
+                output_stats($repertoire_id_field, $sample_id, $stats_junction_aa, "junction_aa_length", $out_file);
+                output_stats($repertoire_id_field, $sample_id, $stats_junction_productive, "junction_length_productive", $out_file);
+                output_stats($repertoire_id_field, $sample_id, $stats_junction_aa_productive, "junction_aa_length_productive", $out_file);
+
 		fclose($out_file);
 	}
 
