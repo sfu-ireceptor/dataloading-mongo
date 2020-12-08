@@ -232,23 +232,31 @@ $start_time = microtime(true);
 		}
         }
 
-	echo "Database ireceptor selected\n";
+        $repertoire_collection_name = "sample";
+        $rearrangement_collection_name = "sequence";
+	echo "Database ireceptor selected, collections = ".$repertoire_collection_name.", ".$rearrangement_collection_name."\n";
+	$repertoire_collection = $db->selectCollection($repertoire_collection_name);
+	$rearrangement_collection   = $db->selectCollection($rearrangement_collection_name);
 
-	$repertoire_collection = $db->selectCollection("sample");
-	$rearrangement_collection   = $db->selectCollection("sequence");
-
+        // Set the field name we use to link repertoires and rearrangements.
         #$repertoire_id_field = "_id";
         #$rearrangement_id_field = "ir_project_sample_id";
         $repertoire_id_field = "ir_annotation_set_metadata_id";
         $rearrangement_id_field = "ir_annotation_set_metadata_id_rearrangement";
+
+        // Get all of the repertoires.
+	$repertoire_results = $repertoire_collection->find();
+        // Example with just a single repertoire. You need to find a repertoire_id for this to work
+        // in the repository of choice...
 	$repertoire_results = $repertoire_collection->find([$repertoire_id_field=>'5faed5aec0fea5f2fe906fc9']);
-	#$repertoire_results = $repertoire_collection->find();
 	$repertoire_ids = Array();
 
+        // Get the repertoire_ids
 	foreach ($repertoire_results as $repertoire)
 	{
 		$repertoire_ids[] = $repertoire[$repertoire_id_field];
 	}
+        // For each repertoire_id, process the repertoire.
 	foreach ($repertoire_ids as $repertoire_id)
 	{
                 echo "Processing repertoire ".$repertoire_id."\n";
