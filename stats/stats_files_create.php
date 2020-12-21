@@ -248,7 +248,7 @@ $start_time = microtime(true);
 	$repertoire_results = $repertoire_collection->find();
         // Example with just a single repertoire. You need to find a repertoire_id for this to work
         // in the repository of choice...
-	$repertoire_results = $repertoire_collection->find([$repertoire_id_field=>'5faed5aec0fea5f2fe906fc9']);
+	// $repertoire_results = $repertoire_collection->find([$repertoire_id_field=>'5faed5aec0fea5f2fe906fc9']);
 	$repertoire_ids = Array();
 
         // Get the repertoire_ids
@@ -342,14 +342,15 @@ $start_time = microtime(true);
 		}
 
 		//output each array into a file of the name repertoireId_statName.json
-		$outdir = '/mnt/stats/'.$sample_id."/";
+                $outdir = '/data/stats';
 		if (!is_dir($outdir))
 		{
 			mkdir($outdir, 0777, true);
 		}
 
-		$file_name = $outdir.$sample_id."stats.json";
+		$file_name = $outdir.'/'.$sample_id."_stats.json";
 		$out_file = fopen ( $file_name, "w");
+                echo "Writing stats to ".$file_name."\n";
 
                 $line = generate_stats_line($repertoire_id_field, $sample_id, "rearrangement_count", "rearrangement_count", $rearrangement_count);
 		fwrite($out_file, $line);
