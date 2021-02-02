@@ -2,7 +2,7 @@
 #
 # Clone the dataloading-mongo github in /data/src so we have the stats
 # loading code
-git clone --branch production-v3 https://github.com/sfu-ireceptor/turnkey-service-php.git
+git clone https://github.com/sfu-ireceptor/dataloading-mongo.git
 
 #
 # We use the API service container for this, because it has PHP. We can
