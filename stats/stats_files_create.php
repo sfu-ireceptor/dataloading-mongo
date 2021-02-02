@@ -230,6 +230,7 @@ $start_time = microtime(true);
 				fwrite($out_file, $line);
 			}
 		}
+		fflush($out_file);
         }
 
         $repertoire_collection_name = "sample";
@@ -243,6 +244,7 @@ $start_time = microtime(true);
         #$rearrangement_id_field = "ir_project_sample_id";
         $repertoire_id_field = "ir_annotation_set_metadata_id";
         $rearrangement_id_field = "ir_annotation_set_metadata_id_rearrangement";
+        $rearrangement_id_field = "repertoire_id";
 
         // Get all of the repertoires.
 	$repertoire_results = $repertoire_collection->find();
@@ -260,6 +262,7 @@ $start_time = microtime(true);
 	foreach ($repertoire_ids as $repertoire_id)
 	{
                 echo "Processing repertoire ".$repertoire_id."\n";
+                $repertoire_start_time = microtime(true);
 		$stats_junction = Array();
 		$stats_junction_aa = Array();
 		$stats_junction_productive = Array();
@@ -360,6 +363,7 @@ $start_time = microtime(true);
 		fwrite($out_file, $line);
                 $line = generate_stats_line($repertoire_id_field, $sample_id, "duplicate_count_productive", "duplicate_count_productive", $rearrangement_count_productive);
 		fwrite($out_file, $line);
+		fflush($out_file);
 
                 // Output V-gene stats
                 output_stats($repertoire_id_field, $sample_id, $stats_vcall_unique, "v_call_unique", $out_file);
@@ -377,6 +381,7 @@ $start_time = microtime(true);
                 output_stats($repertoire_id_field, $sample_id, $stats_vcall_exists_productive, "v_call_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_vgene_exists_productive, "v_gene_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_vfamily_exists_productive, "v_family_exists_productive", $out_file);
+		fflush($out_file);
 
                 // Output D-gene stats
                 output_stats($repertoire_id_field, $sample_id, $stats_dcall_unique, "d_call_unique", $out_file);
@@ -394,6 +399,7 @@ $start_time = microtime(true);
                 output_stats($repertoire_id_field, $sample_id, $stats_dcall_exists_productive, "d_call_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_dgene_exists_productive, "d_gene_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_dfamily_exists_productive, "d_family_exists_productive", $out_file);
+		fflush($out_file);
 
                 // Output J-gene stats
                 output_stats($repertoire_id_field, $sample_id, $stats_jcall_unique, "j_call_unique", $out_file);
@@ -411,6 +417,7 @@ $start_time = microtime(true);
                 output_stats($repertoire_id_field, $sample_id, $stats_jcall_exists_productive, "j_call_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_jgene_exists_productive, "j_gene_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_jfamily_exists_productive, "j_family_exists_productive", $out_file);
+		fflush($out_file);
 
                 // Output C-gene stats
                 output_stats($repertoire_id_field, $sample_id, $stats_ccall_unique, "c_call_unique", $out_file);
@@ -428,6 +435,7 @@ $start_time = microtime(true);
                 output_stats($repertoire_id_field, $sample_id, $stats_ccall_exists_productive, "c_call_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_cgene_exists_productive, "c_gene_exists_productive", $out_file);
                 output_stats($repertoire_id_field, $sample_id, $stats_cfamily_exists_productive, "c_family_exists_productive", $out_file);
+		fflush($out_file);
 
                 // Output the junction stats.
                 output_stats($repertoire_id_field, $sample_id, $stats_junction, "junction_length", $out_file);
@@ -436,6 +444,8 @@ $start_time = microtime(true);
                 output_stats($repertoire_id_field, $sample_id, $stats_junction_aa_productive, "junction_aa_length_productive", $out_file);
 
 		fclose($out_file);
+                $repertoire_end_time = microtime(true) - $repertoire_start_time;
+                echo "Reperotire stats took " . $repertoire_end_time . " seconds\n";
 	}
 
 $end_time = microtime(true) - $start_time;
