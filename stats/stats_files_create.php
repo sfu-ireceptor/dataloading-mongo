@@ -72,6 +72,14 @@ $start_time = microtime(true);
 		    	else
 		    	{
 		    		$stats_unique[$gene_field]=1;
+		    	}
+		    	if (isset($stats_exists[$gene_field]))
+		    	{
+		    		$stats_exists[$gene_field]++;
+		    	}
+		    	else
+		    	{
+		    		$stats_exists[$gene_field]=1;
 		    	}		    	
 		    }
         }
