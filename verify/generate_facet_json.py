@@ -66,13 +66,13 @@ if __name__ == "__main__":
     path_to_json = options.path_to_json
     no_filters = options.no_filters
     study_id = options.study_id
+    verbose = options.verbose
     
     query_url = base_url + "/airr/v1/" + entry_pt
     
     
     # Leave static for now
     expect_pass = True
-    verbose = True
     force = True
 
     # Ensure our HTTP set up has been done.
@@ -96,10 +96,10 @@ if __name__ == "__main__":
     
     path = study_id + "/"
     if os.path.isdir(str(path_to_json) + str(path))==False:
-        print("PATH DOES NOT EXIST")
+        if verbose: print("INFO: PATH DOES NOT EXIST")
         os.mkdir(str(path_to_json) + str(path))
     else:
-        print("PATH EXISTS")
+        if verbose: print("INFO: PATH EXISTS")
         
     rep_ids = pd.json_normalize(json.loads(query_json),record_path="Repertoire")['repertoire_id'].to_list()
         
