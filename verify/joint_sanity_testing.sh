@@ -24,6 +24,11 @@ echo ""
 # $5 study_id       Enter study_id
 
 python3 $SCRIPT_DIR/generate_facet_json.py -v "$1" "$2" "$3" "$4" "$5"
+if [ $? -ne 0 ]
+then
+  echo "ERROR: Could not generate queries correctly."
+  exit 1
+fi
 
 echo ""
 echo "Begin sanity check"
