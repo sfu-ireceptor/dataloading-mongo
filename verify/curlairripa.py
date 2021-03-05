@@ -97,8 +97,8 @@ def initHTTP():
 def process_json_files(force,verbose,query_file):
         
         # Open the JSON query file and read it as a python dict.
-    with open(query_file, 'r') as f:
-        try: 
+    try: 
+        with open(query_file, 'r') as f:
             # Load file
             query_dict = json.load(f)
 
@@ -106,15 +106,18 @@ def process_json_files(force,verbose,query_file):
                 print('INFO: Performing query: ' + str(query_dict))    
             return query_dict
                 
-        except IOError as error:
+    except IOError as error:
             print("ERROR: Unable to open JSON file " + query_file + ": " + str(error))
-        except json.JSONDecodeError as error:
+            exit(1)
+    except json.JSONDecodeError as error:
             if force:
                 print("WARNING: JSON Decode error detected in " + query_file + ": " + str(error))
                 with open(query_file, 'r') as f:
                     query_dict = f.read().replace('\n', '')
             else:
                 print("ERROR: JSON Decode error detected in " + query_file + ": " + str(error))
-        except Exception as error:
+                exit(1)
+    except Exception as error:
             print("ERROR: Unable to open JSON file " + query_file + ": " + str(error))
+            exit(1)
 
