@@ -87,6 +87,10 @@ if __name__ == "__main__":
     # Perform the query. Time it
     start_time = time.time()
     query_json = processQuery(query_url, header_dict, expect_pass, query_dict, verbose, force)
+    if len(query_json) == 0:
+            print('ERROR: Query failed to %s'%(query_url))
+            exit(1)
+
     total_time = time.time() - start_time
     
     
