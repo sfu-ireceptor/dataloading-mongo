@@ -652,9 +652,8 @@ if __name__ == "__main__":
     check_uniqueness_ir_rearrangement_nr(data_df,input_unique_field_id)
 
     if data_df.empty:
-        print("EMPTY DATA FRAME: Cannot find specified study ID\n")
-        print(data_df)
-        sys.exit(0)
+        print("ERROR: Empty data frame, cannot find study ID %s in metadata file\n"%(study_id))
+        sys.exit(1)
 
     no_rows = data_df.shape[0]
     
