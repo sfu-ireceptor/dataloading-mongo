@@ -38,6 +38,8 @@ The iReceptor Data Loader takes various classes of options.
 
 ## Repository Options
 
+- --skipload: Run the program without actually lodaing data into the repository. This option will allow testing of the entire load process without changing the repository.
+- --update: Run the program in update mode rather than insert mode. This only works for repertoires.
 - --host=host - MongoDb server hostname. Defaults to 'localhost'.
 - --port=port - MongoDb server port number. Defaults to 27017.
 - --user=user - MongoDb  user name. Defaults to the MONGODB_SERVICE_USER environment variable if set. Defaults to empty string (no user name) otherwise."
