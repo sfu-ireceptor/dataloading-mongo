@@ -33,7 +33,9 @@ The iReceptor Data Loader takes various classes of options.
 - --repertoire (-s): The file to be loaded is a AIRR Repertoire metadata file (a 'json' file in the AIRR Repertoire format)
 - --imgt (-i): The file to be loaded is a compressed archive files as provided by the IMGT HighV-QUEST annotation tool.
 - --mixcr (-m): The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR annotation tool.
+- --mixcr_v3: The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR (v3.0) annotation tool.
 - --airr (-a): The file to be loaded is a text (or compressed text) annotation file in the AIRR TSV rearrangement format. This format is used to load annotation files produced by igblast (and other tools) that can produce AIRR TSV rearrangement files.
+- --mixcr-clone: The file to be loaded is a text (or compressed text) clone file as produced by the MiXCR clone annotation tool
 - --filename=filename (-f) - Name of the file to load. It is assumed that the filename provided is in the appropriate format that matches either the --sample, --imgt, --mixcr, or --airr command line options. An error will be reported if the formats do not match.
 
 ## Repository Options
