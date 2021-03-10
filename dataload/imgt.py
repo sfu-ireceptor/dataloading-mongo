@@ -185,8 +185,7 @@ class IMGT(Rearrangement):
         # directly or by looking for a repertoire ID based on a rearrangement file
         # name.
         repertoire_link_field = self.getRepertoireLinkIDField()
-        rearrangement_link_field = self.getRearrangementLinkIDField()
-        rearrangement_file_field = self.getRearrangementFileField()
+        rearrangement_link_field = self.getAnnotationLinkIDField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using.
@@ -259,7 +258,8 @@ class IMGT(Rearrangement):
             if self.verbose():
                 print("Info: Processing file ", vquest_file, flush=True)
             # Read in the data frame for the file.
-            vquest_dataframe = self.readScratchDf(vquest_file, sep='\t')
+            vquest_dataframe = pd.read_csv(self.getScratchPath(vquest_file),
+                                           sep='\t', low_memory=False)
             # Extract the fields that are of interest for this file.
             imgt_file_column = airr_map.getRearrangementMapColumn(self.imgt_filename_map)
             fields_of_interest = imgt_file_column.isin([vquest_file])
@@ -344,7 +344,8 @@ class IMGT(Rearrangement):
         # First, we want to keep track of some of the data from the IMGT Parameters file.
         # Create a dictionary with keys the first column of the parameter file and the 
         # values in the second column in the parameter file.
-        Parameters_11 = self.readScratchDfNoHeader('11_Parameters.txt', sep='\t')
+        Parameters_11 = pd.read_csv(self.getScratchPath('11_Parameters.txt'),
+                                    sep='\t', low_memory=False, header=None)
         parameter_dictionary = dict(zip(Parameters_11[0], Parameters_11[1]))
 
         # Need to grab some data out of the parameters dictionary. This is not really
@@ -638,11 +639,13 @@ class IMGT(Rearrangement):
         mongo_concat[ir_updated_at] = now_str
 
         # Transform the data frame so that it meets the repository type requirements
-        if not self.mapToRepositoryType(mongo_concat):
+        if not self.mapToRepositoryType(mongo_concat,
+                                        airr_map.getRearrangementClass(),
+                                        airr_map.getIRRearrangementClass()):
             print("ERROR: Unable to map data to the repository")
             return False
 
-        # Convert the mongo data frame dats int JSON.
+        # Convert the mongo data frame data into JSON.
         if self.verbose():
             print("Info: Creating JSON from Dataframe", flush=True) 
         t_start_load_= time.perf_counter()
@@ -657,7 +660,7 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Inserting %d records into the repository"%(len(records)), flush=True)
         t_start = t_start_load = time.perf_counter()
-        self.repositoryInsertRearrangements(records)
+        self.repositoryInsertRecords(records)
         t_end = time.perf_counter()
         if self.verbose():
             print("Info: Inserted records, time = %f seconds (%f records/s)" %
@@ -667,7 +670,7 @@ class IMGT(Rearrangement):
         if self.verbose():
             print("Info: Getting the number of annotations for this repertoire", flush=True)
         t_start = time.perf_counter()
-        annotation_count = self.repositoryCountRearrangements(repertoire_link_id)
+        annotation_count = self.repositoryCountRecords(repertoire_link_id)
         if annotation_count == -1:
             print("ERROR: invalid annotation count (%d), write failed." %
                   (annotation_count))

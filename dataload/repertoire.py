@@ -77,9 +77,9 @@ class Repertoire(Parser):
         # the rearrangement file field and check to see if the file field
         # already exists in another record or not...
         # First get the file field we use to connect rearrangments and reperotires
-        rearrangement_file_field = self.getRearrangementFileField()
+        repertoire_file_field = self.getRepertoireFileField()
         # Then get the repository field
-        file_repository_field = self.getAIRRMap().getMapping(rearrangement_file_field,
+        file_repository_field = self.getAIRRMap().getMapping(repertoire_file_field,
                                                         self.getiReceptorTag(),
                                                         self.getRepositoryTag())
         # Also get the field that links repertoires to rearrangements
@@ -124,7 +124,7 @@ class Repertoire(Parser):
             print("ERROR: Unable to write repertoire, already exists in the repository")
             print("ERROR:     Write failed for study '%s', sample '%s'"%(study, sample))
             print("ERROR:     File field %s contains rearrangement files %s"%
-                  (rearrangement_file_field, file_names))
+                  (repertoire_file_field, file_names))
             print("ERROR:     Files found in records with record IDs %s"%(str(idarray)))
             return None
 
@@ -147,33 +147,43 @@ class Repertoire(Parser):
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
+
+        # Get the repertoire_id that we are trying to insert from the JSON,
+        # None if not present.
         if rep_id_field in json_document:
             repertoire_id = json_document[rep_id_field]
             if repertoire_id == "":
                 repertoire_id = None
         else: repertoire_id = None
 
+        # Get the data_processing_id that we are trying to insert from the JSON,
+        # None if not present.
         if data_id_field in json_document:
             data_processing_id = json_document[data_id_field]
             if data_processing_id == "":
                 data_processing_id = None
         else: data_processing_id = None
 
+        # Get the sample_processing_id that we are trying to insert from the JSON,
+        # None if not present.
         if sample_id_field in json_document:
             sample_processing_id = json_document[sample_id_field]
             if sample_processing_id == "":
                 sample_processing_id = None
         else: sample_processing_id = None
 
-        # Get the number of repertoires for the current repertoire_id.
+        # Get the number of repertoires that exist in the repository for the
+        # repertoire_id we are trying to insert.
         rep_array = self.repositoryGetRepertoires(rep_id_field, repertoire_id)
         num_repertoires = len(rep_array)
 
         # If we are updating, we want one, and only one record.
         if self.repository.updateOnly():
-            # If we areupdating we want the record to be unique. repertoire_id is
+            # If we are updating we want the record to be unique. repertoire_id is
             # not sufficient so we have to check and see if the repertoire_id,
             # data_processing_id, and sample_processing_id is unique
+            # We use the internal "link" field that is guaranteed to be unique in
+            # the repository to update the record.
             if num_repertoires == 0:
                 print("ERROR: Could not find Reperotire %s to update"%(repertoire_id))
                 return None
@@ -197,9 +207,34 @@ class Repertoire(Parser):
                             print("ERROR:     data_processing_id = %s"%(data_processing_id))
                             return None
 
+            # If we are setting any of the repertoire_id, sample_processing_id, or 
+            # data_processing_id, we want to fail if there are rearrangements or
+            # clones loaded for this repertoire. If there are rearrangements or clones
+            # loaded then changing these _id fields will break the link to the
+            # rearrangements and clones, which would be bad... 
+            if (not repertoire_id == None or
+                not sample_processing_id == None or
+                not data_processing_id == None):
+                # Fail if there are rearrangements or clones
+                numClones = self.repository.countClones(rep_id_field, repertoire_id)
+                numRearrangements = self.repository.countRearrangements(rep_id_field, repertoire_id)
+                if numClones > 0 or numRearrangements >0:
+                    print("ERROR: Unable to update Repertoire with rearrangements or clones")
+                    print("ERROR:     repertoire_id = %s"%(repertoire_id))
+                    print("ERROR:     sample_processing_id = %s"%(sample_processing_id))
+                    print("ERROR:     data_processing_id = %s"%(data_processing_id))
+                    print("ERROR:     found %d rearrangements, %d clones for this repertoire"%
+                          (numRearrangements, numClones))
+                    return None
+
+
             # Store in our internal field the update time.
             json_document["ir_updated_at"] = self.getDateTimeNowUTC()
 
+            # Update the repertoire with the JSON data. Note that this is a non-destructive
+            # and conservative update. That is, it won't remove any information AND it ONLY
+            # sets fields that are different. For each field it reads the value, compares it,
+            # and the writes the new value if and only if it is different.
             if self.verbose():
                 print("Info: Updating Repertoire:")
                 print("Info:     %s = %s"% (link_repository_field, link_repository_value))
