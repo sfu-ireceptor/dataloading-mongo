@@ -1,0 +1,44 @@
+# Generating the Stats
+#
+# Clone the dataloading-mongo github in /data/src so we have the stats
+# loading code
+git clone https://github.com/sfu-ireceptor/dataloading-mongo.git
+
+#
+# We use the API service container for this, because it has PHP. We can
+# run this as a separate container with /data mounted as /data so we can 
+# get the PHP code.
+sudo docker-compose --file ~/turnkey-service-php/scripts/docker-compose.yml --project-name turnkey-service run -v /data:/data ireceptor-api bash
+
+# ON THE DOCKER CONTAINER:
+# Run the Stats generation. This is VERY specific with lots of stuff 
+# hard coded for now.
+php /data/src/dataloading-mongo/stats/stats_files_create.php
+
+# The above creates a bunch of JSON files, one per repertoire, with
+# the stats for that repertoire. We want to combine them into one file.
+mkdir /data/stats/combined
+cat /data/stats/*.json > /data/stats/combined/stats_combined.json
+
+
+# Loading the Stats
+#
+# This uses the database container as it uses mongoimport to load the data.
+# Note for this to work, we need to have a mount with the Stats JSON data
+# available for import.
+
+# Compose file:
+    ireceptor-database:
+        image: ireceptor/repository-mongodb:${DATABASE_TAG:-turnkey-v3}
+        volumes:
+            - ../.mongodb_data:/data/db
+            - /data:/data2
+        environment:
+            MONGO_INITDB_DATABASE: ireceptor
+
+# Run the container
+sudo docker-compose --file ~/turnkey-service-php/scripts/docker-compose.yml --project-name turnkey-service exec ireceptor-database bash
+
+# ON THE DOCKER CONTAINER:
+# Load the stats file
+bash /data2/src/dataloading-mongo/stats/load_stats.sh ireceptor stat /data2/stats/combined/stats_combined.json
