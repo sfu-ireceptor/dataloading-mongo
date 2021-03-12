@@ -835,6 +835,8 @@ if __name__ == "__main__":
                 else:
                     
                     print("WARNING: Could not find appropriate annotation tool: please ensure that ir_rearrangement_tool or the path to your annotation files corresponds to igblast (airr), MiXCR or VQUEST")
+                    print("dir = %s"%(annotation_dir.lower()))
+                    print("tool = %s"%(tool))
         final_result = pd.concat(full_result_suite)
         final_result.to_csv(details_dir + str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv")
         print("For details on sequence count refer to " + str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv")
