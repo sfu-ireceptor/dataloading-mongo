@@ -834,6 +834,8 @@ if __name__ == "__main__":
 
             # Process each according to the tool used
             else:
+                print("annotation_tool: %s"%(annotation_tool))
+                print("tool: %s"%(tool))
                 ############## CASE 1
                 if tool=="IMGT high-Vquest" or annotation_tool.lower()=="vquest":
                     
