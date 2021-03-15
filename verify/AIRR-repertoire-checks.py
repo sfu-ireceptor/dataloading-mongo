@@ -846,7 +846,7 @@ if __name__ == "__main__":
                     full_result_suite.append(result_iter)
                 
                 ############## CASE 3                       
-                elif tool=="MiXCR" or igblast.lower()=="mixcr":   
+                elif tool=="MiXCR" or annotation_tool.lower()=="mixcr":   
                     result_iter = ir_seq_count_mixcr(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
                     full_result_suite.append(result_iter)
                 else:
