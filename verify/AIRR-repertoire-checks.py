@@ -834,7 +834,7 @@ if __name__ == "__main__":
 
             # Process each according to the tool used
             else:
-                print("Processing annotations using:"
+                print("Processing annotations using:")
                 print("  annotation_tool: %s"%(annotation_tool))
                 print("  ir_rearrangement_tool: %s"%(tool))
                 ############## CASE 1
