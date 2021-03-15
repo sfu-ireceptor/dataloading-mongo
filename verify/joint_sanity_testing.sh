@@ -45,6 +45,6 @@ echo ""
 # $9 details_dir     Enter full path where you'd like to store content feedback in CSV format
 # $10 annotation_tool Enter the name of the tool used to process sequence data. Choices: igblast, vquest, mixcr
 
-python3 $SCRIPT_DIR/AIRR-repertoire-checks.py "$6" "$1" "$2" "$4" "$7" "$5" "$3" "$8" "$9" "CC-FC" "$10"
+python3 $SCRIPT_DIR/AIRR-repertoire-checks.py "$6" "$1" "$2" "$4" "$7" "$5" "$3" "$8" "$9" "CC-FC" ${10}
 TIME=`date +%Y-%m-%d_%H-%M-%S`
 echo "Ending run at: " ${TIME}
