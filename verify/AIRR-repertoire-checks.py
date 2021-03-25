@@ -2,7 +2,7 @@
 # AUTHOR: LAURA GUTIERREZ FUNDERBURK
 # SUPERVISOR: JAMIE SCOTT, FELIX BREDEN, BRIAN CORRIE
 # CREATED ON: December 5 2019
-# LAST MODIFIED ON: Dec 2 2020
+# LAST MODIFIED ON: March 12 2021
 
 """
 Use
@@ -486,40 +486,52 @@ def getArguments():
         "entry_point",
         help="Options: string 'rearragement' or string 'repertoire'"
     )
-    
+    # Full path to directory with JSON file containing repertoire id queries associated to a given study
     parser.add_argument(
             "json_files",
         help="Enter full path to JSON query containing repertoire ID's for a given study - this must match the value given for study_id"
     )
     
+    # Full path to metadata sheet (CSV or Excel format)
     parser.add_argument(
             "master_md",
         help="Full path to master metadata"
     )
     
+    # Study ID (study_id) 
     parser.add_argument(
             "study_id",
         help="Study ID (study_id) associated to this study"
     )
     
+    # Full path to directory with JSON files containing facet count queries associated to each repertoire
     parser.add_argument(
         "facet_count",
         help="Enter full path to JSON queries containing facet count request for each repertoire"
     )
     
+    # Full path to annotaton files
     parser.add_argument(
         "annotation_dir",
         help="Enter full path to where annotation files associated with study_id"
     )
     
+    # Full path to directory where output logs will be stored
     parser.add_argument(
         "details_dir",
         help="Enter full path where you'd like to store content feedback in CSV format"
     )
     
+    # Test type
     parser.add_argument(
             "Coverage",
         help="Sanity check levels: enter CC for content comparison, enter FC for facet count vs ir_curator count test, enter AT for AIRR type test"
+    )
+    
+    # Annotation tool
+    parser.add_argument(
+            "annotation_tool",
+        help="Name of annotation tool used to process sequences. Choice between MiXCR, VQuest, IGBLAST"
     )
 
     # Verbosity flag
@@ -548,6 +560,9 @@ if __name__ == "__main__":
     annotation_dir = options.annotation_dir
     details_dir = options.details_dir
     cover_test = options.Coverage
+    annotation_tool = options.annotation_tool
+    
+    study_id = study_id.replace('/', '')
     
     connecting_field = 'repertoire_id'
     
@@ -639,6 +654,7 @@ if __name__ == "__main__":
     if "study_id" in master.columns and master['study_id'].isnull().sum()<1:
         master["study_id"] = master["study_id"].str.strip()
         master['study_id'] = master['study_id'].replace(" ","",regex=True)
+        master['study_id'] = master['study_id'].str.replace('/','')
         data_df = master.loc[master['study_id'] == study_id]
         
 
@@ -652,8 +668,9 @@ if __name__ == "__main__":
     check_uniqueness_ir_rearrangement_nr(data_df,input_unique_field_id)
 
     if data_df.empty:
-        print("ERROR: Empty data frame, cannot find study ID %s in metadata file\n"%(study_id))
-        sys.exit(1)
+        print("EMPTY DATA FRAME: Cannot find specified study ID\n")
+        print(data_df)
+        sys.exit(0)
 
     no_rows = data_df.shape[0]
     
@@ -817,24 +834,27 @@ if __name__ == "__main__":
 
             # Process each according to the tool used
             else:
+                print("Processing annotations using:")
+                print("  annotation_tool: %s"%(annotation_tool))
+                print("  ir_rearrangement_tool: %s"%(tool))
                 ############## CASE 1
-                if tool=="IMGT high-Vquest" or "vquest" in annotation_dir.lower():
+                if tool=="IMGT high-Vquest" or annotation_tool.lower()=="vquest":
                     
                     result_iter = ir_seq_count_imgt(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
                     full_result_suite.append(result_iter)
                     
                 ############## CASE 2            
-                elif tool=="igblast" or "airr" in annotation_dir.lower() or 'adaptive' in annotation_dir.lower():
+                elif tool=="igblast" or annotation_tool.lower()=="igblast":
                     result_iter = ir_seq_count_igblast(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
                     full_result_suite.append(result_iter)
                 
                 ############## CASE 3                       
-                elif tool=="MiXCR" or "mixcr" in annotation_dir.lower():   
+                elif tool=="MiXCR" or annotation_tool.lower()=="mixcr":   
                     result_iter = ir_seq_count_mixcr(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
                     full_result_suite.append(result_iter)
                 else:
                     
-                    print("WARNING: Could not find appropriate annotation tool: please ensure that ir_rearrangement_tool or the path to your annotation files corresponds to igblast (airr), MiXCR or VQUEST")
+                    print("WARNING: Could not find appropriate annotation tool: please specify one of 'MiXCR', 'IGBLAST' or 'VQUEST' in the annotation tool parameter")
         final_result = pd.concat(full_result_suite)
         final_result.to_csv(details_dir + str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv")
         print("For details on sequence count refer to " + str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv")
