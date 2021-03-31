@@ -1,22 +1,20 @@
 <?php
+// Check command line arguments.
+if ($argc != 3) {
+	echo "usage: ".$argv[0]." study_id output_dir\n";
+	exit(1);
+}
 
+$study_id = $argv[1];
+$outdir = $argv[2];
+
+// Keep track orf execution time.
 $start_time = microtime(true);
 
-   // connect to mongodb
+// include Composer's autoloader
+require 'vendor/autoload.php';
 
-	require 'vendor/autoload.php'; // include Composer's autoloader
-        #$m = new MongoDB\Client("mongodb://ireceptor-database:27017", array("username"=>"dataLoader", "password"=>"+#7saQkvrBbZN+-V"));
-        $m = new MongoDB\Client("mongodb://ireceptor-database:27017");
-        echo "Connection to database successfully\n";
-        // select a database
-        $db = $m->ireceptor;
-/*
-	$m = new MongoDB\Client("mongodb://localhost:27017");
-	
-	echo "Connection to database successfully";
-	// select a database
-	$db = $m->ireceptor;
-*/
+
 	//helper function that takes in an array with alelle/gene/family data and sorts out 
 	//  whether to add to a _exists or _unique array. Does not decide on whether it's 
 	//  productive or not
@@ -29,10 +27,12 @@ $start_time = microtime(true);
 	    			if (isset ($stat_exists_array[$single_entry]))
 	    			{
 	    				$stat_exists_array[$single_entry]++;
+				        //echo ".";
 	    			}
 	    			else
 	    			{
 	    				$stat_exists_array[$single_entry]= 1;
+				        //echo ".";
 	    			}
 	    		}
 	    	}
@@ -41,18 +41,22 @@ $start_time = microtime(true);
 	    			if (isset ($stat_unique_array[$gene_array[0]]))
 	    			{
 	    				$stat_unique_array[$gene_array[0]]++;
+				        //echo ".";
 	    			}
 	    			else
 	    			{
 	    				$stat_unique_array[$gene_array[0]]= 1;
+				        //echo ".";
 	    			}	    		
 	    			if (isset ($stat_exists_array[$gene_array[0]]))
 	    			{
 	    				$stat_exists_array[$gene_array[0]]++;
+				        //echo ".";
 	    			}
 	    			else
 	    			{
 	    				$stat_exists_array[$gene_array[0]]= 1;
+				        //echo ".";
 	    			}
 	    	}
 
@@ -68,157 +72,120 @@ $start_time = microtime(true);
 		    {  	if (isset($stats_unique[$gene_field]))
 		    	{
 		    		$stats_unique[$gene_field]++;
+				//echo ".";
 		    	}
 		    	else
 		    	{
 		    		$stats_unique[$gene_field]=1;
+				//echo ".";
 		    	}
 		    	if (isset($stats_exists[$gene_field]))
 		    	{
 		    		$stats_exists[$gene_field]++;
+				//echo ".";
 		    	}
 		    	else
 		    	{
 		    		$stats_exists[$gene_field]=1;
+				//echo ".";
 		    	}		    	
 		    }
         }
 
-	//helper function to simply set the stats array for each rearrangement
-	function process_stats($rearrangement,
-				&$stats_junction_aa, &$stats_junction, &$stats_junction_aa_productive, &$stats_junction_productive, 
-				&$stats_vcall_exists, &$stats_vcall_unique, &$stats_vcall_exists_productive, &$stats_vcall_unique_productive, 
-				&$stats_vgene_exists, &$stats_vgene_unique, &$stats_vgene_exists_productive, &$stats_vgene_unique_productive, 
-				&$stats_vfamily_exists, &$stats_vfamily_unique, &$stats_vfamily_exists_productive, &$stats_vfamily_unique_productive, 
-				&$stats_jcall_exists,  &$stats_jcall_unique, &$stats_jcall_exists_productive, &$stats_jcall_unique_productive, 
-				&$stats_jgene_exists,  &$stats_jgene_unique, &$stats_jgene_exists_productive, &$stats_jgene_unique_productive, 
-				&$stats_jfamily_exists,  &$stats_jfamily_unique, &$stats_jfamily_exists_productive, &$stats_jfamily_unique_productive, 
-				&$stats_dcall_exists,  &$stats_dcall_unique, &$stats_dcall_exists_productive, &$stats_dcall_unique_productive, 
-				&$stats_dgene_exists, &$stats_dgene_unique, &$stats_dgene_exists_productive, &$stats_dgene_unique_productive, 
-				&$stats_dfamily_exists, &$stats_dfamily_unique, &$stats_dfamily_exists_productive, &$stats_dfamily_unique_productive, 
-				&$stats_ccall_exists,  &$stats_ccall_unique, &$stats_ccall_exists_productive, &$stats_ccall_unique_productive, 
-				&$stats_cfamily_exists,  &$stats_cfamily_unique, &$stats_cfamily_exists_productive, &$stats_cfamily_unique_productive, 
-				&$stats_cgene_exists, &$stats_cgene_unique, &$stats_cgene_exists_productive, &$stats_cgene_unique_productive
-				)
+	// Helper function to simply set the stats array for each rearrangement
+	function process_stats($rearrangement, &$stats, $gene_fields, $count_fields)
 	{
-	    $junction_length_string = 'junction_length';
-	    $junction_aa_length_string = 'junction_aa_length';
-
-	    $v_call_string = 'v_call';
-	    $v_family_string = 'ir_vgene_family';
-	    $v_gene_string = 'ir_vgene_gene';
-    
-	    $j_call_string = 'j_call';
-	    $j_family_string = 'ir_jgene_family';
-	    $j_gene_string = 'ir_jgene_gene';
-
-	    $d_call_string = 'd_call';
-	    $d_family_string = 'ir_dgene_family';
-	    $d_gene_string = 'ir_dgene_gene';
-
-	    $c_call_string = 'c_call';
-	    $c_family_string = 'ir_cgene_family';
-	    $c_gene_string = 'ir_cgene_gene';
-
+	    // Get the gene data for each gene field from the rearrangement record.
+	    foreach ($gene_fields as $gene_stat=>$gene_field)
+	    {
+	        $gene_data[$gene_field] = isset($rearrangement[$gene_field])? $rearrangement[$gene_field] :"";
+                //echo "data: ".$gene_field."\n";
+	    }
+	    // Get the data for each count field from the rearrangement record.
+	    foreach ($count_fields as $count_stat=>$count_field)
+	    {
+	        $count_data[$count_field] = isset($rearrangement[$count_field])? $rearrangement[$count_field] :"";
+                //echo "data: ".$count_field." = ".$count_data[$count_field]."\n";
+	    }
+	    // Store the productive value for alter use.
 	    $productive_string = 'productive';
-
-	    $v_call = isset($rearrangement[$v_call_string])? $rearrangement[$v_call_string] :"";
-	    $v_family = isset($rearrangement[$v_family_string])? $rearrangement[$v_family_string] :""; 
-	    $v_gene = isset($rearrangement[$v_gene_string])? $rearrangement[$v_gene_string] :"";
-
-	    $d_call = isset($rearrangement[$d_call_string])? $rearrangement[$d_call_string] :"";
-	    $d_family = isset($rearrangement[$d_family_string])? $rearrangement[$d_family_string] :"";
-	    $d_gene = isset($rearrangement[$d_gene_string])? $rearrangement[$d_gene_string] :"";
-	    
-	    $j_call = isset($rearrangement[$j_call_string])? $rearrangement[$j_call_string] :"";
-	    $j_family = isset($rearrangement[$j_family_string])? $rearrangement[$j_family_string] :"";
-	    $j_gene = isset($rearrangement[$j_gene_string])? $rearrangement[$j_gene_string] :"";
-
-	    $c_call = isset($rearrangement[$c_call_string])? $rearrangement[$c_call_string] :"";
-	    $c_family = isset($rearrangement[$c_family_string])? $rearrangement[$c_family_string] :"";
-	    $c_gene = isset($rearrangement[$c_gene_string])? $rearrangement[$c_gene_string] :"";
-
-	    $junction_length = isset($rearrangement[$junction_length_string])? $rearrangement[$junction_length_string]:0;
-	    $junction_aa_length = isset($rearrangement[$junction_aa_length_string])? $rearrangement[$junction_aa_length_string]:0;
-
 	    $productive = isset($rearrangement[$productive_string])?$rearrangement[$productive_string] :false;
+            //echo "productive: ".$productive."\n";
 
-	    // if V/D/J alele, gene or family are arrays, add any multiple values to the _exist stat
-	    //   otherwise add to the appropriate _unique stat (or _productive in either case)
+	    // Calculate the productive stats.
 	    if ($productive)
 	    {
-	    	//process stats for V region
-                count_rearrangement_gene($v_call, $stats_vcall_exists_productive, $stats_vcall_unique_productive);
-                count_rearrangement_gene($v_gene, $stats_vgene_exists_productive, $stats_vgene_unique_productive);
-		count_rearrangement_gene($v_family, $stats_vfamily_exists_productive, $stats_vfamily_unique_productive); 	
+		// Process the gene stats for each gene field. This iterates over the gene fields we
+		// have stats for, tracking both the base stat name and the field from which
+		// to calculate it.
+		foreach ($gene_fields as $gene_stat=>$gene_field)
+	    	{	
+	            // Gene stats have two types, exists and unique. The count function handles
+		    // both, so we need to pass it the stats arrays for both. The function calculates
+		    // the exists and unique values based on the gene data provided.
+		    $exist_tag = $gene_stat."_exists_productive";
+		    $unique_tag = $gene_stat."_unique_productive";
+		    //echo "Count: ".$exist_tag.",".$unique_tag." from ".$gene_field."\n";
+                    count_rearrangement_gene($gene_data[$gene_field], $stats[$exist_tag], $stats[$unique_tag]);
+	    	}
 
-                count_rearrangement_gene($d_call, $stats_dcall_exists_productive, $stats_dcall_unique_productive);
-                count_rearrangement_gene($d_gene, $stats_dgene_exists_productive, $stats_dgene_unique_productive);
-		count_rearrangement_gene($d_family, $stats_dfamily_exists_productive, $stats_dfamily_unique_productive); 	
-
-                count_rearrangement_gene($j_call, $stats_jcall_exists_productive, $stats_jcall_unique_productive);
-                count_rearrangement_gene($j_gene, $stats_jgene_exists_productive, $stats_jgene_unique_productive);
-		count_rearrangement_gene($j_family, $stats_jfamily_exists_productive, $stats_jfamily_unique_productive); 	
-
-                count_rearrangement_gene($c_call, $stats_ccall_exists_productive, $stats_ccall_unique_productive);
-                count_rearrangement_gene($c_gene, $stats_cgene_exists_productive, $stats_cgene_unique_productive);
-		count_rearrangement_gene($c_family, $stats_cfamily_exists_productive, $stats_cfamily_unique_productive); 	
-
-                // Process the junction length stats.
-		if (isset ($stats_junction_productive[$junction_length]))
-		{
-		    	$stats_junction_productive[$junction_length]++;
-		}
-		else
-		{
-		    	$stats_junction_productive[$junction_length]=1;
-		}
-
-		if (isset ($stats_junction_aa_productive[$junction_aa_length]))
-		{
-		    	$stats_junction_aa_productive[$junction_aa_length]++;
-		}
-		else
-		{
-		    	$stats_junction_aa_productive[$junction_aa_length]=1;
-		}
+		// Process the count stats. These are simple test and increment stats
+		foreach ($count_fields as $count_stat=>$count_field)
+	    	{	
+		    // We are handling the productive stat here, so we need to use the
+	            // correct tag.
+		    $tag = $count_stat."_productive";
+		    //echo "Count: ".$tag." from ".$count_field."\n";
+		    // The tag is the stat we want. We want to check to see if the 
+		    // value we are looking at is set or not and if not set it, else
+		    // increment the field value.
+		    if (isset ($stats[$tag][$count_data[$count_field]]))
+		    {
+		    	$stats[$tag][$count_data[$count_field]]++;
+		        //echo ".";
+		    }
+		    else
+		    {
+		    	$stats[$tag][$count_data[$count_field]]=1;
+		        //echo ".";
+		    }
+	    	}
 	    }
 
-	    //process stats for V region
-            count_rearrangement_gene($v_call, $stats_vcall_exists, $stats_vcall_unique);
-            count_rearrangement_gene($v_gene, $stats_vgene_exists, $stats_vgene_unique);
-	    count_rearrangement_gene($v_family, $stats_vfamily_exists, $stats_vfamily_unique); 	
-
-            count_rearrangement_gene($d_call, $stats_dcall_exists, $stats_dcall_unique);
-            count_rearrangement_gene($d_gene, $stats_dgene_exists, $stats_dgene_unique);
-	    count_rearrangement_gene($d_family, $stats_dfamily_exists, $stats_dfamily_unique); 	
-
-            count_rearrangement_gene($j_call, $stats_jcall_exists, $stats_jcall_unique);
-            count_rearrangement_gene($j_gene, $stats_jgene_exists, $stats_jgene_unique);
-	    count_rearrangement_gene($j_family, $stats_jfamily_exists, $stats_jfamily_unique); 	
-
-            count_rearrangement_gene($c_call, $stats_ccall_exists, $stats_ccall_unique);
-            count_rearrangement_gene($c_gene, $stats_cgene_exists, $stats_cgene_unique);
-	    count_rearrangement_gene($c_family, $stats_cfamily_exists, $stats_cfamily_unique); 	
-
-            // Do the junction length stats.
-	    if (isset ($stats_junction[$junction_length]))
-	    {
-	    	$stats_junction[$junction_length]++;
-	    }
-	    else
-	    {
-	    	$stats_junction[$junction_length]=1; 
+	    // Process the gene stats for each gene field. This iterates over the gene fields we
+	    // have stats for, tracking both the base stat name and the field from which
+	    // to calculate it.
+	    foreach ($gene_fields as $gene_stat=>$gene_field)
+	    {	
+	        // Gene stats have two types, exists and unique. The count function handles
+		// both, so we need to pass it the stats arrays for both. The function calculates
+		// the exists and unique values based on the gene data provided.
+	        $exist_tag = $gene_stat."_exists";
+	        $unique_tag = $gene_stat."_unique";
+	        //echo "Count: ".$exist_tag.",".$unique_tag." from ".$gene_field."\n";
+                count_rearrangement_gene($gene_data[$gene_field], $stats[$exist_tag], $stats[$unique_tag]);
 	    }
 
-	    if (isset ($stats_junction_aa[$junction_aa_length]))
-	    {
-	    	$stats_junction_aa[$junction_aa_length]++;
-	    }
-	    else
-	    {
-	    	$stats_junction_aa[$junction_aa_length]=1;
-	    }			
+	    // Process the count stats. These are simple test and increment stats
+            foreach ($count_fields as $count_stat=>$count_field)
+    	    {	
+	        $tag = $count_stat;
+	        //echo "Count: ".$tag." from ".$count_field."\n";
+	        //echo "Count: ".$count_data[$count_field]."\n";
+		// The tag is the stat we want. We want to check to see if the 
+		// value we are looking at is set or not and if not set it, else
+		// increment the field value.
+	        if (isset ($stats[$tag][$count_data[$count_field]]))
+	        {
+	    	    $stats[$tag][$count_data[$count_field]]++;
+		    //echo ".";
+	        }
+	        else
+	        {
+	    	    $stats[$tag][$count_data[$count_field]]=1;
+		    //echo ".";
+	        }
+    	    }
 	}
 
 
@@ -241,215 +208,160 @@ $start_time = microtime(true);
 		fflush($out_file);
         }
 
+
+	// Connect to MongoDB
+        $m = new MongoDB\Client("mongodb://ireceptor-database:27017");
+        echo "Connection to database successfully\n";
+
+        // Select a database
+        $db = $m->ireceptor;
+
+	// Set up the collections to use to find data.
         $repertoire_collection_name = "sample";
         $rearrangement_collection_name = "sequence";
-	echo "Database ireceptor selected, collections = ".$repertoire_collection_name.", ".$rearrangement_collection_name."\n";
+	$stat_collection_name = "stat";
 	$repertoire_collection = $db->selectCollection($repertoire_collection_name);
 	$rearrangement_collection   = $db->selectCollection($rearrangement_collection_name);
+	$stat_collection   = $db->selectCollection($stat_collection_name);
+	echo "Database ireceptor selected, collections = ".$repertoire_collection_name.", ".$rearrangement_collection_name.", ".$stat_collection_name."\n";
 
-        // Set the field name we use to link repertoires and rearrangements.
-        #$repertoire_id_field = "_id";
-        #$rearrangement_id_field = "ir_project_sample_id";
+        // Set the field names we use to link repertoires and rearrangements.
+	$study_id_field = "study_id";
         $repertoire_id_field = "ir_annotation_set_metadata_id";
         $rearrangement_id_field = "ir_annotation_set_metadata_id_rearrangement";
-        $rearrangement_id_field = "repertoire_id";
+	// We need to track the string we use the describes the field  that determines
+	// productive rearrangements.
+	$productive_string = 'productive';
+
+	// Dictionaries that contain the stats we want to generate as counts. Key
+	// in the dictionary is the stat name, the value is the field in the database.
+	// The base fields for the stats name are listed in the iR+ stats spec:
+	//     https://github.com/ireceptor-plus/specifications/blob/master/stats-api.yaml
+	//
+	// For each of the gene fields, there are four stats. The spec says that there is
+	// a unique and exists stat - which handles multiple gene calls in two different
+	// ways. For each of the exists and uniques stats there is also a productive version
+	// that is a stat for the rearrangements filtered on productive rearrangements only. 
+	$gene_stats = Array(
+            'v_call' => 'v_call',
+            'v_family' => 'ir_vgene_family',
+            'v_gene' => 'ir_vgene_gene',
+
+            'd_call' => 'd_call',
+            'd_family' => 'ir_dgene_family',
+            'd_gene' => 'ir_dgene_gene',
+
+            'j_call' => 'j_call',
+            'j_family' => 'ir_jgene_family',
+            'j_gene' => 'ir_jgene_gene',
+
+            'c_call' => 'c_call',
+            'c_family' => 'ir_cgene_family',
+            'c_gene' => 'ir_cgene_gene'
+        );
+	// For each of the count fields, there are two stats, a productive version
+	// that is a stat for the rearrangements filtered on productive rearrangements only
+	// and a normal version which counts all rearrangemetns. 
+        $count_stats = Array( 
+            'junction_length' => 'junction_length',
+            'junction_aa_length' => 'junction_aa_length'
+	);
 
         // Get all of the repertoires.
-	$repertoire_results = $repertoire_collection->find();
+	$repertoire_results = $repertoire_collection->find([$study_id_field=>$study_id]);
         // Example with just a single repertoire. You need to find a repertoire_id for this to work
         // in the repository of choice...
 	// $repertoire_results = $repertoire_collection->find([$repertoire_id_field=>'5faed5aec0fea5f2fe906fc9']);
-	$repertoire_ids = Array();
 
         // Get the repertoire_ids
+	$repertoire_ids = Array();
 	foreach ($repertoire_results as $repertoire)
 	{
 		$repertoire_ids[] = $repertoire[$repertoire_id_field];
 	}
+	echo "Generating stats for ".$study_id_field."=".$study_id.", found ".count($repertoire_ids)." repertoires\n";
         // For each repertoire_id, process the repertoire.
 	foreach ($repertoire_ids as $repertoire_id)
 	{
-                echo "Processing repertoire ".$repertoire_id."\n";
+		$stats = Array();
                 $repertoire_start_time = microtime(true);
-		$stats_junction = Array();
-		$stats_junction_aa = Array();
-		$stats_junction_productive = Array();
-		$stats_junction_aa_productive = Array();
+		# Intialize the count stat arrays.
+		foreach ($count_stats as $stat=>$field)
+		{
+			// For each count stat, we have the stat and the stat filtered with productive.
+			//echo "Array: ".$stat." from ".$field."\n";
+			$stats[$stat] = Array();
+			//echo "Array: ".$stat."_".$productive_string." from ".$field."\n";
+			$stats[$stat."_".$productive_string] = Array();
+		}
+		# Intialize the gene stat arrays.
+		foreach ($gene_stats as $stat=>$field)
+		{
+			// For each gene stat, we have the stat as an exists and a unique stat.
+			// A unique count for a gene is incremented if the gene is
+			// an exact match of data value in the rearrangement.
+			// A exists count for a gene is incremented if the gene is a member
+			// of the list of genes annotated for the rearragement.
+			// We also have one of each for productive genes as well.
+			$stat_name = $stat."_unique";
+			//echo "Array: ".$stat_name." from ".$field."\n";
+			$stats[$stat_name] = Array();
 
-		$stats_vcall_unique = Array();
-		$stats_vgene_unique =  Array();
-		$stats_vfamily_unique =   Array();
-		$stats_jcall_unique =   Array();
-		$stats_jgene_unique =   Array();
-		$stats_jfamily_unique =   Array();
-		$stats_dcall_unique =   Array();
-		$stats_dgene_unique =   Array();
-		$stats_dfamily_unique =   Array();
-		$stats_ccall_unique =   Array();
-		$stats_cgene_unique =   Array();
-		$stats_cfamily_unique =   Array();
+			$stat_name = $stat."_exists";
+			//echo "Array: ".$stat_name." from ".$field."\n";
+			$stats[$stat_name] = Array();
 
-		$stats_vcall_exists = Array();
-		$stats_vgene_exists =  Array();
-		$stats_vfamily_exists =   Array();
-		$stats_jcall_exists =   Array();
-		$stats_jgene_exists =   Array();
-		$stats_jfamily_exists =   Array();
-		$stats_dcall_exists =   Array();
-		$stats_dgene_exists =   Array();
-		$stats_dfamily_exists =   Array();
-		$stats_ccall_exists =   Array();
-		$stats_cgene_exists =   Array();
-		$stats_cfamily_exists =   Array();
+			$stat_name = $stat."_unique_productive";
+			//echo "Array: ".$stat_name." from ".$field."\n";
+			$stats[$stat_name] = Array();
 
-		$stats_vcall_unique_productive = Array();
-		$stats_vgene_unique_productive =  Array();
-		$stats_vfamily_unique_productive =   Array();
-		$stats_jcall_unique_productive =   Array();
-		$stats_jgene_unique_productive =   Array();
-		$stats_jfamily_unique_productive =   Array();
-		$stats_dcall_unique_productive =   Array();
-		$stats_dgene_unique_productive =   Array();
-		$stats_dfamily_unique_productive =   Array();
-		$stats_ccall_unique_productive =   Array();
-		$stats_cgene_unique_productive =   Array();
-		$stats_cfamily_unique_productive =   Array();
+			$stat_name = $stat."_exists_productive";
+			//echo "Array: ".$stat_name." from ".$field."\n";
+			$stats[$stat_name] = Array();
 
-		$stats_vcall_exists_productive = Array();
-		$stats_vgene_exists_productive =  Array();
-		$stats_vfamily_exists_productive =   Array();
-		$stats_jcall_exists_productive =   Array();
-		$stats_jgene_exists_productive =   Array();
-		$stats_jfamily_exists_productive =   Array();
-		$stats_dcall_exists_productive =   Array();
-		$stats_dgene_exists_productive =   Array();
-		$stats_dfamily_exists_productive =   Array();
-		$stats_ccall_exists_productive =   Array();
-		$stats_cgene_exists_productive =   Array();
-		$stats_cfamily_exists_productive =   Array();
-
-		$sample_id = $repertoire_id;
-
-		$rearrangement_count = $rearrangement_collection->count([$rearrangement_id_field=>$sample_id]);
-		$rearrangement_count_productive = $rearrangement_collection->count([$rearrangement_id_field=>$sample_id, 'productive'=>True]);
-		$rearrangement_result = $rearrangement_collection->find([$rearrangement_id_field=>$sample_id]);
-
-		//process the rearrangements into stats arrays
-		foreach ($rearrangement_result as $rearrangement) {
-			process_stats($rearrangement, $stats_junction_aa, $stats_junction, $stats_junction_aa_productive, $stats_junction_productive,
-				$stats_vcall_exists, $stats_vcall_unique, $stats_vcall_exists_productive, $stats_vcall_unique_productive, 
-				$stats_vgene_exists, $stats_vgene_unique, $stats_vgene_exists_productive, $stats_vgene_unique_productive, 
-				$stats_vfamily_exists, $stats_vfamily_unique, $stats_vfamily_exists_productive, $stats_vfamily_unique_productive, 
-				$stats_jcall_exists,  $stats_jcall_unique, $stats_jcall_exists_productive, $stats_jcall_unique_productive, 
-				$stats_jgene_exists,  $stats_jgene_unique, $stats_jgene_exists_productive, $stats_jgene_unique_productive, 
-				$stats_jfamily_exists,  $stats_jfamily_unique, $stats_jfamily_exists_productive, $stats_jfamily_unique_productive, 
-				$stats_dcall_exists,  $stats_dcall_unique, $stats_dcall_exists_productive, $stats_dcall_unique_productive, 
-				$stats_dgene_exists, $stats_dgene_unique, $stats_dgene_exists_productive, $stats_dgene_unique_productive, 
-				$stats_dfamily_exists, $stats_dfamily_unique, $stats_dfamily_exists_productive, $stats_dfamily_unique_productive, 
-				$stats_ccall_exists,  $stats_ccall_unique, $stats_ccall_exists_productive, $stats_ccall_unique_productive, 
-				$stats_cfamily_exists,  $stats_cfamily_unique, $stats_cfamily_exists_productive, $stats_cfamily_unique_productive, 
-				$stats_cgene_exists, $stats_cgene_unique, $stats_cgene_exists_productive, $stats_cgene_unique_productive
-			);
 		}
 
+		$rearrangement_count = $rearrangement_collection->count([$rearrangement_id_field=>$repertoire_id]);
+                echo "Processing repertoire ".$repertoire_id.", rearrangement count = " . $rearrangement_count . "\n";
+		$rearrangement_count_productive = $rearrangement_collection->count([$rearrangement_id_field=>$repertoire_id, 'productive'=>True]);
+		$rearrangement_result = $rearrangement_collection->find([$rearrangement_id_field=>$repertoire_id]);
+
+		// process the rearrangements into stats arrays
+		foreach ($rearrangement_result as $rearrangement) {
+			//echo "processing rearrangement\n";
+			process_stats($rearrangement, $stats, $gene_stats, $count_stats);
+		}
+	        //echo "DUMP\n";
+	        //var_dump($stats);
+
 		//output each array into a file of the name repertoireId_statName.json
-                $outdir = '/data/stats';
 		if (!is_dir($outdir))
 		{
 			mkdir($outdir, 0777, true);
 		}
 
-		$file_name = $outdir.'/'.$sample_id."_stats.json";
+		$file_name = $outdir.'/'.$repertoire_id."_stats.json";
 		$out_file = fopen ( $file_name, "w");
                 echo "Writing stats to ".$file_name."\n";
 
-                $line = generate_stats_line($repertoire_id_field, $sample_id, "rearrangement_count", "rearrangement_count", $rearrangement_count);
+                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "rearrangement_count", "rearrangement_count", $rearrangement_count);
 		fwrite($out_file, $line);
-                $line = generate_stats_line($repertoire_id_field, $sample_id, "rearrangement_count_productive", "rearrangement_count_productive", $rearrangement_count_productive);
+                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "rearrangement_count_productive", "rearrangement_count_productive", $rearrangement_count_productive);
 		fwrite($out_file, $line);
-                $line = generate_stats_line($repertoire_id_field, $sample_id, "duplicate_count", "duplicate_count", $rearrangement_count);
+                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "duplicate_count", "duplicate_count", $rearrangement_count);
 		fwrite($out_file, $line);
-                $line = generate_stats_line($repertoire_id_field, $sample_id, "duplicate_count_productive", "duplicate_count_productive", $rearrangement_count_productive);
+                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "duplicate_count_productive", "duplicate_count_productive", $rearrangement_count_productive);
 		fwrite($out_file, $line);
 		fflush($out_file);
 
                 // Output V-gene stats
-                output_stats($repertoire_id_field, $sample_id, $stats_vcall_unique, "v_call_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vgene_unique, "v_gene_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vfamily_unique, "v_family_unique", $out_file);
 
-                output_stats($repertoire_id_field, $sample_id, $stats_vcall_exists, "v_call_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vgene_exists, "v_gene_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vfamily_exists, "v_family_exists", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_vcall_unique_productive, "v_call_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vgene_unique_productive, "v_gene_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vfamily_unique_productive, "v_family_unique_productive", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_vcall_exists_productive, "v_call_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vgene_exists_productive, "v_gene_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_vfamily_exists_productive, "v_family_exists_productive", $out_file);
-		fflush($out_file);
-
-                // Output D-gene stats
-                output_stats($repertoire_id_field, $sample_id, $stats_dcall_unique, "d_call_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dgene_unique, "d_gene_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dfamily_unique, "d_family_unique", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_dcall_exists, "d_call_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dgene_exists, "d_gene_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dfamily_exists, "d_family_exists", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_dcall_unique_productive, "d_call_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dgene_unique_productive, "d_gene_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dfamily_unique_productive, "d_family_unique_productive", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_dcall_exists_productive, "d_call_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dgene_exists_productive, "d_gene_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_dfamily_exists_productive, "d_family_exists_productive", $out_file);
-		fflush($out_file);
-
-                // Output J-gene stats
-                output_stats($repertoire_id_field, $sample_id, $stats_jcall_unique, "j_call_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jgene_unique, "j_gene_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jfamily_unique, "j_family_unique", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_jcall_exists, "j_call_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jgene_exists, "j_gene_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jfamily_exists, "j_family_exists", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_jcall_unique_productive, "j_call_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jgene_unique_productive, "j_gene_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jfamily_unique_productive, "j_family_unique_productive", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_jcall_exists_productive, "j_call_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jgene_exists_productive, "j_gene_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_jfamily_exists_productive, "j_family_exists_productive", $out_file);
-		fflush($out_file);
-
-                // Output C-gene stats
-                output_stats($repertoire_id_field, $sample_id, $stats_ccall_unique, "c_call_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cgene_unique, "c_gene_unique", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cfamily_unique, "c_family_unique", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_ccall_exists, "c_call_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cgene_exists, "c_gene_exists", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cfamily_exists, "c_family_exists", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_ccall_unique_productive, "c_call_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cgene_unique_productive, "c_gene_unique_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cfamily_unique_productive, "c_family_unique_productive", $out_file);
-
-                output_stats($repertoire_id_field, $sample_id, $stats_ccall_exists_productive, "c_call_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cgene_exists_productive, "c_gene_exists_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_cfamily_exists_productive, "c_family_exists_productive", $out_file);
-		fflush($out_file);
-
-                // Output the junction stats.
-                output_stats($repertoire_id_field, $sample_id, $stats_junction, "junction_length", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_junction_aa, "junction_aa_length", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_junction_productive, "junction_length_productive", $out_file);
-                output_stats($repertoire_id_field, $sample_id, $stats_junction_aa_productive, "junction_aa_length_productive", $out_file);
+		//echo "DUMP STAT\n";
+		foreach ($stats as $stat=>$data)
+		{
+			//echo "Output stat ".$stat."\n";
+                        output_stats($repertoire_id_field, $repertoire_id, $data, $stat, $out_file);
+		}
 
 		fclose($out_file);
                 $repertoire_end_time = microtime(true) - $repertoire_start_time;
