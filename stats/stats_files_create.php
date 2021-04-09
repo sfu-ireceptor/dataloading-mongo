@@ -1,7 +1,8 @@
 <?php
 
-// include Composer's autoloader
-require 'vendor/autoload.php';
+// Include Composer's autoloader. Assumes this is running in a container with
+// composer installed in the / so the vendor directory is /vendor.
+require '/vendor/autoload.php';
 
 // Check command line arguments.
 if ($argc != 3) {
