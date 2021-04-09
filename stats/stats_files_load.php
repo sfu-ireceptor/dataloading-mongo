@@ -4,7 +4,7 @@
 $start_time = microtime(true);
 
 // include Composer's autoloader
-require 'vendor/autoload.php';
+require '/vendor/autoload.php';
 
 
 // Connect to MongoDB

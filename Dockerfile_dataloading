@@ -4,6 +4,17 @@ FROM python:3.6
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
+# add PHP requirements (PHP 7.3 specific)
+RUN apt-get update
+RUN apt-get install php -y
+RUN apt-get install php-dev -y
+RUN pecl install mongodb
+RUN echo "extension=mongodb.so" >> /etc/php/7.3/cli/php.ini
+RUN curl -sS https://getcomposer.org/installer |php
+RUN mv composer.phar /usr/local/bin/composer
+RUN composer require mongodb/mongodb
+
+
 # add this folder to the Docker image
 COPY . /app
 
