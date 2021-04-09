@@ -1,4 +1,8 @@
 <?php
+
+// include Composer's autoloader
+require 'vendor/autoload.php';
+
 // Check command line arguments.
 if ($argc != 3) {
 	echo "usage: ".$argv[0]." study_id output_dir\n";
@@ -11,53 +15,43 @@ $outdir = $argv[2];
 // Keep track orf execution time.
 $start_time = microtime(true);
 
-// include Composer's autoloader
-require 'vendor/autoload.php';
-
-
 	//helper function that takes in an array with alelle/gene/family data and sorts out 
 	//  whether to add to a _exists or _unique array. Does not decide on whether it's 
 	//  productive or not
 	function process_gene_array($gene_array, &$stat_exists_array, &$stat_unique_array)
 	{
+		// If we have more than one gene in the array, process each.
 		if (sizeof($gene_array) > 1)
 	    	{
+			// Iterate over the genes.
 	    		foreach ($gene_array as $single_entry)
 	    		{
+				// Check if the entry exists and increment if so, 
+				// otherwise set the entry to 1.
 	    			if (isset ($stat_exists_array[$single_entry]))
-	    			{
 	    				$stat_exists_array[$single_entry]++;
-				        //echo ".";
-	    			}
 	    			else
-	    			{
 	    				$stat_exists_array[$single_entry]= 1;
-				        //echo ".";
-	    			}
 	    		}
 	    	}
 	    	else
 	    	{
-	    			if (isset ($stat_unique_array[$gene_array[0]]))
-	    			{
-	    				$stat_unique_array[$gene_array[0]]++;
-				        //echo ".";
-	    			}
+				// Handle the case where the gene array is empty. If it is
+				// use the empty string as the key, otherwise use the gene
+				// as the key.
+				if (sizeof($gene_array) == 0) $gene = "";
+				else $gene = $gene_array[0];
+				// We want to count this as both unique and exists. So check
+				// both, and if a count exists for this gene, increment,
+				// if no count yet, set count to 1
+	    			if (isset ($stat_unique_array[$gene]))
+	    				$stat_unique_array[$gene]++;
 	    			else
-	    			{
-	    				$stat_unique_array[$gene_array[0]]= 1;
-				        //echo ".";
-	    			}	    		
-	    			if (isset ($stat_exists_array[$gene_array[0]]))
-	    			{
-	    				$stat_exists_array[$gene_array[0]]++;
-				        //echo ".";
-	    			}
+	    				$stat_unique_array[$gene]= 1;
+	    			if (isset ($stat_exists_array[$gene]))
+	    				$stat_exists_array[$gene]++;
 	    			else
-	    			{
-	    				$stat_exists_array[$gene_array[0]]= 1;
-				        //echo ".";
-	    			}
+	    				$stat_exists_array[$gene]= 1;
 	    	}
 
 	}
