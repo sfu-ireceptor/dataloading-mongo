@@ -12,6 +12,7 @@ RUN pecl install mongodb
 RUN echo "extension=mongodb.so" >> /etc/php/7.3/cli/php.ini
 RUN curl -sS https://getcomposer.org/installer |php
 RUN mv composer.phar /usr/local/bin/composer
+RUN composer install
 RUN composer require mongodb/mongodb
 
 
