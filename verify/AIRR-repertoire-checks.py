@@ -833,7 +833,6 @@ if __name__ == "__main__":
                     result_iter = ir_seq_count_mixcr(rowMD,rowAPI['repertoire_id'].to_list()[0],query_dict,base_url + "/airr/v1/rearrangement", header_dict,annotation_dir)
                     full_result_suite.append(result_iter)
                 else:
-                    
                     print("WARNING: Could not find appropriate annotation tool: please specify one of 'MiXCR', 'IGBLAST' or 'VQUEST' in the annotation tool parameter")
 
         final_result = pd.concat(full_result_suite)
