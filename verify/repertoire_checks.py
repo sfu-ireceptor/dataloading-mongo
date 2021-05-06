@@ -12,6 +12,7 @@ import pandas as pd
 import sys
 from xlrd import open_workbook, XLRDError
 import json
+import requests
 
 pd.set_option('display.max_columns', 500)
 
@@ -25,7 +26,7 @@ class SanityCheck:
     :parameter repertoire_json: full path containing the name of JSON query input for repertoire metadata
     :parameter facet_json: full path containing the name of JSON query input for facet count data
     :parameter annotation_dir: full path containing sequence annotation files
-    :parameter repertoire id: unique identifier associated with a repertoire, uniqueness only attained at study level
+    :parameter repertoire_id: unique identifier associated with a repertoire, uniqueness only attained at study level
     :parameter url_api_end_point: base url of AIRR API
     :parameter study_id: identifies study
     """
@@ -117,6 +118,115 @@ class SanityCheck:
             sys.exit(0)
 
         return data_df
+
+    def flatten_json(self):
+        """
+        This function takes metadata in JSON format. Data is flattened and object of type dataframe is returned
+        """
+
+        def rename_cols(flattened_sub_df, field_name):
+            """
+
+            :param flattened_sub_df: JSON response turned into object of type dataframe
+            :param field_name: field name to be renamed
+            :return: object of type dataframe with renamed columns
+            """
+            # Access original columns
+            flattened_cols = flattened_sub_df.columns
+            # Rename columns
+            new_col_names = {item: str(field_name) + ".0." + str(item) for item in flattened_cols}
+            # Apply new names
+            flattened_sub_df = flattened_sub_df.rename(columns=new_col_names)
+
+            return flattened_sub_df
+
+        metadata = self.metadata_df
+
+        try:
+            # Level: repertoire
+            repertoire = pd.json_normalize(data=metadata['Repertoire'])
+
+        except KeyError:
+            print('No Repertoire field found in JSON metadata')
+            sys.exit(0)
+
+        try:
+
+            # Level: data processing under repertoire
+            data_pro = pd.json_normalize(data=metadata['Repertoire'], record_path='data_processing')
+            data_pro = rename_cols(data_pro, "data_processing")
+
+        except KeyError:
+            print('No data_processing field found in JSON metadata')
+            sys.exit(0)
+
+        try:
+            # Level: sample under repertoire
+            sample = pd.json_normalize(data=metadata['Repertoire'], record_path='sample')
+            sample = rename_cols(sample, "sample")
+
+        except KeyError:
+            print('No sample field found in JSON metadata')
+            sys.exit(0)
+
+        try:
+            # Level pcr_target under sample, under repertoire
+            pcr_target = pd.json_normalize(metadata["Repertoire"], record_path=['sample', 'pcr_target'])
+            pcr_target = rename_cols(pcr_target, "sample.0.pcr_target")
+
+        except KeyError:
+            print('No pcr_target or sample fields found in JSON metadata')
+            sys.exit(0)
+
+        try:
+            # Level: diagnosis under subject, under repertoire
+            subject = pd.json_normalize(data=metadata['Repertoire'], record_path=["subject", "diagnosis"])
+            subject = rename_cols(subject, "subject.diagnosis")
+        except KeyError:
+            print('No diagnosis or subject field found in JSON metadata')
+            sys.exit(0)
+
+        # Concatenate
+        concat_version = pd.concat([repertoire, data_pro, sample,
+                                    pcr_target, subject], 1).drop(["data_processing", "sample",
+                                                                   'sample.0.pcr_target'], 1)
+        return concat_version
+
+    def identify_file_type(self):
+        """
+        Determine whether metadata file is xlsx, csv or json
+        """
+        # Access metadata attribute
+        metadata = self.metadata_df
+
+        try:
+            # Metadata is of type Excel
+            if "xlsx" in metadata:
+                self.test_book()
+                master = self.get_study_entries()
+            # Metadata is of type CSV
+            elif "csv" in metadata:
+                master = pd.read_csv(metadata, encoding='utf-8')
+                master = master.loc[:, ~master.columns.str.contains('^Unnamed')]
+
+            # Metadata is of type TSV
+            elif "tsv" in metadata:
+                master = pd.read_csv(metadata, encoding='utf8', sep="\t")
+
+            # Metadata if of type JSON
+            elif "json" in metadata:
+                florian_json = requests.get(metadata)
+                florian_json = florian_json.json()
+                master = self.flatten_json(florian_json)
+            else:
+                print("File format provided is not valid")
+                sys.exit(0)
+
+            return master
+
+        except:
+            print("Warning: Provided wrong type file: cannot read metadata.")
+            sys.exit(0)
 
     def execute_query(self, flag: str) -> object:
         """
