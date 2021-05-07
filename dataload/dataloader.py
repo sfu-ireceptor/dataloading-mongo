@@ -23,6 +23,7 @@ from airr_tsv import AIRR_TSV
 from adaptive import Adaptive
 # Clone loader clasases
 from mixcr_clone import MiXCR_Clone
+from generic_clone import Generic_Clone
 
 # Get the command line arguments...
 def getArguments():
@@ -149,7 +150,14 @@ def getArguments():
         dest="type",
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR clone annotation tool."
     )
-
+    # Processing generic Clone data
+    type_group.add_argument(
+        "--generic-clone",
+        action='store_const',
+        const="Generic Clone",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file as produced by the clone annotation tool."
+    )
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
         "--host",
@@ -328,6 +336,11 @@ if __name__ == "__main__":
         # process mixcr clone data
         print("Info: Processing MiXCR Clone data file: {}".format(options.filename))
         parser = MiXCR_Clone(options.verbose, options.database_map,
+                             options.database_chunk, airr_map, repository)
+    elif options.type == "Generic Clone":
+        # process generic clone data
+        print("Info: Processing generic Clone data file: {}".format(options.filename))
+        parser = Generic_Clone(options.verbose, options.database_map,
                              options.database_chunk, airr_map, repository)
     else:
         print("ERROR: unknown data type '{}'".format(options.type))
