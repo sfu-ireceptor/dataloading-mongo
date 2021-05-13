@@ -302,7 +302,7 @@ class SanityCheck:
         except:
             print("Error in URL - cannot complete query. Ensure the input provided points to an API")
 
-    def validate_repertoire_data_airr(self):
+    def validate_repertoire_data_airr(self, validate: bool):
 
         # Initialize variables
         json_input = self.repertoire_json
@@ -320,7 +320,7 @@ class SanityCheck:
             json.dump(rep_json, outfile)
         outfile.close()
         # Perform AIRR validation test
-        airr.load_repertoire("test.json", validate=True)
+        airr.load_repertoire(output_dir + filename, validate)
 
     def perform_mapping_test(self, repertoire_metadata_df, repertoire_response_df):
         """
@@ -328,7 +328,7 @@ class SanityCheck:
         :param repertoire_metadata_df: dataframe containing clean repertoire metadata (from sheet)
         :param repertoire_response_df: dataframe containing clean repertoire metadata (from API)
         :return: list of lists reporting fields in mapping not in API response, fields in mapping not in
-            metadata sheet, fields in both 
+            metadata sheet, fields in both
         """
 
         # Initialize file
@@ -336,7 +336,9 @@ class SanityCheck:
 
         # Read and subset data
         map_csv = pd.read_csv(mapping_file, sep="\t", encoding="utf8", engine='python', error_bad_lines=False)
-        map_csv_repertoire = map_csv[['ir_adc_api_response', 'ir_curator']].iloc[:103]
+        # Data clean up and accessing repertoire fields only
+        map_csv_no_na = map_csv[['ir_adc_api_response', 'ir_curator', 'airr_type', "ir_class"]].fillna("")
+        map_csv_repertoire = map_csv_no_na[(map_csv_no_na['ir_class'].str.contains("Repertoire"))]
 
         # Subset series into lists for each of the mappings
         ir_adc_fields = map_csv_repertoire["ir_adc_api_response"].tolist()
@@ -362,6 +364,186 @@ class SanityCheck:
         return [field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md, in_both]
 
 
+    def print_mapping_results(self, field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md):
+        """
+
+        :param field_names_in_mapping_not_in_api: (list)  list of field names (str) found in mapping not in
+                                                    API response
+        :param field_names_in_mapping_not_in_md: (list)  list of field names (str) found in mapping not in
+                                                    file metadata
+        :return: None
+        """
+        print_separators()
+        print("Field names in mapping, ir_adc_api_response, not in API response\n")
+        # Print items not found in API, skip those reported as NaN or empty string
+        for item in field_names_in_mapping_not_in_api:
+            if type(item) == float or item == "":
+                continue
+            else:
+                print(item)
+
+        print_separators()
+        print("Field names in mapping, ir_curator, not in metadata fields\n")
+        # Print items not found in metadata sheet, skip those reported as NaN or empty string
+        for item in field_names_in_mapping_not_in_md:
+            if type(item) == float or item == "":
+                continue
+            else:
+                print(item)
+
+
+def test_connecting_field(connecting_field, data_df, json_study_df):
+    """
+
+    :param connecting_field: str with metadata field uniquely identifying repertoires,
+                            typically repertoire_id
+    :param data_df: dataframe object containing CVS/Excel metadata associated with
+                            specific study
+    :param json_study_df: dataframe object containing JSON response of metadata associated with
+                            specific study
+    :return: result (bool) True if repertoire_id is present in both JSON response dataframe and
+                            CSV metadata file
+    """
+
+    result = True
+    if connecting_field not in data_df.columns or "repertoire_id" not in json_study_df.columns:
+        print(
+            f"Failure, need an ID to compare fields, usually {connecting_field} in metadata file and "
+            f"{connecting_field} in ADC API response. "
+            "If at least one of these is missing, the test cannot be completed.")
+        result = False
+        return result
+    else:
+        return result
+
+
+def identify_mutual_repertoire_ids_in_data(connecting_field, data_df, json_study_df):
+    """
+
+    :param connecting_field: str with metadata field uniquely identifying repertoires,
+                            typically repertoire_id
+    :param data_df: dataframe object containing CVS/Excel metadata associated with
+                            specific study
+    :param json_study_df: dataframe object containing JSON response of metadata associated with
+                            specific study
+    :return: unique_items: list containing repertoire ids found in both JSON response and metadata
+                            file
+
+    """
+    if test_connecting_field(connecting_field, data_df, json_study_df):
+        # Get entries of interest in API response
+        repertoire_list = json_study_df["repertoire_id"].to_list()
+
+        # Get corresponding entries in metadata
+        sub_data = data_df[data_df[connecting_field].isin(repertoire_list)]
+        # Generate list of repertoires
+        unique_items = sub_data[connecting_field].to_list()
+    else:
+        sys.exit(0)
+
+    # Check whether there are no common repertoire_ids in both sources of data
+    if len(unique_items) == 0:
+        print(
+            "WARNING: NON-MATCHING REPERTOIRE IDS - no id's match at ADC API and metadata level. "
+            "Test results 'pass' as there is nothing to compare. Verify the repertoire ids in metadata are correct.")
+
+    return unique_items
+
+
+def metadata_content_testing(unique_items, json_study_df, data_df, connecting_field, mutual_fields):
+    """
+
+    :param mutual_fields: list containing fields found in both JSON repertoire response and metadata
+                            file
+    :param connecting_field: str with metadata field uniquely identifying repertoires,
+                            typically repertoire_id
+    :param unique_items: list containing repertoire ids found in both JSON response and metadata
+                            file
+    :param json_study_df: dataframe object containing JSON response of metadata associated with
+                            specific study
+    :param data_df: dataframe object containing CVS/Excel metadata associated with
+                            specific study
+    :return:
+    """
+    print("Content cross comparison\n")
+
+    # Get entries of interest in API response
+    repertoire_list = json_study_df["repertoire_id"].to_list()
+
+    # Get corresponding entries in metadata
+    sub_data = data_df[data_df[connecting_field].isin(repertoire_list)]
+
+    # Store information
+    api_fields = []
+    md_fields = []
+    api_val = []
+    md_val = []
+    data_proc_id = []
+
+    # Iterate over each rearrangement_number/repertoire_id
+    for item in unique_items:
+
+        # Get the row corresponding to the matching response in API
+        row_api = json_study_df[json_study_df[connecting_field] == str(item)]
+
+        row_md = sub_data[sub_data[connecting_field] == item]
+
+        # Content check
+        for i in mutual_fields:
+
+            # Get row of interest
+            md_entry = row_md[i[1]].to_list()  # [0]
+            api_entry = row_api[i[0]].to_list()  # [0]
+
+            # Content is equal or types are equivalent
+            try:
+                if md_entry == api_entry or api_entry[0] is None and type(md_entry[0]) == float or type(
+                        api_entry[0]) == float and type(md_entry[0]) == float:
+                    continue
+
+                elif type(md_entry[0]) != type(api_entry[0]) and str(md_entry[0]) == str(api_entry[0]):
+                    continue
+                # Content mismatch
+                else:
+                    data_proc_id.append(item)
+                    api_fields.append(i[0])
+                    md_fields.append(i[1])
+                    api_val.append(api_entry)
+                    md_val.append(md_entry)
+
+            except:
+                print("Cannot compare types")
+                print("-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*\n")
+    # Report and store results
+    content_results = pd.DataFrame({"DataProcessingID": data_proc_id,
+                                    "API field": api_fields,
+                                    "MD field": md_fields,
+                                    "API value": api_val,
+                                    "MD value": md_val})
+    return content_results
+
+
+def print_content_test_results(content_results, details_dir, study_id):
+    """
+
+    :param study_id:
+    :param details_dir:
+    :param content_results: dataframe object containing content test results
+    :return: None
+    """
+    # Perfect results
+    if content_results.empty:
+        print("Could not find differing results between column content.")
+    # Not so perfect results
+    else:
+        print("Some fields may require attention:")
+        print("In ADC API: ", content_results["API field"].unique())
+        print("In metadata: ", content_results["MD field"].unique())
+        file_name = "".join([details_dir, str(study_id), "_reported_fields_", str(pd.to_datetime('today')), ".csv"])
+        print(f"For details refer to {file_name}")
+        content_results.to_csv(file_name)
+
+
 def print_data_validator():
     # Begin sanity checking
     print("########################################################################################################")
@@ -373,6 +555,67 @@ def print_separators():
     print("--------------------------------------------------------------------------------------------------------")
 
 
+def main():
+
+    # Input reading
+    metadata = "./metadata/PRJNA628125_Nielsen_Yang_2020-12-10.csv"
+    mapping_file = "./config/AIRR-iReceptorMapping.txt"
+    base_url = "http://covid19-1.ireceptor.org"
+    entry_pt = "repertoire"
+    json_input = "JSON-Files/repertoire/nofilters.json"
+    facet_json_input = './JSON-Files/facet_queries_for_sanity_tests/'
+    repertoire_id = "5ed6859e99011334ac05e847"
+    annotation_directory = "./dummy_annotation/"
+    query_url = base_url + "/airr/v1/" + entry_pt
+    study_id = "PRJNA628125"
+    details_dir = "./output/"
+    connecting_field = "repertoire_id"
+    sanity_check = SanityCheck(metadata_df=metadata, repertoire_json=json_input, facet_json=facet_json_input,
+                               annotation_dir=annotation_directory, repertoire_id=repertoire_id,
+                               url_api_end_point=query_url,
+                               study_id=study_id, mapping_file=mapping_file, output_directory=details_dir)
+    # Generate printed report
+    print_data_validator()
+
+    # Read repertoire response from metadata file
+    master = sanity_check.identify_file_type()
+    data_df = master
+
+    # Report separators
+    print_separators()
+
+    # Read repertoire response from API
+    concat_version = sanity_check.flatten_json("json_response")
+    concat_version['study.study_id'] = concat_version['study.study_id'].replace(" ", "", regex=True)
+    json_study_df = concat_version[concat_version['study.study_id'] == study_id]
+
+    # Mapping file test
+    [field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md,
+     mutual_fields] = sanity_check.perform_mapping_test(master, concat_version)
+
+    # Print mapping file test results
+    sanity_check.print_mapping_results(field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md)
+
+    # Report separators
+    print_separators()
+
+    # Content test
+    identify_mutual_repertoire_ids_in_data(connecting_field, data_df, json_study_df)
+    # Select repertoire ids
+    unique_items = identify_mutual_repertoire_ids_in_data(connecting_field, data_df, json_study_df)
+    # Perform content sanity check
+    sanity_test_df = metadata_content_testing(unique_items, json_study_df, data_df, connecting_field, mutual_fields)
+    # Generate CSV results
+    print_content_test_results(sanity_test_df, details_dir, study_id)
+
+    # Report separators
+    print_separators()
+
+    # Report AIRR validation
+    print("AIRR FIELD VALIDATION")
+    sanity_check.validate_repertoire_data_airr(validate=True)
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    pass
+    main()
