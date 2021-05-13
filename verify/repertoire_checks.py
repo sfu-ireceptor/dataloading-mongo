@@ -14,6 +14,7 @@ from xlrd import open_workbook, XLRDError
 import json
 import requests
 import airr
+import argparse
 
 pd.set_option('display.max_columns', 500)
 
@@ -35,12 +36,11 @@ class SanityCheck:
     """
 
     def __init__(self, metadata_df: str, repertoire_json: str, facet_json: str, annotation_dir: str,
-                 repertoire_id: str, url_api_end_point: str, study_id: str, mapping_file: str, output_directory: str):
+                 url_api_end_point: str, study_id: str, mapping_file: str, output_directory: str):
         self.metadata_df = metadata_df
         self.repertoire_json = repertoire_json
         self.facet_json = facet_json
         self.annotation_dir = annotation_dir
-        self.repertoire_id = repertoire_id
         self.url_api_end_point = url_api_end_point
         self.study_id = study_id
         self.mapping_file = mapping_file
@@ -363,7 +363,6 @@ class SanityCheck:
 
         return [field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md, in_both]
 
-
     def print_mapping_results(self, field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md):
         """
 
@@ -555,24 +554,137 @@ def print_separators():
     print("--------------------------------------------------------------------------------------------------------")
 
 
+def get_arguments():
+    # Set up the command line parser
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=""
+    )
+
+    # Output Directory - where Performance test results will be stored
+    parser.add_argument(
+        "mapping_file",
+        help="Indicate the full path to where the mapping file is found"
+    )
+
+    # Array with URL
+    parser.add_argument(
+        "base_url",
+        help="String containing URL to API server  (e.g. https://airr-api2.ireceptor.org)"
+    )
+    # Entry point
+    parser.add_argument(
+        "entry_point",
+        help="Options: string 'rearrangement' or string 'repertoire'"
+    )
+    # Full path to directory with JSON file containing repertoire id queries associated to a given study
+    parser.add_argument(
+        "json_files",
+        help="Enter full path to JSON query containing repertoire ID's for a given study - "
+             "this must match the value given for study_id"
+    )
+
+    # Full path to metadata sheet (CSV or Excel format)
+    parser.add_argument(
+        "master_md",
+        help="Full path to master metadata"
+    )
+
+    # Study ID (study_id)
+    parser.add_argument(
+        "study_id",
+        help="Study ID (study_id) associated to this study"
+    )
+
+    # Full path to directory with JSON files containing facet count queries associated to each repertoire
+    parser.add_argument(
+        "facet_count",
+        help="Enter full path to JSON queries containing facet count request for each repertoire"
+    )
+
+    # Full path to annotation files
+    parser.add_argument(
+        "annotation_dir",
+        help="Enter full path to where annotation files associated with study_id"
+    )
+
+    # Full path to directory where output logs will be stored
+    parser.add_argument(
+        "details_dir",
+        help="Enter full path where you'd like to store content feedback in CSV format"
+    )
+
+    # Test type
+    parser.add_argument(
+        "Coverage",
+        help="Sanity check levels: enter CC for content comparison, enter FC for facet count vs ir_curator count test, enter AT for AIRR type test"
+    )
+
+    # Annotation tool
+    parser.add_argument(
+        "annotation_tool",
+        help="Name of annotation tool used to process sequences. Choice between MiXCR, VQuest, IGBLAST"
+    )
+
+    # Verbosity flag
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Run the program in verbose mode.")
+
+    # Parse the command line arguements.
+    options = parser.parse_args()
+    return options
+
+
+# # Input reading
+# options = getArguments()
+# mapping_file = options.mapping_file
+# base_url = options.base_url
+# entry_pt = options.entry_point
+# query_files = options.json_files
+# master_md = options.master_md
+# study_id = options.study_id
+# facet_ct = options.facet_count
+# annotation_dir = options.annotation_dir
+# details_dir = options.details_dir
+# cover_test = options.Coverage
+# annotation_tool = options.annotation_tool
+#
+# study_id = study_id.replace('/', '')
+#
+# connecting_field = 'repertoire_id'
+#
+# query_url = base_url + "/airr/v1/" + entry_pt
+
 def main():
+    print("DATA PROVENANCE TEST \n")
 
     # Input reading
-    metadata = "./metadata/PRJNA628125_Nielsen_Yang_2020-12-10.csv"
-    mapping_file = "./config/AIRR-iReceptorMapping.txt"
-    base_url = "http://covid19-1.ireceptor.org"
-    entry_pt = "repertoire"
-    json_input = "JSON-Files/repertoire/nofilters.json"
-    facet_json_input = './JSON-Files/facet_queries_for_sanity_tests/'
-    repertoire_id = "5ed6859e99011334ac05e847"
-    annotation_directory = "./dummy_annotation/"
+    options = get_arguments()
+    mapping_file = options.mapping_file
+    base_url = options.base_url
+    entry_pt = options.entry_point
+    json_input = options.json_files
+    metadata = options.master_md
+    study_id = options.study_id
+    facet_json_input = options.facet_count
+    annotation_directory = options.annotation_dir
+    details_dir = options.details_dir
+    cover_test = options.Coverage
+    annotation_tool = options.annotation_tool
+
+    # Handle odd study_id
+    study_id = study_id.replace('/', '')
+    # Set connecting_field
+    connecting_field = 'repertoire_id'
+    # Build full query
     query_url = base_url + "/airr/v1/" + entry_pt
-    study_id = "PRJNA628125"
-    details_dir = "./output/"
-    connecting_field = "repertoire_id"
+
+    # Initialize sanity check
     sanity_check = SanityCheck(metadata_df=metadata, repertoire_json=json_input, facet_json=facet_json_input,
-                               annotation_dir=annotation_directory, repertoire_id=repertoire_id,
-                               url_api_end_point=query_url,
+                               annotation_dir=annotation_directory, url_api_end_point=query_url,
                                study_id=study_id, mapping_file=mapping_file, output_directory=details_dir)
     # Generate printed report
     print_data_validator()
@@ -616,5 +728,6 @@ def main():
     sanity_check.validate_repertoire_data_airr(validate=True)
 
 
+# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     main()
