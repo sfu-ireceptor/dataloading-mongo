@@ -638,26 +638,6 @@ def get_arguments():
     return options
 
 
-# # Input reading
-# options = getArguments()
-# mapping_file = options.mapping_file
-# base_url = options.base_url
-# entry_pt = options.entry_point
-# query_files = options.json_files
-# master_md = options.master_md
-# study_id = options.study_id
-# facet_ct = options.facet_count
-# annotation_dir = options.annotation_dir
-# details_dir = options.details_dir
-# cover_test = options.Coverage
-# annotation_tool = options.annotation_tool
-#
-# study_id = study_id.replace('/', '')
-#
-# connecting_field = 'repertoire_id'
-#
-# query_url = base_url + "/airr/v1/" + entry_pt
-
 def main():
     print("DATA PROVENANCE TEST \n")
 
