@@ -76,7 +76,7 @@ class AIRRRepertoire(Repertoire):
 
             # We flatten this explicitly as a special case. We want to store the list
             # of strings.
-            if key == "keywords_study" or key == "data_processing_files":
+            if key == "keywords_study" or key == "data_processing_files" or key == "germline_alleles":
                 # TODO: Need to implement type checking on this field...
                 
                 if self.validAIRRFieldType(key, value, False):
@@ -139,11 +139,11 @@ class AIRRRepertoire(Repertoire):
 
         # Check the validity of the repertoires from an AIRR perspective
         try:
-            data = airr.load_repertoire(filename, validate=True)
+            #data = airr.load_repertoire(filename, validate=True)
+            data = airr.load_repertoire(filename)
         except airr.ValidationError as err:
-            print("ERROR: AIRR repertoire validation failed for file %s - %s" %
+            print("Warning: AIRR repertoire validation failed for file %s - %s" %
                   (filename, err))
-            return False
         except Exception as err:
             print("ERROR: AIRR repertoire validation failed for file %s - %s" %
                   (filename, err))
