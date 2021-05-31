@@ -63,6 +63,9 @@ class AIRRRepertoire(Repertoire):
                 else:
                     raise TypeError(key)
             else:
+                repo_type = self.getAIRRMap().getMapping(key,
+                                                    self.getAIRRTag(), "airr_type")
+                print("##### repository type for key %s = %s"%(key, repo_type))
                 for sub_key, sub_value in value.items():
                     self.ir_flatten(sub_key, sub_value, dictionary)
         elif isinstance(value, list):
@@ -120,8 +123,20 @@ class AIRRRepertoire(Repertoire):
                         print("Warning: Found a repertoire list for %s > 1 (%d)."%
                               (key, len(value)))
                         print("Warning: iReceptor only supports a single array, using first instance.")
-                    for sub_key, sub_value in value[0].items():
-                        self.ir_flatten(sub_key, sub_value, dictionary)
+                    repo_type = self.getAIRRMap().getMapping(key,
+                                                    self.getAIRRTag(), "airr_type")
+                    print("XXXX repository type for key %s = %s"%(key, repo_type))
+                    if (repo_type == "object"):
+                        #if self.validAIRRFieldType(key, value, False):
+                        #    rep_key = self.fieldToRepository(key, rep_class)
+                        #    rep_value = self.valueToRepository(key, column, value, rep_class)
+                        #    dictionary[rep_key] = rep_value
+                        #else:
+                        #    raise TypeError(key)
+                        dictionary[key] = value
+                    else:
+                        for sub_key, sub_value in value[0].items():
+                            self.ir_flatten(sub_key, sub_value, dictionary)
         return dictionary
 
     def process(self, filename):
