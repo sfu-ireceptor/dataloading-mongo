@@ -170,8 +170,8 @@ class AIRRMap:
             else:
                 return None
         elif len(value.values) > 1:
-            print("Warning: Duplicate AIRR mapping for field %s (%s -> %s)"%
-                  (field, from_column, to_column))
+            print("Warning: Duplicate AIRR mapping for field %s (%s -> %s) %s"%
+                  (field, from_column, to_column, value.values))
             return value.values[0]
         else:
             return None
