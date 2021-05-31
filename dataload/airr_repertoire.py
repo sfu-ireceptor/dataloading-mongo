@@ -113,13 +113,13 @@ class AIRRRepertoire(Repertoire):
                             self.ir_flatten(sub_key, sub_value, dictionary)
                 else:
                     # In the general case, iReceptor only supports a single instance in 
-                    # array subtypes. If this occurs, we print a warning and use the first
-                    # element in the array and ignore the rest. This is a fairly substantial
-                    # issue and MAYBE it should be a FATAL ERROR???
+                    # array subtypes. If this occurs, we generate an error message and
+                    # stop processing by raising an exception on this key.
                     if len(value) > 1:
-                        print("Warning: Found a repertoire list for %s > 1 (%d)."%
+                        print("ERROR: Found a repertoire list for %s > 1 (%d)."%
                               (key, len(value)))
-                        print("Warning: iReceptor only supports a single array, using first instance.")
+                        print("ERROR: iReceptor only supports arrays of objects with one element.")
+                        raise TypeError(key)
                     for sub_key, sub_value in value[0].items():
                         self.ir_flatten(sub_key, sub_value, dictionary)
         return dictionary
@@ -139,11 +139,10 @@ class AIRRRepertoire(Repertoire):
 
         # Check the validity of the repertoires from an AIRR perspective
         try:
-            data = airr.load_repertoire(filename, validate=True)
+            data = airr.load_repertoire(filename)
         except airr.ValidationError as err:
-            print("ERROR: AIRR repertoire validation failed for file %s - %s" %
+            print("Warning: AIRR repertoire validation failed for file %s - %s" %
                   (filename, err))
-            return False
         except Exception as err:
             print("ERROR: AIRR repertoire validation failed for file %s - %s" %
                   (filename, err))
