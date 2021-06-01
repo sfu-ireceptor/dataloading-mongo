@@ -19,7 +19,7 @@ RUN composer require mongodb/mongodb
 COPY . /app
 
 # download mapping file
-ADD https://raw.githubusercontent.com/sfu-ireceptor/config/clone-and-stats-mapping/AIRR-iReceptorMapping.txt /app/config/
+ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey-v4/AIRR-iReceptorMapping.txt /app/config/
 
 # set working directory
 WORKDIR /root
