@@ -64,10 +64,25 @@ class AIRRRepertoire(Repertoire):
                     raise TypeError(key)
             else:
                 repo_type = self.getAIRRMap().getMapping(key,
-                                                    self.getAIRRTag(), "airr_type")
-                print("##### repository type for key %s = %s"%(key, repo_type))
-                for sub_key, sub_value in value.items():
-                    self.ir_flatten(sub_key, sub_value, dictionary)
+                                              self.getAIRRTag(), "ir_repository_type")
+                airr_type = self.getAIRRMap().getMapping(key,
+                                                  self.getAIRRTag(), "airr_type")
+                # If the AIRR field from the file is marked for storage as an object
+                # and the repository can accept the object as an object, then we 
+                # can save the object directly as an object. 
+                if (repo_type == "object" and airr_type == "object"):
+                    print("Info: Storing field %s as an object (%s,%s)"%(key, airr_type, repo_type))
+                    #if self.validAIRRFieldType(key, value, False):
+                    #    rep_key = self.fieldToRepository(key, rep_class)
+                    #    rep_value = self.valueToRepository(key, column, value, rep_class)
+                    #    dictionary[rep_key] = rep_value
+                    #else:
+                    #    raise TypeError(key)
+                    dictionary[key] = value
+                else:
+                    # If we aren't storing as an object, we continue to flatten
+                    for sub_key, sub_value in value.items():
+                        self.ir_flatten(sub_key, sub_value, dictionary)
         elif isinstance(value, list):
             # There are currently three possible list situations in the spec. 
             # - keywords_study, data_processing_files: An array of strings
@@ -116,9 +131,14 @@ class AIRRRepertoire(Repertoire):
                             self.ir_flatten(sub_key, sub_value, dictionary)
                 else:
                     repo_type = self.getAIRRMap().getMapping(key,
-                                                    self.getAIRRTag(), "airr_type")
-                    print("XXXX repository type for key %s = %s"%(key, repo_type))
-                    if (repo_type == "object"):
+                                                  self.getAIRRTag(), "ir_repository_type")
+                    airr_type = self.getAIRRMap().getMapping(key,
+                                                  self.getAIRRTag(), "airr_type")
+                    # If the AIRR field from the file is marked for storage as an object
+                    # and the repository can accept the object as an object, then we 
+                    # can save the object directly as an object. 
+                    if (repo_type == "object" and airr_type == "object"):
+                        print("Info: Storing field %s as an array of objects (%s,%s)"%(key, airr_type, repo_type))
                         #if self.validAIRRFieldType(key, value, False):
                         #    rep_key = self.fieldToRepository(key, rep_class)
                         #    rep_value = self.valueToRepository(key, column, value, rep_class)
