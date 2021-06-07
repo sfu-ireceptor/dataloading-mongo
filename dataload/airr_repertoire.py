@@ -21,7 +21,7 @@ class AIRRRepertoire(Repertoire):
     # then the fucntion recurses on all of the elements in the dict or list. Note that
     # a leaf node is a bit complex and specialized based on both the AIRR spec and how
     # they are represented in the iReceptor repository. 
-    def ir_flatten(self, key, value, dictionary):
+    def ir_flatten(self, key, value, dictionary, key_path):
         rep_class = self.getAIRRMap().getRepertoireClass()
         column = self.getAIRRTag()
         # If it is an integer, float, or bool we just use the key value pair.
@@ -63,26 +63,34 @@ class AIRRRepertoire(Repertoire):
                 else:
                     raise TypeError(key)
             else:
-                repo_type = self.getAIRRMap().getMapping(key,
-                                              self.getAIRRTag(), "ir_repository_type")
-                airr_type = self.getAIRRMap().getMapping(key,
-                                                  self.getAIRRTag(), "airr_type")
+                #repo_key = self.getAIRRMap().getMapping(key,
+                #                              self.getAIRRTag(), "ir_repository")
+                #repo_type = self.getAIRRMap().getMapping(key,
+                #                              self.getAIRRTag(), "ir_repository_type")
+                #airr_type = self.getAIRRMap().getMapping(key,
+                #                                  self.getAIRRTag(), "airr_type")
+                repo_key = self.getAIRRMap().getMapping(key_path,
+                                              "ir_adc_api_query", "ir_repository")
+                repo_type = self.getAIRRMap().getMapping(key_path,
+                                              "ir_adc_api_query","ir_repository_type")
+                airr_type = self.getAIRRMap().getMapping(key_path,
+                                              "ir_adc_api_query","airr_type")
                 # If the AIRR field from the file is marked for storage as an object
                 # and the repository can accept the object as an object, then we 
                 # can save the object directly as an object. 
                 if (repo_type == "object" and airr_type == "object"):
-                    print("Info: Storing field %s as an object (%s,%s)"%(key, airr_type, repo_type))
+                    print("Info: Storing field %s as object %s (%s,%s, %s)"%(key, repo_key, airr_type, repo_type, key_path))
                     #if self.validAIRRFieldType(key, value, False):
                     #    rep_key = self.fieldToRepository(key, rep_class)
                     #    rep_value = self.valueToRepository(key, column, value, rep_class)
                     #    dictionary[rep_key] = rep_value
                     #else:
                     #    raise TypeError(key)
-                    dictionary[key] = value
+                    dictionary[repo_key] = value
                 else:
                     # If we aren't storing as an object, we continue to flatten
                     for sub_key, sub_value in value.items():
-                        self.ir_flatten(sub_key, sub_value, dictionary)
+                        self.ir_flatten(sub_key, sub_value, dictionary, key_path + "." + sub_key)
         elif isinstance(value, list):
             # There are currently three possible list situations in the spec. 
             # - keywords_study, data_processing_files: An array of strings
@@ -120,7 +128,7 @@ class AIRRRepertoire(Repertoire):
                         if 'primary_annotation' in element and element['primary_annotation']:
                             # If we found it, flatten it and the break out of the loop
                             for sub_key, sub_value in element.items():
-                                self.ir_flatten(sub_key, sub_value, dictionary)
+                                self.ir_flatten(sub_key, sub_value, dictionary, key_path + "." + sub_key)
                             got_primary = True
                             print("Info: Found a primary annotation, using it.")
                             break
@@ -128,7 +136,7 @@ class AIRRRepertoire(Repertoire):
                     if not got_primary:
                         print("Warning: Could not find a primary annotation, using the first one.")
                         for sub_key, sub_value in value[0].items():
-                            self.ir_flatten(sub_key, sub_value, dictionary)
+                            self.ir_flatten(sub_key, sub_value, dictionary, key_path + "." + sub_key)
                 else:
                     repo_type = self.getAIRRMap().getMapping(key,
                                                   self.getAIRRTag(), "ir_repository_type")
@@ -156,7 +164,7 @@ class AIRRRepertoire(Repertoire):
                             print("ERROR: iReceptor only supports arrays of objects with one element.")
                             raise TypeError(key)
                         for sub_key, sub_value in value[0].items():
-                            self.ir_flatten(sub_key, sub_value, dictionary)
+                            self.ir_flatten(sub_key, sub_value, dictionary, key_path + "." + sub_key)
         return dictionary
 
     def process(self, filename):
@@ -195,7 +203,7 @@ class AIRRRepertoire(Repertoire):
             repertoire_dict = dict()
             for key, value in repertoire.items():
                 try:
-                    self.ir_flatten(key, value, repertoire_dict)
+                    self.ir_flatten(key, value, repertoire_dict, key)
                 except TypeError as error:
                     print("ERROR: %s"%(error))
                     return False
