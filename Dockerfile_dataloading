@@ -17,9 +17,7 @@ RUN composer require mongodb/mongodb
 # add this folder to the Docker image
 COPY . /app
 
-# add mapping file
 RUN mkdir /config /app/config
-ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey-v4/AIRR-iReceptorMapping.txt /config/
 RUN ln -s /config/AIRR-iReceptorMapping.txt /app/config/AIRR-iReceptorMapping.txt
 RUN chmod 644 /app/config/AIRR-iReceptorMapping.txt
 
