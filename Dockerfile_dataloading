@@ -18,7 +18,7 @@ RUN composer require mongodb/mongodb
 COPY . /app
 
 # add mapping file
-RUN mkdir /config
+RUN mkdir /config /app/config
 ADD https://raw.githubusercontent.com/sfu-ireceptor/config/turnkey-v4/AIRR-iReceptorMapping.txt /config/
 RUN ln -s /config/AIRR-iReceptorMapping.txt /app/config/AIRR-iReceptorMapping.txt
 RUN chmod 644 /app/config/AIRR-iReceptorMapping.txt
