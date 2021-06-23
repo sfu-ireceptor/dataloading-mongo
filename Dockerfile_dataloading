@@ -20,5 +20,6 @@ COPY . /app
 RUN mkdir /config /app/config
 RUN ln -s /config/AIRR-iReceptorMapping.txt /app/config/AIRR-iReceptorMapping.txt
 
+
 # set working directory
 WORKDIR /root
