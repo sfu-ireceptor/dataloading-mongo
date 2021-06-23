@@ -39,7 +39,7 @@ class SanityCheck:
     """
 
     def __init__(self, metadata_df, repertoire_json, facet_json, annotation_dir,
-                 url_api_end_point, study_id, mapping_file, output_directory):
+                 url_api_end_point, study_id, mapping_file, output_directory, url_facet_query):
         self.metadata_df = metadata_df
         self.repertoire_json = repertoire_json
         self.facet_json = facet_json
@@ -48,6 +48,7 @@ class SanityCheck:
         self.study_id = study_id
         self.mapping_file = mapping_file
         self.output_directory = output_directory
+        self.url_facet_query = url_facet_query
 
     def test_book(self):
 
@@ -273,15 +274,16 @@ class SanityCheck:
         # Query files
         if flag == "repertoire":
             query_files = self.repertoire_json
+            # End point
+            query_url = self.url_api_end_point
         elif flag == "facet":
             query_files = f"{self.facet_json}facet_repertoire_id_{repertoire_id}.json"
-            print(query_files)
+            query_url = self.url_facet_query
         else:
             print("INVALID FLAG: provide one of 'repertoire' or 'facet'")
             sys.exit(0)
 
-        # End point
-        query_url = self.url_api_end_point
+        
 
         # Test query is well built, then perform query
         try:
@@ -888,11 +890,13 @@ def main():
     connecting_field = 'repertoire_id'
     # Build full query
     query_url = base_url + "/airr/v1/" + entry_pt
+    # Build facet query
+    facet_query = base_url + "/airr/v1/rearrangement"
 
     # Initialize sanity check
     sanity_check = SanityCheck(metadata_df=metadata, repertoire_json=json_input, facet_json=facet_json_input,
                                annotation_dir=annotation_directory, url_api_end_point=query_url,
-                               study_id=study_id, mapping_file=mapping_file, output_directory=details_dir)
+                               study_id=study_id, mapping_file=mapping_file, output_directory=details_dir, url_facet_query = facet_query)
     # Generate printed report
     print_data_validator()
 
@@ -988,4 +992,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-        
+    
