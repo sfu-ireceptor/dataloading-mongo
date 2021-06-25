@@ -692,7 +692,7 @@ def assess_test_results(ir_seq_api, sum_all, ir_sec, ir_rea):
 def test_file_type_keyword(key, data_df):
     """
 
-    :param key: one of 'imgt', 'mixcr', 'igblast'
+    :param key: one of 'imgt', 'mixcr', 'airr'
     :param data_df: (dataframe object) contains row within metadata with selected repertoire
     :return: flag (str) contains 'True_' or 'False_' along with the key selected
         'True_' denotes that they file extension was found, 'False_' denotes otherwise
@@ -701,7 +701,7 @@ def test_file_type_keyword(key, data_df):
     annotation_file_nm = data_df["data_processing_files"].tolist()[0].replace(" ", "")
     # Dictionary with test types and file endings
     test_type = {'imgt': ["txz"],
-                 'igblast': ["fmt", "tsv"],
+                 'airr': ["fmt", "tsv"],
                  'mixcr': ["txt"]}
 
     # Perform test
@@ -715,13 +715,13 @@ def test_file_type_keyword(key, data_df):
             flag = "False_mixcr"
         else:
             flag = "True_mixcr"
-    elif key == "igblast":
+    elif key == "airr":
         if test_type[key][0] not in annotation_file_nm and test_type[key][1] not in annotation_file_nm:
-            flag = "False_igblast"
+            flag = "False_airr"
         else:
-            flag = "True_igblast"
+            flag = "True_airr"
     else:
-        print("WARNING, wrong key, functiont takes one of 'imgt', 'mixcr', 'igblast'")
+        print("WARNING, wrong key, functiont takes one of 'imgt', 'mixcr', 'airr'")
         print("Data provided", data_df)
 
     return flag
@@ -745,7 +745,7 @@ def run_count(check_file_end, line_one, files, test_type_key, annotation_dir):
                 files_found.append(item)
 
                 # Proceed to identify which kind of file we are dealing with
-                if "mixcr" in test_type_key or "igblast" in test_type_key:
+                if "mixcr" in test_type_key or "airr" in test_type_key:
                     # Counting lines in annotation file
                     stri = subprocess.check_output(['wc', '-l', annotation_dir + str(item)])
 
@@ -853,7 +853,7 @@ def get_arguments():
     # Annotation tool
     parser.add_argument(
         "annotation_tool",
-        help="Name of annotation tool used to process sequences. Choice between MiXCR, VQuest, IGBLAST"
+        help="Name of annotation tool used to process sequences. Choice between MiXCR, VQuest, airr"
     )
 
     # Verbosity flag
@@ -973,8 +973,8 @@ def main():
                 full_result_suite.append(result_iter)
                     
             ############## CASE 2            
-            elif "igblast" in annotation_tool.lower():
-                result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "igblast")
+            elif "airr" in annotation_tool.lower():
+                result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "airr")
                 full_result_suite.append(result_iter)
                 
             ############## CASE 3                       
@@ -984,13 +984,13 @@ def main():
                 
             ############### CASE 4
             elif "adaptive" in annotation_tool.lower():
-                result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "igblast")
+                result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "airr")
                 full_result_suite.append(result_iter)
 
             else:
                 print("OBTAINED ANNOTATION TOOL",annotation_tool.lower())
                 print("WARNING: Could not find appropriate annotation tool")
-                print("Please specify one of 'MiXCR', 'IGBLAST', 'VQUEST' or 'Adaptive' in the annotation tool parameter")
+                print("Please specify one of 'MiXCR', 'AIRR', 'VQUEST' or 'Adaptive' in the annotation tool parameter")
                 sys.exit(0)
                 
     final_result = pd.concat(full_result_suite)
