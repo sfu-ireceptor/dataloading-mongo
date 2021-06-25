@@ -277,7 +277,7 @@ class SanityCheck:
             # End point
             query_url = self.url_api_end_point
         elif flag == "facet":
-            query_files = f"{self.facet_json}facet_repertoire_id_{repertoire_id}.json"
+            query_files = f"{self.facet_json}{self.study_id}/facet_repertoire_id_{repertoire_id}.json"
             query_url = self.url_facet_query
         else:
             print("INVALID FLAG: provide one of 'repertoire' or 'facet'")
