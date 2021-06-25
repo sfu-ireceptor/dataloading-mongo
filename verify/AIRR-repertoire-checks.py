@@ -943,6 +943,8 @@ def main():
     print("ANNOTATION COUNT")
     full_result_suite = []
     for item in unique_items:
+        # Delay queries 
+        time.sleep(1)
 
         rowAPI = concat_version[concat_version['repertoire_id']==str(item)]
 
