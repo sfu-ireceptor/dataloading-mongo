@@ -977,14 +977,20 @@ def main():
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "igblast")
                 full_result_suite.append(result_iter)
                 
-                ############## CASE 3                       
+            ############## CASE 3                       
             elif "mixcr" in annotation_tool.lower():   
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "mixcr")
                 full_result_suite.append(result_iter)
+                
+            ############### CASE 4
+            elif "adaptive" in annotation_tool.lower():
+                result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "igblast")
+                full_result_suite.append(result_iter)
+
             else:
-                print(annotation_tool.lower(),"mixcr" in annotation_tool.lower())   
+                print("OBTAINED ANNOTATION TOOL",annotation_tool.lower())
                 print("WARNING: Could not find appropriate annotation tool")
-                print("Please specify one of 'MiXCR', 'IGBLAST' or 'VQUEST' in the annotation tool parameter")
+                print("Please specify one of 'MiXCR', 'IGBLAST', 'VQUEST' or 'Adaptive' in the annotation tool parameter")
                 sys.exit(0)
                 
     final_result = pd.concat(full_result_suite)
