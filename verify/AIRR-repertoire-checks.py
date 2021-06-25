@@ -852,8 +852,8 @@ def get_arguments():
 
     # Annotation tool
     parser.add_argument(
-        "annotation_tool",
-        help="Name of annotation tool used to process sequences. Choice between MiXCR, VQuest, airr"
+        "annotation_file_format",
+        help="Name of annotation file format. Choice between MiXCR, VQuest, airr"
     )
 
     # Verbosity flag
@@ -882,7 +882,7 @@ def main():
     annotation_directory = options.annotation_dir
     details_dir = options.details_dir
     cover_test = options.Coverage
-    annotation_tool = options.annotation_tool
+    annotation_file_format = options.annotation_file_format
 
     # Handle odd study_id
     study_id = study_id.replace('/', '')
@@ -965,30 +965,30 @@ def main():
         # Process each according to the tool used
         else:
             print("Processing annotations using:")
-            print("  annotation_tool: %s"%(annotation_tool))
+            print("  annotation_file_format: %s"%(annotation_file_format))
             print("  ir_rearrangement_tool: %s"%(tool))
             ############## CASE 1
-            if "vquest" in annotation_tool.lower():
+            if "vquest" in annotation_file_format.lower():
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "imgt")
                 full_result_suite.append(result_iter)
                     
             ############## CASE 2            
-            elif "airr" in annotation_tool.lower():
+            elif "airr" in annotation_file_format.lower():
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "airr")
                 full_result_suite.append(result_iter)
                 
             ############## CASE 3                       
-            elif "mixcr" in annotation_tool.lower():   
+            elif "mixcr" in annotation_file_format.lower():   
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "mixcr")
                 full_result_suite.append(result_iter)
                 
             ############### CASE 4
-            elif "adaptive" in annotation_tool.lower():
+            elif "adaptive" in annotation_file_format.lower():
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "airr")
                 full_result_suite.append(result_iter)
 
             else:
-                print("OBTAINED ANNOTATION TOOL",annotation_tool.lower())
+                print("OBTAINED ANNOTATION TOOL",annotation_file_format.lower())
                 print("WARNING: Could not find appropriate annotation tool")
                 print("Please specify one of 'MiXCR', 'AIRR', 'VQUEST' or 'Adaptive' in the annotation tool parameter")
                 sys.exit(0)
