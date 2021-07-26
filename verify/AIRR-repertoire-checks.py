@@ -437,8 +437,10 @@ class SanityCheck:
         annotation_dir = self.annotation_dir
         # Get file names
         line_one = get_data_processing_files(data_df)
-        # Access repertoire_id
-        ir_rea = data_df[connecting_field].tolist()[0]
+        # Access repertoire_id - convert to string as repertoire_id is a
+        # string but it can be in the form of an integer, and pandas will
+        # return an integer if all repertoire_ids are integer in the data frame.
+        ir_rea = str(data_df[connecting_field].tolist()[0])
         # Access curator count
         ir_sec = data_df["ir_curator_count"].tolist()[0]
         # List files in annotation directory
