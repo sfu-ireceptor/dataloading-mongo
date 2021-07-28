@@ -13,9 +13,7 @@ SCRIPT_DIR=`dirname "$0"`
 
 # ---------------------------------------------------------------------
 TIME=`date +%Y-%m-%d_%H-%M-%S`
-echo "Starting run at: " ${TIME}
-echo "Generate facet queries"
-echo ""
+echo "INFO: Starting run at: " ${TIME}
 
 # $1 base_url       String containing URL to API server (e.g. https://airr-api2.ireceptor.org)
 # $2 entry_point    Options: string 'rearragement' or string 'repertoire'
@@ -23,16 +21,14 @@ echo ""
 # $4 no_filters     Enter full path to JSON query nofilters
 # $5 study_id       Enter study_id
 
-python3 $SCRIPT_DIR/generate_facet_json.py -v "$1" "$2" "$3" "$4" "$5"
+echo "INFO: Generate facet queries"
+python3 $SCRIPT_DIR/generate_facet_json.py "$1" "$2" "$3" "$4" "$5"
 if [ $? -ne 0 ]
 then
   echo "ERROR: Could not generate queries correctly."
   exit 1
 fi
 
-echo ""
-echo "Begin sanity check"
-echo ""
 
 # $6 mapping_file    Indicate the full path to where the mapping file is found
 # $1 base_url        String containing URL to API server (e.g. https://airr-api2.ireceptor.org)
@@ -45,6 +41,8 @@ echo ""
 # $9 details_dir     Enter full path where you'd like to store content feedback in CSV format
 # $10 annotation_tool Enter the name of the tool used to process sequence data. Choices: igblast, vquest, mixcr
 
+echo ""
+echo "INFO: Begin sanity check"
 python3 $SCRIPT_DIR/AIRR-repertoire-checks.py "$6" "$1" "$2" "$4" "$7" "$5" "$3" "$8" "$9" "CC-FC" ${10}
 TIME=`date +%Y-%m-%d_%H-%M-%S`
-echo "Ending run at: " ${TIME}
+echo "INFO: Ending run at: " ${TIME}

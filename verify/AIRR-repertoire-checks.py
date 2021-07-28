@@ -156,7 +156,7 @@ class SanityCheck:
         elif flag == "json_response":
             json_data = self.execute_query("repertoire", "")
         else:
-            print("INVALID FLAG: pick one of 'metadata' or 'json_response'")
+            print("FAIL: INVALID FLAG - pick one of 'metadata' or 'json_response'")
             sys.exit(0)
 
         # Begin flattening
@@ -238,23 +238,24 @@ class SanityCheck:
 
             # Metadata if of type JSON
             elif "json" in metadata:
-                florian_json = requests.get(metadata)
-                florian_json = florian_json.json()
-                master = self.flatten_json(florian_json)
+                repsonse = requests.get(metadata)
+                json_data = repsonse.json()
+                master = self.flatten_json(json_data)
             else:
-                print("File format provided is not valid")
+                print("FAIL: File format provided is not valid")
                 sys.exit(0)
 
             # Check if file is empty
             if master.empty:
-                print("EMPTY DATA FRAME: Cannot find specified study ID\n")
+                print("FAIL: EMPTY DATA FRAME - Cannot find specified study ID\n")
                 print(master)
                 sys.exit(0)
 
+            print("PASS: Metadata file %s loaded\n"%(metadata))
             return master
 
         except:
-            print("Warning: Provided wrong type file: cannot read metadata.")
+            print("FAIL: Provided wrong type file: cannot read metadata.")
             sys.exit(0)
 
     def execute_query(self, flag, repertoire_id):
@@ -280,10 +281,8 @@ class SanityCheck:
             query_files = f"{self.facet_json}{self.study_id}/facet_repertoire_id_{repertoire_id}.json"
             query_url = self.url_facet_query
         else:
-            print("INVALID FLAG: provide one of 'repertoire' or 'facet'")
+            print("FAIL: INVALID FLAG - provide one of 'repertoire' or 'facet'")
             sys.exit(0)
-
-        
 
         # Test query is well built, then perform query
         try:
@@ -292,16 +291,15 @@ class SanityCheck:
             query_dict = curlairripa.process_json_files(force, verbose, query_files)
 
             # Perform the query. Time it
+            print("INFO: Sending query to %s" % query_url)
             start_time = time.time()
             query_json = curlairripa.processQuery(query_url, header_dict, expect_pass, query_dict, verbose, force)
             total_time = time.time() - start_time
+            # Time
+            print("INFO: Total query time (in seconds): %s" % total_time)
 
             # Parse
             parsed_query = json.loads(query_json)
-
-            # Time
-            print("ELAPSED DOWNLOAD TIME (in seconds): %s" % total_time)
-            print("------------------------------------------------------")
 
             return parsed_query
 
@@ -356,7 +354,13 @@ class SanityCheck:
             json.dump(rep_json, outfile)
         outfile.close()
         # Perform AIRR validation test
-        airr.load_repertoire(output_dir + filename, validate)
+        try:
+            airr.load_repertoire(output_dir + filename, validate)
+        except Exception as e:
+            print("FAIL: AIRR Repertoire error: %s\n"%(e))
+            sys.exit(1)
+        print("PASS: AIRR Repertoire is valid\n")
+
 
     def perform_mapping_test(self, repertoire_metadata_df, repertoire_response_df):
         """
@@ -413,23 +417,29 @@ class SanityCheck:
                                                     file metadata
         :return: None
         """
-        print_separators()
-        print("Field names in mapping, ir_adc_api_response, not in API response\n")
+        print("\nINFO: Checking field names from AIRR mapping for API (column ir_adc_api_response) not found in API response")
         # Print items not found in API, skip those reported as NaN or empty string
+        count = 0
         for item in field_names_in_mapping_not_in_api:
             if type(item) == float or item == "":
                 continue
             else:
                 print(item)
+                count = count + 1
+        if count == 0:
+            print("PASS: No fields missing")
 
-        print_separators()
-        print("Field names in mapping, ir_curator, not in metadata fields\n")
+        print("\nINFO: Checking field names in AIRR mapping for curation (column ir_curator) not found in metadata fields")
         # Print items not found in metadata sheet, skip those reported as NaN or empty string
+        count = 0
         for item in field_names_in_mapping_not_in_md:
             if type(item) == float or item == "":
                 continue
             else:
                 print(item)
+                count = count + 1
+        if count == 0:
+            print("PASS: No fields missing")
 
     def annotation_count(self, data_df, repertoire_id, test_type_key):
         # Initialize
@@ -549,7 +559,7 @@ def metadata_content_testing(unique_items, json_study_df, data_df, connecting_fi
                             specific study
     :return:
     """
-    print("Content cross comparison\n")
+    print("Metadata/API content cross comparison\n")
 
     # Get entries of interest in API response
     repertoire_list = json_study_df["repertoire_id"].to_list()
@@ -620,11 +630,11 @@ def print_content_test_results(content_results, details_dir, study_id):
         print("Could not find differing results between column content.")
     # Not so perfect results
     else:
-        print("Some fields may require attention:")
-        print("In ADC API: ", content_results["API field"].unique())
-        print("In metadata: ", content_results["MD field"].unique())
+        print("WARN: Some fields may require attention:")
+        print("WARN:     In ADC API: ", content_results["API field"].unique())
+        print("WARN:     In metadata: ", content_results["MD field"].unique())
         file_name = "".join([details_dir, str(study_id), "_reported_fields_", str(pd.to_datetime('today')), ".csv"])
-        print(f"For details refer to {file_name}")
+        print(f"WARN: For details refer to {file_name}")
         content_results.to_csv(file_name)
 
 
@@ -683,10 +693,10 @@ def assess_test_results(ir_seq_api, sum_all, ir_sec, ir_rea):
     test_flag = set([str(ir_seq_api), str(sum_all), str(ir_sec)])
     if len(test_flag) == 1:
         test_result = True
-        print(ir_rea + " returned TRUE (test passed), see CSV for details")
+        print("PASS: Repertoire " + ir_rea + " returned TRUE (test passed), see CSV for details\n")
     else:
         test_result = False
-        print(ir_rea + " returned FALSE (test failed), see CSV for details")
+        print("PASS: Repertoire " + ir_rea + " returned FALSE (test failed), see CSV for details\n")
 
     return test_result
 
@@ -899,17 +909,16 @@ def main():
     sanity_check = SanityCheck(metadata_df=metadata, repertoire_json=json_input, facet_json=facet_json_input,
                                annotation_dir=annotation_directory, url_api_end_point=query_url,
                                study_id=study_id, mapping_file=mapping_file, output_directory=details_dir, url_facet_query = facet_query)
-    # Generate printed report
-    print_data_validator()
 
-    # Read repertoire response from metadata file
+    # Read metadata file
+    print_separators()
+    print("Check Metadata file\n")
     master = sanity_check.identify_file_type()
     data_df = master
 
-    # Report separators
-    print_separators()
-
     # Read repertoire response from API
+    print_separators()
+    print("Check AIRR Mapping against API and Metadata file\n")
     concat_version = sanity_check.flatten_json("json_response")
     concat_version['study.study_id'] = concat_version['study.study_id'].replace(" ", "", regex=True)
     json_study_df = concat_version[concat_version['study.study_id'] == study_id]
@@ -921,10 +930,8 @@ def main():
     # Print mapping file test results
     sanity_check.print_mapping_results(field_names_in_mapping_not_in_api, field_names_in_mapping_not_in_md)
 
-    # Report separators
-    print_separators()
-
     # Content test
+    print_separators()
     identify_mutual_repertoire_ids_in_data(connecting_field, data_df, json_study_df)
     # Select repertoire ids
     unique_items = identify_mutual_repertoire_ids_in_data(connecting_field, data_df, json_study_df)
@@ -933,16 +940,14 @@ def main():
     # Generate CSV results
     print_content_test_results(sanity_test_df, details_dir, study_id)
 
-    # Report separators
-    print_separators()
-
     # Report AIRR validation
-    print("AIRR FIELD VALIDATION")
+    print_separators()
+    print("AIRR field validation\n")
     sanity_check.validate_repertoire_data_airr(validate=False)
 
     # Annotation count
     print_separators()
-    print("ANNOTATION COUNT")
+    print("Annotation count validation (API, file size, curator count)\n")
     full_result_suite = []
     for item in unique_items:
         # Delay queries 
@@ -966,9 +971,9 @@ def main():
 
         # Process each according to the tool used
         else:
-            print("Processing annotations using:")
-            print("  annotation_file_format: %s"%(annotation_file_format))
-            print("  ir_rearrangement_tool: %s"%(tool))
+            print("INFO: Processing annotations for Repertoire %s using:"%(item))
+            print("INFO:   annotation_file_format: %s"%(annotation_file_format))
+            print("INFO:   ir_rearrangement_tool: %s"%(tool))
             ############## CASE 1
             if "vquest" in annotation_file_format.lower():
                 result_iter = sanity_check.annotation_count(rowMD, rowMD['repertoire_id'].to_list()[0], "imgt")
@@ -998,7 +1003,7 @@ def main():
     final_result = pd.concat(full_result_suite)
     count_file_name = str(study_id) + "_Facet_Count_curator_count_Annotation_count_"+str(pd.to_datetime('today')) + ".csv"
     final_result.to_csv(details_dir + count_file_name)
-    print("For details on sequence count refer to " + count_file_name)
+    print("INFO: For details on sequence count refer to " + count_file_name)
 
 if __name__ == '__main__':
     main()
