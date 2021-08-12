@@ -224,7 +224,7 @@ class AIRRRepertoire(Repertoire):
             # If we can't find the file field for the rearrangement field in the repository, then
             # abort, as we won't be able to link the repertoire to the rearrangement.
             if not repository_file_field in repertoire_dict:
-                print("ERROR: Could not find a repertoire file field in the metadata (%)"
+                print("ERROR: Could not find a repertoire file field in the metadata (%s)"
                       %(repertoire_file_field))
                 print("ERROR: Will not be able to link repertoire to rearrangement annotations")
                 return False
