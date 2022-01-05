@@ -177,7 +177,7 @@ class Repertoire(Parser):
         rep_array = self.repositoryGetRepertoires(rep_id_field, repertoire_id)
         num_repertoires = len(rep_array)
 
-        # If we are updating, we want one, and only one record.
+        # If we are updating...
         if self.repository.updateOnly():
             # If we are updating we want the record to be unique. repertoire_id is
             # not sufficient so we have to check and see if the repertoire_id,
@@ -189,12 +189,25 @@ class Repertoire(Parser):
                 return None
             elif num_repertoires == 1:
                 rep = rep_array[0]
-                link_repository_value = rep[link_repository_field]
+                # If we have the correct repertoire, keep track of its link field,
+                # other wise we fail as we have to have an exact match for each field.
+                if (rep[sample_id_field]==sample_processing_id and 
+                    rep[data_id_field]==data_processing_id and
+                    rep[rep_id_field]==repertoire_id):
+                    link_repository_value = rep[link_repository_field]
+                else:
+                    print("ERROR: Can not change repertoire/sample/data processing IDs.")
+                    print("ERROR:     repertoire_id = %s,%s"%(repertoire_id,rep[rep_id_field]))
+                    print("ERROR:     sample_processing_id = %s,%s"%(sample_processing_id,rep[sample_id_field]))
+                    print("ERROR:     data_processing_id = %s,%s"%(data_processing_id,rep[data_id_field]))
+                    return None
+                    
             elif num_repertoires > 1:
                 link_repository_value = None
                 for rep in rep_array:
                     # If we found the correct repertoire, keep track of its "link_field"
                     # as that is the unique repository identifier we use to update that field.
+                    # If not report an error and return.
                     if (rep[sample_id_field]==sample_processing_id and 
                         rep[data_id_field]==data_processing_id and
                         rep[rep_id_field]==repertoire_id):
@@ -206,27 +219,6 @@ class Repertoire(Parser):
                             print("ERROR:     sample_processing_id = %s"%(sample_processing_id))
                             print("ERROR:     data_processing_id = %s"%(data_processing_id))
                             return None
-
-            # If we are setting any of the repertoire_id, sample_processing_id, or 
-            # data_processing_id, we want to fail if there are rearrangements or
-            # clones loaded for this repertoire. If there are rearrangements or clones
-            # loaded then changing these _id fields will break the link to the
-            # rearrangements and clones, which would be bad... 
-            if (not repertoire_id == None or
-                not sample_processing_id == None or
-                not data_processing_id == None):
-                # Fail if there are rearrangements or clones
-                numClones = self.repository.countClones(rep_id_field, repertoire_id)
-                numRearrangements = self.repository.countRearrangements(rep_id_field, repertoire_id)
-                if numClones > 0 or numRearrangements >0:
-                    print("ERROR: Unable to update Repertoire with rearrangements or clones")
-                    print("ERROR:     repertoire_id = %s"%(repertoire_id))
-                    print("ERROR:     sample_processing_id = %s"%(sample_processing_id))
-                    print("ERROR:     data_processing_id = %s"%(data_processing_id))
-                    print("ERROR:     found %d rearrangements, %d clones for this repertoire"%
-                          (numRearrangements, numClones))
-                    return None
-
 
             # Store in our internal field the update time.
             json_document["ir_updated_at"] = self.getDateTimeNowUTC()
