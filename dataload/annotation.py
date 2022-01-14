@@ -23,7 +23,7 @@ class Annotation(Parser):
         # to insert annotation tool information into the repository.
         # Subclasses that process data files from a specific type of 
         # annotation tool should set this value.
-        # This is only used for rearrangement and clone files.
+        # This is only used for rearrangement, clone, and cell files.
         self.annotation_tool = ""
         # Each file has fields in it. This variable holds the mapping column
         # from the AIRR Mapping file to use for this parser. Again, subclasses
@@ -122,6 +122,68 @@ class Annotation(Parser):
 
 
     # Method to check and set annotation fields if they need to be...
+    # This handles a single JSON objecr and returns an updated object.
+    def checkIDFieldsJSON(self, json_object, repertoire_link_id):
+        # Get the link field.
+        repertoire_link_field = self.getRepertoireLinkIDField()
+        # Get mapping of the ID fields we want to generate.
+        rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        sample_id_field =  self.getAIRRMap().getMapping("sample_processing_id",
+                                              self.getAIRRTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        # We don't want to over write existing fields.
+        if rep_id_field in json_object:
+            print("ERROR: Can not load data with preset field %s"%(rep_id_field))
+            return False
+        if data_id_field in json_object:
+            print("ERROR: Can not load data with preset field %s"%(data_id_field))
+            return False
+        if sample_id_field in json_object:
+            print("ERROR: Can not load data with preset field %s"%(sample_id_field))
+            return False
+
+
+        # Look up the repertoire data for the record of interest. This is an array
+        # and it should be of length 1
+        repertoires = self.repository.getRepertoires(repertoire_link_field,
+                                                     repertoire_link_id)
+        if not len(repertoires) == 1:
+            print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
+            return False
+        repertoire = repertoires[0]
+
+        # If we have a field, set it. First, use the exisiting values if we have
+        # them in the reperotire record, if not use the link ID as a default as 
+        # we always need one...
+        if not rep_id_field is None:
+            if rep_id_field in repertoires[0]:
+                json_object[rep_id_field] = repertoire[rep_id_field]
+            else:
+                json_object[rep_id_field] = repertoire_link_id
+
+        if not data_id_field is None:
+            if data_id_field in repertoires[0]:
+                json_object[data_id_field] = repertoire[data_id_field]
+            else:
+                json_object[data_id_field] = repertoire_link_id
+
+        if not sample_id_field is None:
+            if sample_id_field in repertoires[0]:
+                json_object[sample_id_field] = repertoire[sample_id_field]
+            else:
+                json_object[sample_id_field] = repertoire_link_id
+        return True 
+
+    # Method to check and set annotation fields if they need to be...
+    # This handles a dataframe and sets all records in the data frame.
     def checkIDFields(self, dataframe, repertoire_link_id):
         # Get the link field.
         repertoire_link_field = self.getRepertoireLinkIDField()
@@ -349,7 +411,7 @@ class Annotation(Parser):
 
     # Method to map a dataframe to the repository type mapping. The method takes
     # the mapping class and the iReceptor specific mapping class that it should
-    # use as this can be used to map both Rearrangement and Clone classes.
+    # use as this can be used to map both Rearrangement, Clone, and Cell classes.
     def mapToRepositoryType(self, df, map_class, ir_map_class):
         # time this function
         t_start = time.perf_counter()
