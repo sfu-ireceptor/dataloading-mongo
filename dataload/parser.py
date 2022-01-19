@@ -55,12 +55,13 @@ class Parser:
         # (identified by a specific iReceptor field) and it is this field 
         # that must be unique across all of the repertoires in the repository. As
         # a result, it is possible to specify a ID to which all of the
-        # rearrangements, clones, or cells in a specific file should be associated.
+        # rearrangements, clones, cells, or expression in a specific file should be associated.
         #
         # Secondly, it is possible to use the reperotire file name of the file 
         # being loaded to identify the repertoire to which the rearrangements,
-        # clones, and cells belong. The file name for rearrangements, clones, and cells
-        # is stored in a field (again, identified by a specific iReceptor field).
+        # clones, cells, and gene expression belong. The file name for rearrangements,
+        # clones, cells, and gene expression is stored in a field (again, identified
+        # by a specific iReceptor field).
         #
         # Below, we keep track of these important fields. This is
         # maintained by the Parser class because these are the fields that link
@@ -68,21 +69,24 @@ class Parser:
         # record in the repertoire collection. Rearrangements are associated with
         # this ID through the field identified by the rearrangement_linkid_field.
         # The repertoire_file_field is the field in the repertoire where file
-        # names for rearrangement, clone, and cell files are stored. This is the main lookup
-        # mechanism when a rearrangement, clone, or cell file is loaded against a repertoire.
-        # Finally ir_sequence_count it the internal field that the repository
-        # uses to cache the could of all the sequences that belong to a specific
+        # names for rearrangement, clone, cell, and gene expression files are stored. This
+        # is the main lookup mechanism when a rearrangement, clone, cell, or gene expression
+        # file is loaded against a repertoire.
+        #
+        # Finally ir_*_count it the internal field that the repository
+        # uses to cache the count of all the data that belong to a specific
         # repertoire record.
         self.repertoire_linkid_field = "ir_annotation_set_metadata_id"
         self.repertoire_file_field = "ir_rearrangement_file_name"
         self.rearrangement_count_field = "ir_sequence_count"
         self.clone_count_field = "ir_clone_count"
         self.cell_count_field = "ir_cell_count"
+        self.expression_count_field = "ir_expression_count"
 
         # We need to keep track of the field (identified by an iReceptor 
         # field name) in the annotation collection that points to the
         # Repertoire ID field in the repertoire collection. This should be
-        # set by the subclass (Rearrangement, Clone, or Cell).
+        # set by the subclass (Rearrangement, Clone, Cell, or Expression).
         self.annotation_linkid_field = ""
 
     # Sanity check for validity for the parser...
@@ -110,6 +114,9 @@ class Parser:
 
     def getCellCountField(self):
         return self.cell_count_field
+
+    def getExpressionCountField(self):
+        return self.expression_count_field
 
     def getAnnotationLinkIDField(self):
         return self.annotation_linkid_field

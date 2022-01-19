@@ -40,13 +40,13 @@ class Cell(Annotation):
         record_ids = self.repository.insertCells(json_records)
         if record_ids is None:
             return False
-        # Get the field we want to map for the clone ID for each record.
+        # Get the field we want to map for the cell ID for each record.
         cell_id_field =  self.getAIRRMap().getMapping("cell_id",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getCellClass())
         # If we found a repository record, write a string repersentation of the ID 
-        # returned into the clone_id field.
+        # returned into the cell_id field.
         if not cell_id_field is None:
             for record_id in record_ids:
                 self.repository.updateCellField("_id", record_id,
