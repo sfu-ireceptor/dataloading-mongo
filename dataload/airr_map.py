@@ -10,7 +10,7 @@ class AIRRMap:
         self.rearrangement_class = "Rearrangement"
         self.clone_class = "Clone"
         self.cell_class = "Cell"
-        self.expression_class = "Expression"
+        self.expression_class = "GeneExpression"
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
@@ -239,8 +239,8 @@ class AIRRMap:
             else:
                 return None
         elif len(value.values) > 1:
-            print("Warning: Duplicate AIRR mapping for field %s (%s -> %s) %s"%
-                  (field, from_column, to_column, value.values))
+            print("Warning: Duplicate AIRR mapping for field %s, class = %s (%s -> %s) %s"%
+                  (field, map_class, from_column, to_column, value.values))
             return value.values[0]
         else:
             return None
