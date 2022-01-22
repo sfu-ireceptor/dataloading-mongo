@@ -77,6 +77,12 @@ class AIRR_Expression(Expression):
         # name.
         repertoire_link_field = self.getRepertoireLinkIDField()
         expression_link_field = self.getAnnotationLinkIDField()
+        rep_expression_link_field = airr_map.getMapping(
+                                         expression_link_field,
+                                         ireceptor_tag, repository_tag)
+        if rep_expression_link_field is None:
+            print("ERROR: Could not get repertoire link field from AIRR mapping.")
+            return False
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
         # look up into the columns of the AIRR Mapping that we are using. 
@@ -94,24 +100,24 @@ class AIRR_Expression(Expression):
 
         # Get the column of values from the AIRR tag. We only want the
         # Expression related fields.
-        map_column = self.getAIRRMap().getIRExpressionMapColumn(airr_tag)
+        map_column = self.getAIRRMap().getExpressionMapColumn(airr_tag)
         # Get a boolean column that flags columns of interest. Exclude nulls.
         fields_of_interest = map_column.notnull()
         # Afer the following airr_fields contains N columns (e.g. iReceptor, AIRR)
         # that contain the AIRR Repertoire mappings.
-        airr_fields = self.getAIRRMap().getIRExpressionRows(fields_of_interest)
+        airr_fields = self.getAIRRMap().getExpressionRows(fields_of_interest)
 
         # Extract the fields that are of interest for this file. Essentially all non
         # null fields in the file. This is a boolean array that is T everywhere there
         # is a notnull field in the column of interest.
-        map_column = airr_map.getIRExpressionMapColumn(filemap_tag)
+        map_column = airr_map.getExpressionMapColumn(filemap_tag)
         fields_of_interest = map_column.notnull()
 
         # We select the rows in the mapping that contain fields of interest for Expression.
         # At this point, file_fields contains N columns that contain our mappings for
         # the specific formats (e.g. airr). The rows are limited to 
         # only data that is relevant to Expression
-        file_fields = airr_map.getIRExpressionRows(fields_of_interest)
+        file_fields = airr_map.getExpressionRows(fields_of_interest)
 
         # We need to build the set of fields that the repository can store. We don't
         # want to extract fields that the repository doesn't want.
@@ -142,56 +148,63 @@ class AIRR_Expression(Expression):
         if self.verbose():
             print("Info: Read %d Expression objects"%(len(expression_array)), flush=True)
 
+        # Get the fields to use for the created and updated dates
+        ir_created_at = airr_map.getMapping("ir_created_at_expression", 
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getIRExpressionClass())
+        ir_updated_at = airr_map.getMapping("ir_updated_at_expression",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getIRExpressionClass())
+
+        t_preamble_end = time.perf_counter()
+        print("Info: Preamble time = %fs"% (t_preamble_end-t_start_full),flush=True)
+
         # Iterate over each element in the array 
         total_records = 0
+        block_size = 9000
+        block_count = 0
+        block_array = []
+        t_start = time.perf_counter()
         for expression_dict in expression_array:
 
-            if self.verbose():
-                print("Info: Processing raw data frame...", flush=True)
             # Remap the column names. We need to remap because the columns may be in 
             # a different order in the file than in the column mapping. We leave any
             # non-mapped columns in the data frame as we don't want to discard data.
-            add_dict = dict() 
-            del_dict = dict()
-            for expression_key, expression_value in expression_dict.items():
-                if expression_key in columnMapping:
-                    mongo_column = columnMapping[expression_key]
-                    if self.verbose():
-                        print("Info: Mapping %s field in file: %s -> %s"
-                              %(self.getAnnotationTool(), expression_key, mongo_column))
-                    # If they are different swap them.
-                    if mongo_column != expression_key:
-                        add_dict[mongo_column] = expression_value
-                        del_dict[expression_key] = True
-                else:
-                    if self.verbose():
-                        print("Info: No mapping for %s column %s, storing as is"
-                              %(self.getAnnotationTool(), expression_key))
-
-            for add_key, add_value in add_dict.items():
-                expression_dict[add_key] = add_value
-                if self.verbose():
-                    print("Info: Adding %s -> %s"%(add_key, add_value))
-            for del_key in del_dict:
-                del expression_dict[del_key]
-                if self.verbose():
-                    print("Info: Removing %s "%(del_key))
+            #add_dict = dict() 
+            #del_dict = dict()
+            #for expression_key, expression_value in expression_dict.items():
+            #    if expression_key in columnMapping:
+            #        mongo_column = columnMapping[expression_key]
+            #        if self.verbose() and total_records == 0:
+            #            print("Info: Mapping %s field in file: %s -> %s"
+            #                  %(self.getAnnotationTool(), expression_key, mongo_column))
+            #        # If they are different swap them.
+            #        if mongo_column != expression_key:
+            #            add_dict[mongo_column] = expression_value
+            #            del_dict[expression_key] = True
+            #    else:
+            #        if self.verbose() and total_records == 0:
+            #            print("Info: No mapping for %s column %s, storing as is"
+            #                  %(self.getAnnotationTool(), expression_key))
+#
+#            for add_key, add_value in add_dict.items():
+#                expression_dict[add_key] = add_value
+#                if self.verbose() and total_records == 0:
+#                    print("Info: Adding %s -> %s"%(add_key, add_value))
+#            for del_key in del_dict:
+#                del expression_dict[del_key]
+#                if self.verbose() and total_records == 0:
+#                    print("Info: Removing %s "%(del_key))
             # Check to see which desired Expression mappings we don't have in the file...
-            for expression_column, mongo_column in columnMapping.items():
-                if not mongo_column in expression_dict:
-                    if self.verbose():
-                        print("Info: Missing data in input %s file for %s"
-                              %(self.getAnnotationTool(), expression_column))
+#            if self.verbose() and total_records == 0:
+#                for expression_column, mongo_column in columnMapping.items():
+#                    if not mongo_column in expression_dict:
+#                        print("Info: Missing data in input %s file for %s"
+#                              %(self.getAnnotationTool(), expression_column))
             
 
-            rep_expression_link_field = airr_map.getMapping(
-                                             expression_link_field,
-                                             ireceptor_tag, repository_tag)
-            if not rep_expression_link_field is None:
-                expression_dict[rep_expression_link_field] = repertoire_link_id
-            else:
-                print("ERROR: Could not get repertoire link field from AIRR mapping.")
-                return False
+            # Set the link field to link back to the repertoire object
+            expression_dict[rep_expression_link_field] = repertoire_link_id
 
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
@@ -203,13 +216,9 @@ class AIRR_Expression(Expression):
             #####if not self.checkAIRRRequired(df_chunk, airr_fields):
             #####    return False
 
-            # Create the created and update values for this block of records. Note that
+            # Create the created and update values for this record. Note that
             # this means that each block of inserts will have the same date.
             now_str = self.getDateTimeNowUTC()
-            ir_created_at = airr_map.getMapping("ir_created_at", 
-                                                ireceptor_tag, repository_tag)
-            ir_updated_at = airr_map.getMapping("ir_updated_at",
-                                                ireceptor_tag, repository_tag)
             expression_dict[ir_created_at] = now_str
             expression_dict[ir_updated_at] = now_str
 
@@ -220,21 +229,28 @@ class AIRR_Expression(Expression):
             ####    print("ERROR: Unable to map data to the repository")
             ####    return False
 
-            # Insert the chunk of records into Mongo.
-            ####num_records = len(df_chunk)
-            ####print("Info: Inserting", num_records, "records into Mongo...", flush=True)
-            t_start = time.perf_counter()
-            ####records = json.loads(df_chunk.T.to_json()).values()
-            ####self.repositoryInsertRecords(records)
-            self.repositoryInsertRecords(expression_dict)
-            t_end = time.perf_counter()
-            print("Info: Inserted records, time =", (t_end - t_start),
-                  "seconds", flush=True)
+            # Insert a chunk of records into Mongo if we have a chunk ready.
+            block_array.append(expression_dict.copy())
+            block_count = block_count + 1
+            if block_count == block_size:
+                self.repositoryInsertRecords(block_array)
+                t_end = time.perf_counter()
+                print("Info: Inserted %d records, time = %f (%f records/s)"%
+                        (block_size, t_end-t_start, block_size/(t_end-t_start)),flush=True)
+                block_count = 0
+                block_array = []
+                t_start = time.perf_counter()
 
             # Keep track of the total number of records processed.
-            ####total_records = total_records + num_records
             total_records = total_records + 1
-            print("Info: Total records so far =", total_records, flush=True)
+
+        # Done the main loop, insert any remaining records that didn't get inserted
+        # as a block.
+        if block_count > 0:
+            self.repositoryInsertRecords(block_array)
+            t_end = time.perf_counter()
+            print("Info: Inserted %d records, time = %f (%f records/s)"%
+                    (block_count, t_end-t_start, block_count/(t_end-t_start)),flush=True)
 
         # Get the number of annotations for this repertoire 
         if self.verbose():
