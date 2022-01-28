@@ -145,9 +145,6 @@ class AIRR_Cell(Cell):
         # Iterate over each element in the array 
         total_records = 0
         for cell_dict in cell_array:
-
-            if self.verbose():
-                print("Info: Processing raw data frame...", flush=True)
             # Remap the column names. We need to remap because the columns may be in 
             # a different order in the file than in the column mapping. We leave any
             # non-mapped columns in the data frame as we don't want to discard data.
@@ -156,7 +153,7 @@ class AIRR_Cell(Cell):
             for cell_key, cell_value in cell_dict.items():
                 if cell_key in columnMapping:
                     mongo_column = columnMapping[cell_key]
-                    if self.verbose():
+                    if self.verbose() and total_records == 0:
                         print("Info: Mapping %s field in file: %s -> %s"
                               %(self.getAnnotationTool(), cell_key, mongo_column))
                     # If they are different swap them.
@@ -164,22 +161,22 @@ class AIRR_Cell(Cell):
                         add_dict[mongo_column] = cell_value
                         del_dict[cell_key] = True
                 else:
-                    if self.verbose():
+                    if self.verbose() and total_records == 0:
                         print("Info: No mapping for %s column %s, storing as is"
                               %(self.getAnnotationTool(), cell_key))
 
             for add_key, add_value in add_dict.items():
                 cell_dict[add_key] = add_value
-                if self.verbose():
+                if self.verbose() and total_records == 0:
                     print("Info: Adding %s -> %s"%(add_key, add_value))
             for del_key in del_dict:
                 del cell_dict[del_key]
-                if self.verbose():
+                if self.verbose() and total_records == 0:
                     print("Info: Removing %s "%(del_key))
             # Check to see which desired Cell mappings we don't have in the file...
             for cell_column, mongo_column in columnMapping.items():
                 if not mongo_column in cell_dict:
-                    if self.verbose():
+                    if self.verbose() and total_records == 0:
                         print("Info: Missing data in input %s file for %s"
                               %(self.getAnnotationTool(), cell_column))
             
@@ -206,10 +203,13 @@ class AIRR_Cell(Cell):
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.
             now_str = self.getDateTimeNowUTC()
-            ir_created_at = airr_map.getMapping("ir_created_at", 
-                                                ireceptor_tag, repository_tag)
-            ir_updated_at = airr_map.getMapping("ir_updated_at",
-                                                ireceptor_tag, repository_tag)
+            ir_created_at = airr_map.getMapping("ir_created_at_cell", 
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getIRCellClass())
+            ir_updated_at = airr_map.getMapping("ir_updated_at_cell",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getIRCellClass())
+
             cell_dict[ir_created_at] = now_str
             cell_dict[ir_updated_at] = now_str
 
@@ -228,13 +228,12 @@ class AIRR_Cell(Cell):
             ####self.repositoryInsertRecords(records)
             self.repositoryInsertRecords(cell_dict)
             t_end = time.perf_counter()
-            print("Info: Inserted records, time =", (t_end - t_start),
-                  "seconds", flush=True)
 
             # Keep track of the total number of records processed.
             ####total_records = total_records + num_records
             total_records = total_records + 1
-            print("Info: Total records so far =", total_records, flush=True)
+            if total_records % 1000 == 0:
+                print("Info: Total records so far =", total_records, flush=True)
 
         # Get the number of annotations for this repertoire 
         if self.verbose():
