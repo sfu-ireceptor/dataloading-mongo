@@ -9,11 +9,15 @@ class AIRRMap:
         self.repertoire_class = "Repertoire"
         self.rearrangement_class = "Rearrangement"
         self.clone_class = "Clone"
+        self.cell_class = "Cell"
+        self.expression_class = "GeneExpression"
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
         self.ir_rearrangement_class = "IR_Rearrangement"
         self.ir_clone_class = "IR_Clone"
+        self.ir_cell_class = "IR_Cell"
+        self.ir_expression_class = "IR_Expression"
 
         # Keep track of the mapfile being used.
         self.mapfile = ""
@@ -26,6 +30,10 @@ class AIRRMap:
         self.airr_rearrangement_map = []
         # AIRR clone mappings only
         self.airr_clone_map = []
+        # AIRR cell mappings only
+        self.airr_cell_map = []
+        # AIRR expression mappings only
+        self.airr_expression_map = []
         # AIRR repertoire mappings only
         self.airr_repertiore_map = []
         # AIRR and IR repertoire mapping only
@@ -34,6 +42,10 @@ class AIRRMap:
         self.ir_rearrangement_map = []
         # AIRR and IR clone mappings only
         self.ir_clone_map = []
+        # AIRR and IR cell mappings only
+        self.ir_cell_map = []
+        # AIRR and IR expression mappings only
+        self.ir_expression_map = []
         
     # Read in a map file given a file name.
     def readMapFile(self, mapfile):
@@ -62,6 +74,9 @@ class AIRRMap:
             print("Info: Successfully read in %d mapping columns from %s" %
                   (len(self.airr_mappings.columns), mapfile))
 
+        #
+        # Rearrangement mappings
+        #
         # Get the labels for all of the fields that are in the airr rearrangements class.
         labels = self.airr_mappings['ir_class'].isin([self.rearrangement_class])
         # Get all of the rows that have the rearrangement class labels.
@@ -73,6 +88,9 @@ class AIRRMap:
         # Get all of the rows that have the rearrangement class labels.
         self.ir_rearrangement_map = self.airr_mappings.loc[labels]
 
+        #
+        # Clone mappings
+        #
         # Get the labels for all of the fields that are in the airr clone class.
         labels = self.airr_mappings['ir_class'].isin([self.clone_class])
         # Get all of the rows that have the clone class labels.
@@ -84,6 +102,37 @@ class AIRRMap:
         # Get all of the rows that have the clone class labels.
         self.ir_clone_map = self.airr_mappings.loc[labels]
 
+        #
+        # Cell mappings
+        #
+        # Get the labels for all of the fields that are in the airr cell class.
+        labels = self.airr_mappings['ir_class'].isin([self.cell_class])
+        # Get all of the rows that have the cell class labels.
+        self.airr_cell_map = self.airr_mappings.loc[labels]
+
+        # Get the labels for all of the fields that are in the airr and IR cell class.
+        labels = self.airr_mappings['ir_class'].isin([self.cell_class,
+                                                      self.ir_cell_class])
+        # Get all of the rows that have the cell class labels.
+        self.ir_cell_map = self.airr_mappings.loc[labels]
+
+        #
+        # Expression mappings
+        #
+        # Get the labels for all of the fields that are in the airr Expression class.
+        labels = self.airr_mappings['ir_class'].isin([self.expression_class])
+        # Get all of the rows that have the expression class labels.
+        self.airr_expression_map = self.airr_mappings.loc[labels]
+
+        # Get the labels for all of the fields that are in the airr and IR expression class.
+        labels = self.airr_mappings['ir_class'].isin([self.expression_class,
+                                                      self.ir_expression_class])
+        # Get all of the rows that have the expression class labels.
+        self.ir_expression_map = self.airr_mappings.loc[labels]
+
+        #
+        # Repertoire mappings
+        #
         # Get the labels for all of the fields that are in the airr repertoire class.
         labels = self.airr_mappings['ir_class'].isin([self.repertoire_class])
         # Get all of the rows that have the repertoire class labels.
@@ -112,10 +161,22 @@ class AIRRMap:
         return self.ir_rearrangement_class
 
     def getCloneClass(self):
-        return self.rearrangement_class
+        return self.clone_class
 
     def getIRCloneClass(self):
-        return self.ir_rearrangement_class
+        return self.ir_clone_class
+    
+    def getCellClass(self):
+        return self.cell_class
+
+    def getIRCellClass(self):
+        return self.ir_cell_class
+
+    def getExpressionClass(self):
+        return self.expression_class
+
+    def getIRExpressionClass(self):
+        return self.ir_expression_class
 
     # Utility function to determine if the mapping has a specific column
     def hasColumn(self, column_name):
@@ -134,6 +195,10 @@ class AIRRMap:
            mapping = self.airr_rearrangement_map
         elif map_class == self.clone_class: 
            mapping = self.airr_clone_map
+        elif map_class == self.cell_class: 
+           mapping = self.airr_cell_map
+        elif map_class == self.expression_class: 
+           mapping = self.airr_expression_map
         elif map_class == self.repertoire_class: 
            mapping = self.airr_repertoire_map
         elif map_class == self.ir_repertoire_class: 
@@ -142,6 +207,10 @@ class AIRRMap:
            mapping = self.ir_rearrangement_map
         elif map_class == self.ir_clone_class: 
            mapping = self.ir_clone_map
+        elif map_class == self.ir_cell_class: 
+           mapping = self.ir_cell_map
+        elif map_class == self.ir_expression_class: 
+           mapping = self.ir_expression_map
         else:
             print("Warning: Invalid maping class %s"%(map_class))
             return None
@@ -170,8 +239,8 @@ class AIRRMap:
             else:
                 return None
         elif len(value.values) > 1:
-            print("Warning: Duplicate AIRR mapping for field %s (%s -> %s) %s"%
-                  (field, from_column, to_column, value.values))
+            print("Warning: Duplicate AIRR mapping for field %s, class = %s (%s -> %s) %s"%
+                  (field, map_class, from_column, to_column, value.values))
             return value.values[0]
         else:
             return None
@@ -233,6 +302,62 @@ class AIRRMap:
     # Clone table size.
     def getIRCloneRows(self, extract_flags):
         return self.ir_clone_map.loc[extract_flags]
+
+    # Return a full column of the Cell mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getCellMapColumn(self, column_name):
+        if column_name in self.airr_cell_map:
+            return self.airr_cell_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the cell table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Cell table size.
+    def getCellRows(self, extract_flags):
+        return self.airr_cell_map.loc[extract_flags]
+
+    # Return a full column of the Cell mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getIRCellMapColumn(self, column_name):
+        if column_name in self.ir_cell_map:
+            return self.ir_cell_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the cell table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Cell table size.
+    def getIRCellRows(self, extract_flags):
+        return self.ir_cell_map.loc[extract_flags]
+
+    # Return a full column of the Expression mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getExpressionMapColumn(self, column_name):
+        if column_name in self.airr_expression_map:
+            return self.airr_expression_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the expression table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Expression table size.
+    def getExpressionRows(self, extract_flags):
+        return self.airr_expression_map.loc[extract_flags]
+
+    # Return a full column of the Expression mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getIRExpressionMapColumn(self, column_name):
+        if column_name in self.ir_expression_map:
+            return self.ir_expression_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the expression table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Expression table size.
+    def getIRExpressionRows(self, extract_flags):
+        return self.ir_expression_map.loc[extract_flags]
 
     # Return a full column of the Repertoire mapping based on the name given.
     # Return None if the column is not in the mapping.
