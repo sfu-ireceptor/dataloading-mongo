@@ -23,6 +23,7 @@ from airr_tsv import AIRR_TSV
 from adaptive import Adaptive
 # Clone loader classes
 from mixcr_clone import MiXCR_Clone
+from airr_clone import AIRR_Clone
 # Cell loader classes
 from airr_cell import AIRR_Cell
 # Gene Expression loader classes
@@ -152,6 +153,15 @@ def getArguments():
         const="MiXCR Clone",
         dest="type",
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR clone annotation tool."
+    )
+
+    # Processing AIRR Clone data
+    type_group.add_argument(
+        "--airr-clone",
+        action='store_const',
+        const="AIRR Clone",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file in the AIRR Clone JSON format."
     )
 
     # Processing AIRR Cell JSON data
@@ -365,6 +375,11 @@ if __name__ == "__main__":
         print("Info: Processing MiXCR Clone data file: {}".format(options.filename))
         parser = MiXCR_Clone(options.verbose, options.database_map,
                              options.database_chunk, airr_map, repository)
+    elif options.type == "AIRR Clone":
+        # process AIRR clone data
+        print("Info: Processing AIRR Clone data file: {}".format(options.filename))
+        parser = AIRR_Clone(options.verbose, options.database_map,
+                            options.database_chunk, airr_map, repository)
     elif options.type == "AIRR Cell":
         # process AIRR Cell JSON data
         print("Info: Processing AIRR JSON Cell data file: {}".format(options.filename))
