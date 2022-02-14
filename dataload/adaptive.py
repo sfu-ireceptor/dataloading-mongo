@@ -29,7 +29,7 @@ class Adaptive(Rearrangement):
     @staticmethod
     def mapAdaptiveGene(resolved, allele_ties, gene_ties, family_ties):
         new_resolved = resolved
-        if not allele_ties == "no data":
+        if not (allele_ties == "no data" or allele_ties==""):
             # If there is an allele tie, then resolved is correct, and we
             # need to split the resolved into the resolved gene and add the alleles.
             # e.g. v_resolved = TCRBV02-01, v_allele_ties = 01,03
@@ -46,7 +46,7 @@ class Adaptive(Rearrangement):
                 # Concatenate the resolved gene and the allele
                 new_resolved = new_resolved + resolved + "*" + allele.strip()
                 count = count + 1
-        elif not gene_ties == "no data" and not resolved == "unknown" :
+        elif not (gene_ties == "no data" or gene_ties =="") and not (resolved == "unknown" or resolved=="") :
             # If there is a gene_tie then we need to handle the case where one of
             # the genes has a / in it. As far as I can tell this is redundant data
             # in the examples that I have seen so we just throw away the stuff after
@@ -70,7 +70,7 @@ class Adaptive(Rearrangement):
                 # Add the fixed gene
                 new_resolved = new_resolved + gene_fixed.strip()
                 count = count + 1
-        elif not gene_ties == "no data" and resolved == "unknown" :
+        elif not (gene_ties == "no data" or gene_ties == "") and (resolved == "unknown" or resolved == "") :
             # Handle no v_resolved and gene_ties.
             # E.g. d_resolved = unknown, d_gene_ties = TCRBD01-01,TCRBD02-01
             # becomes TCRBD01-01,TCRBD02-01
