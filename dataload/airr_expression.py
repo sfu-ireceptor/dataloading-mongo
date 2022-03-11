@@ -165,7 +165,20 @@ class AIRR_Expression(Expression):
         block_count = 0
         block_array = []
         t_start = time.perf_counter()
-        for expression_dict in expression_array:
+        for airr_expression_dict in expression_array:
+
+            # When we load into an iReceptor repository, we flatten out all AIRR
+            # contructs into a simple, flat representation. ir_flatten performs this.
+            # We give it an empty dictionary, iterated over all of the items, and it
+            # gives us back a dictionary suitable for storing in our repository.
+            expression_dict = dict()
+            airr_class = self.getAIRRMap().getExpressionClass()
+            for key, value in airr_expression_dict.items():
+                try:
+                    self.ir_flatten(key, value, expression_dict, key, airr_class)
+                except TypeError as error:
+                    print("ERROR: %s"%(error))
+                    return False
 
             # Remap the column names. We need to remap because the columns may be in 
             # a different order in the file than in the column mapping. We leave any

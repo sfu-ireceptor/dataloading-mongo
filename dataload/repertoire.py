@@ -12,62 +12,6 @@ class Repertoire(Parser):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
     
-    # Utility function to check to see if a given value is a valid type for a specific
-    # AIRR field.  If doing strict AIRR checks, if the field is not an AIRR field then
-    # it returns FALSE. If not doing strict AIRR checks, then it doesn't do any checks
-    # against the the field if it isn't an AIRR field (it returns TRUE). 
-    def validAIRRFieldType(self, key, value, strict):
-        field_type = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
-                               "airr_type", self.getAIRRMap().getRepertoireClass())
-        field_nullable = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
-                               "airr_nullable", self.getAIRRMap().getRepertoireClass())
-        is_array = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
-                               "airr_is_array", self.getAIRRMap().getRepertoireClass())
-        # If we are not doing strict typing, then if the key is not an AIRR
-        # key (field_type == None) then we return True. This allows us to
-        # check AIRR keys only and skip non-AIRR keys. If strict checking is
-        # on, then if we find a non-AIRR key, we return False, as this is
-        # checking AIRR typing explicitly, not typing in general.
-        if field_type is None:
-            if strict: return False
-            else: return True
-
-        # If the value is null and the field is nullable or there is no nullable
-        # entry in the AIRR mapping (meaning NULL is OK) then return True.
-        if (not isinstance(value, (list))and
-            pd.isnull(value) and
-            (field_nullable == None or field_nullable)):
-            return True
-
-        # If we get here, we have an AIRR field, so no matter what we 
-        # return False if the type doesn't match.
-        valid_type = False
-        if isinstance(value, (str)) and field_type == "string":
-            valid_type = True
-        elif isinstance(value, (bool,np.bool_)) and field_type == "boolean":
-            valid_type = True
-        elif isinstance(value, (int,np.integer)) and field_type == "integer":
-            valid_type = True
-        elif isinstance(value, (float,int,np.floating,np.integer)) and field_type == "number":
-            # We need to accept integers and floats as numbers.
-            valid_type = True
-        elif isinstance(value, (list)) and is_array:
-            # List is a special case, we only have arrays of strings.
-            # Iterate and check each value
-            valid_type = True
-            for element in value:
-                if not self.validAIRRFieldType(key, element, strict):
-                    valid_type = False
-
-        if self.verbose():
-            if not isinstance(value, (list)) and pd.isnull(value):
-                print("Info: Field %s type ERROR, null value, field is non-nullable"%
-                      (key))
-            elif not valid_type:
-                print("Info: Field %s type ERROR, expected %s, got %s"%
-                      (key, field_type, str(type(value))))
-        return valid_type
-
     # Hide the impementation of the repository from the Repertoire subclasses.
     # The subclasses don't ask much of the repository, just insert a single
     # JSON document at a time. Returns a record_id on success, None on failure
