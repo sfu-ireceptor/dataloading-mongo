@@ -43,23 +43,25 @@ Once that has been completed, you can then run a repertoire sanity check with th
                                       details_dir Coverage
 
      positional arguments:
-       mapping_file    Indicate the full path to where the mapping file is found
-       base_url        String containing URL to API server (e.g. https://airr-
-                       api2.ireceptor.org)
-       entry_point     Options: string 'rearragement' or string 'repertoire'
-       json_files      Enter full path to JSON query containing repertoire ID's for
-                       a given study - this must match the value given for study_id
-       master_md       Full path to master metadata
-       study_id        Study ID (study_id) associated to this study
-       facet_count     Enter full path to JSON queries containing facet count
-                       request for each repertoire
-       annotation_dir  Enter full path to where annotation files associated with
-                       study_id
-       details_dir     Enter full path where you'd like to store content feedback
-                       in CSV format
-       Coverage        Sanity check levels: enter CC for content comparison, enter
-                       FC for facet count vs ir_curator count test, enter AT for
-                       AIRR type test
+       mapping_file           Indicate the full path to where the mapping file is found
+       base_url               String containing URL to API server (e.g. https://airr-
+                              api2.ireceptor.org)
+       entry_point            Options: string 'rearragement' or string 'repertoire'
+       json_files             Enter full path to JSON query containing repertoire ID's for
+                              a given study - this must match the value given for study_id
+       master_md              Full path to master metadata
+       study_id               Study ID (study_id) associated to this study
+       facet_count            Enter full path to JSON queries containing facet count
+                              request for each repertoire
+       annotation_dir         Enter full path to where annotation files associated with
+                              study_id
+       details_dir            Enter full path where you'd like to store content feedback
+                              in CSV format
+       Coverage               Sanity check levels: enter CC for content comparison, enter
+                              FC for facet count vs ir_curator count test, enter AT for
+                              AIRR type test
+       annotation_file_format Name of annotation file format. Choice between MiXCR, 
+                              VQuest, airr
 
      optional arguments:
        -h, --help      show this help message and exit
@@ -68,7 +70,7 @@ Once that has been completed, you can then run a repertoire sanity check with th
 
 ### Example
 
-     python3 AIRR-repertoire-checks.py "./MappingFiles/AIRR-iReceptorMapping-latest.txt" "https://ipa1.ireceptor.org" "repertoire" "./JSON-Files/repertoire/PRJNA493983_ipa5.json" "./MetadataFiles/master_metadata_UTF-latest.csv" "PRJEB9332" "./JSON-Files/facet_queries_for_sanity_tests/ipa1/PRJEB9332/" "./annotation/" "./ExtraFeedback/" "CC-FC-AT"
+     python3 AIRR-repertoire-checks.py "./MappingFiles/AIRR-iReceptorMapping-latest.txt" "https://ipa1.ireceptor.org" "repertoire" "./JSON-Files/repertoire/PRJNA493983_ipa5.json" "./MetadataFiles/master_metadata_UTF-latest.csv" "PRJEB9332" "./JSON-Files/facet_queries_for_sanity_tests/ipa1/PRJEB9332/" "./annotation/" "./ExtraFeedback/" "CC-FC-AT" "airr"
 
 ## curlairripa Python Package 
 

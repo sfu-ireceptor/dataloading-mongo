@@ -12,62 +12,6 @@ class Repertoire(Parser):
     def __init__(self, verbose, repository_tag, repository_chunk, airr_map, repository):
         Parser.__init__(self, verbose, repository_tag, repository_chunk, airr_map, repository)
     
-    # Utility function to check to see if a given value is a valid type for a specific
-    # AIRR field.  If doing strict AIRR checks, if the field is not an AIRR field then
-    # it returns FALSE. If not doing strict AIRR checks, then it doesn't do any checks
-    # against the the field if it isn't an AIRR field (it returns TRUE). 
-    def validAIRRFieldType(self, key, value, strict):
-        field_type = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
-                               "airr_type", self.getAIRRMap().getRepertoireClass())
-        field_nullable = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
-                               "airr_nullable", self.getAIRRMap().getRepertoireClass())
-        is_array = self.getAIRRMap().getMapping(key, self.getAIRRTag(),
-                               "airr_is_array", self.getAIRRMap().getRepertoireClass())
-        # If we are not doing strict typing, then if the key is not an AIRR
-        # key (field_type == None) then we return True. This allows us to
-        # check AIRR keys only and skip non-AIRR keys. If strict checking is
-        # on, then if we find a non-AIRR key, we return False, as this is
-        # checking AIRR typing explicitly, not typing in general.
-        if field_type is None:
-            if strict: return False
-            else: return True
-
-        # If the value is null and the field is nullable or there is no nullable
-        # entry in the AIRR mapping (meaning NULL is OK) then return True.
-        if (not isinstance(value, (list))and
-            pd.isnull(value) and
-            (field_nullable == None or field_nullable)):
-            return True
-
-        # If we get here, we have an AIRR field, so no matter what we 
-        # return False if the type doesn't match.
-        valid_type = False
-        if isinstance(value, (str)) and field_type == "string":
-            valid_type = True
-        elif isinstance(value, (bool,np.bool_)) and field_type == "boolean":
-            valid_type = True
-        elif isinstance(value, (int,np.integer)) and field_type == "integer":
-            valid_type = True
-        elif isinstance(value, (float,int,np.floating,np.integer)) and field_type == "number":
-            # We need to accept integers and floats as numbers.
-            valid_type = True
-        elif isinstance(value, (list)) and is_array:
-            # List is a special case, we only have arrays of strings.
-            # Iterate and check each value
-            valid_type = True
-            for element in value:
-                if not self.validAIRRFieldType(key, element, strict):
-                    valid_type = False
-
-        if self.verbose():
-            if not isinstance(value, (list)) and pd.isnull(value):
-                print("Info: Field %s type ERROR, null value, field is non-nullable"%
-                      (key))
-            elif not valid_type:
-                print("Info: Field %s type ERROR, expected %s, got %s"%
-                      (key, field_type, str(type(value))))
-        return valid_type
-
     # Hide the impementation of the repository from the Repertoire subclasses.
     # The subclasses don't ask much of the repository, just insert a single
     # JSON document at a time. Returns a record_id on success, None on failure
@@ -177,7 +121,7 @@ class Repertoire(Parser):
         rep_array = self.repositoryGetRepertoires(rep_id_field, repertoire_id)
         num_repertoires = len(rep_array)
 
-        # If we are updating, we want one, and only one record.
+        # If we are updating...
         if self.repository.updateOnly():
             # If we are updating we want the record to be unique. repertoire_id is
             # not sufficient so we have to check and see if the repertoire_id,
@@ -189,12 +133,25 @@ class Repertoire(Parser):
                 return None
             elif num_repertoires == 1:
                 rep = rep_array[0]
-                link_repository_value = rep[link_repository_field]
+                # If we have the correct repertoire, keep track of its link field,
+                # other wise we fail as we have to have an exact match for each field.
+                if (rep[sample_id_field]==sample_processing_id and 
+                    rep[data_id_field]==data_processing_id and
+                    rep[rep_id_field]==repertoire_id):
+                    link_repository_value = rep[link_repository_field]
+                else:
+                    print("ERROR: Can not change repertoire/sample/data processing IDs.")
+                    print("ERROR:     repertoire_id = %s,%s"%(repertoire_id,rep[rep_id_field]))
+                    print("ERROR:     sample_processing_id = %s,%s"%(sample_processing_id,rep[sample_id_field]))
+                    print("ERROR:     data_processing_id = %s,%s"%(data_processing_id,rep[data_id_field]))
+                    return None
+                    
             elif num_repertoires > 1:
                 link_repository_value = None
                 for rep in rep_array:
                     # If we found the correct repertoire, keep track of its "link_field"
                     # as that is the unique repository identifier we use to update that field.
+                    # If not report an error and return.
                     if (rep[sample_id_field]==sample_processing_id and 
                         rep[data_id_field]==data_processing_id and
                         rep[rep_id_field]==repertoire_id):
@@ -206,27 +163,6 @@ class Repertoire(Parser):
                             print("ERROR:     sample_processing_id = %s"%(sample_processing_id))
                             print("ERROR:     data_processing_id = %s"%(data_processing_id))
                             return None
-
-            # If we are setting any of the repertoire_id, sample_processing_id, or 
-            # data_processing_id, we want to fail if there are rearrangements or
-            # clones loaded for this repertoire. If there are rearrangements or clones
-            # loaded then changing these _id fields will break the link to the
-            # rearrangements and clones, which would be bad... 
-            if (not repertoire_id == None or
-                not sample_processing_id == None or
-                not data_processing_id == None):
-                # Fail if there are rearrangements or clones
-                numClones = self.repository.countClones(rep_id_field, repertoire_id)
-                numRearrangements = self.repository.countRearrangements(rep_id_field, repertoire_id)
-                if numClones > 0 or numRearrangements >0:
-                    print("ERROR: Unable to update Repertoire with rearrangements or clones")
-                    print("ERROR:     repertoire_id = %s"%(repertoire_id))
-                    print("ERROR:     sample_processing_id = %s"%(sample_processing_id))
-                    print("ERROR:     data_processing_id = %s"%(data_processing_id))
-                    print("ERROR:     found %d rearrangements, %d clones for this repertoire"%
-                          (numRearrangements, numClones))
-                    return None
-
 
             # Store in our internal field the update time.
             json_document["ir_updated_at"] = self.getDateTimeNowUTC()

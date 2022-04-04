@@ -21,8 +21,13 @@ from imgt import IMGT
 from mixcr import MiXCR
 from airr_tsv import AIRR_TSV
 from adaptive import Adaptive
-# Clone loader clasases
+# Clone loader classes
 from mixcr_clone import MiXCR_Clone
+from airr_clone import AIRR_Clone
+# Cell loader classes
+from airr_cell import AIRR_Cell
+# Gene Expression loader classes
+from airr_expression import AIRR_Expression
 
 # Get the command line arguments...
 def getArguments():
@@ -150,6 +155,33 @@ def getArguments():
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR clone annotation tool."
     )
 
+    # Processing AIRR Clone data
+    type_group.add_argument(
+        "--airr-clone",
+        action='store_const',
+        const="AIRR Clone",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file in the AIRR Clone JSON format."
+    )
+
+    # Processing AIRR Cell JSON data
+    type_group.add_argument(
+        "--airr-cell",
+        action='store_const',
+        const="AIRR Cell",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) AIRR Cell JSON file."
+    )
+
+    # Processing AIRR Cell JSON data
+    type_group.add_argument(
+        "--airr-expression",
+        action='store_const',
+        const="AIRR Expression",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) AIRR Gene Expression JSON file."
+    )
+
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
         "--host",
@@ -216,6 +248,18 @@ def getArguments():
         default="clone",
         help="The collection to use for storing and searching clones. This is the collection that data is inserted into when the --mixcr-clone option is used to load files. Defaults to 'clone', which is the collection in the iReceptor Turnkey repository."
     )
+    db_group.add_argument(
+        "--cell_collection",
+        dest="cell_collection",
+        default="cell",
+        help="The collection to use for storing and searching cells. This is the collection that data is inserted into when the --airr-cell option is used to load files. Defaults to 'cell', which is the collection in the iReceptor Turnkey repository."
+    )
+    db_group.add_argument(
+        "--expression_collection",
+        dest="expression_collection",
+        default="expression",
+        help="The collection to use for storing and searching gene expression. This is the collection that data is inserted into when the --airr-expression option is used to load files. Defaults to 'expression', which is the collection in the iReceptor Turnkey repository."
+    )
 
     path_group = parser.add_argument_group("file options")
     path_group.add_argument(
@@ -252,6 +296,8 @@ if __name__ == "__main__":
                             options.repertoire_collection,
                             options.rearrangement_collection,
                             options.clone_collection,
+                            options.cell_collection,
+                            options.expression_collection,
                             options.skipload, options.update,
                             options.verbose)
     # Check on the successful creation of the repository
@@ -329,6 +375,21 @@ if __name__ == "__main__":
         print("Info: Processing MiXCR Clone data file: {}".format(options.filename))
         parser = MiXCR_Clone(options.verbose, options.database_map,
                              options.database_chunk, airr_map, repository)
+    elif options.type == "AIRR Clone":
+        # process AIRR clone data
+        print("Info: Processing AIRR Clone data file: {}".format(options.filename))
+        parser = AIRR_Clone(options.verbose, options.database_map,
+                            options.database_chunk, airr_map, repository)
+    elif options.type == "AIRR Cell":
+        # process AIRR Cell JSON data
+        print("Info: Processing AIRR JSON Cell data file: {}".format(options.filename))
+        parser = AIRR_Cell(options.verbose, options.database_map,
+                           options.database_chunk, airr_map, repository)
+    elif options.type == "AIRR Expression":
+        # process AIRR Expression JSON data
+        print("Info: Processing AIRR JSON Gene Expression data file: {}".format(options.filename))
+        parser = AIRR_Expression(options.verbose, options.database_map,
+                                 options.database_chunk, airr_map, repository)
     else:
         print("ERROR: unknown data type '{}'".format(options.type))
         sys.exit(4)
