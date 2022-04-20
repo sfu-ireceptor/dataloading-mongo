@@ -152,18 +152,7 @@ class Annotation(Parser):
         rep_id_field = self.getAIRRRepositoryField("repertoire_id", map_class)
         data_id_field = self.getAIRRRepositoryField("data_processing_id", map_class)
         sample_id_field = self.getAIRRRepositoryField("sample_processing_id", map_class)
-        #rep_id_field =  self.getAIRRMap().getMapping("repertoire_id",
-        #                                      self.getAIRRTag(),
-        #                                      self.getRepositoryTag(),
-        #                                      self.getAIRRMap().getRepertoireClass())
-        #data_id_field =  self.getAIRRMap().getMapping("data_processing_id",
-        #                                      self.getAIRRTag(),
-        #                                      self.getRepositoryTag(),
-        #                                      self.getAIRRMap().getRepertoireClass())
-        #sample_id_field =  self.getAIRRMap().getMapping("sample_processing_id",
-        #                                      self.getAIRRTag(),
-        #                                      self.getRepositoryTag(),
-        #                                      self.getAIRRMap().getRepertoireClass())
+
         # We don't want to over write existing fields.
         if rep_id_field in json_object:
             print("ERROR: Can not load data with preset field %s"%(rep_id_field))
