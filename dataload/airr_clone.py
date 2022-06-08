@@ -164,11 +164,15 @@ class AIRR_Clone(Clone):
                     if self.verbose() and total_records == 0:
                         print("Info: No mapping for %s column %s, storing as is"
                               %(self.getAnnotationTool(), clone_key))
-
+            # Add any key value pairs in the add_dict to the clone_dict. These are mapped
+            # columns that changed from the file field to the repository field.
             for add_key, add_value in add_dict.items():
                 clone_dict[add_key] = add_value
                 if self.verbose() and total_records == 0:
                     print("Info: Adding %s -> %s"%(add_key, add_value))
+            # Remove any key value pairs  that are in the delete_dict. These are the keys 
+            # that changed name between the file and the repository. We store these through
+            # add_dict so don't want them twice.
             for del_key in del_dict:
                 del clone_dict[del_key]
                 if self.verbose() and total_records == 0:
@@ -180,7 +184,72 @@ class AIRR_Clone(Clone):
                         print("Info: Missing data in input %s file for %s"
                               %(self.getAnnotationTool(), clone_column))
             
+            # We need to look up the field from an iReceptor perspective. We want the
+            # field name in the iReceptor column mapping and map that to the correct
+            # field name for the repository we are writing to.
+            v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
+            d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
+            j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
+            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene",
+                                                ireceptor_tag, repository_tag)
+            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene",
+                                                ireceptor_tag, repository_tag)
+            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene",
+                                                ireceptor_tag, repository_tag)
+            ir_vgene_family = airr_map.getMapping("ir_vgene_family",
+                                                ireceptor_tag, repository_tag)
+            ir_dgene_family = airr_map.getMapping("ir_dgene_family",
+                                                ireceptor_tag, repository_tag)
+            ir_jgene_family = airr_map.getMapping("ir_jgene_family",
+                                                ireceptor_tag, repository_tag)
 
+            # Convert the gene call to a valid gene and family for each of the VDJ calls.
+            if v_call in clone_dict:
+                array_result =  Annotation.setGeneGene([clone_dict[v_call]])
+                if len(array_result) == 1:
+                    clone_dict[ir_vgene_gene] = array_result[0]
+                else:
+                    print("ERROR: Ambiguous v_call, not storing clone gene information.")
+
+                array_result = Annotation.setGeneFamily([clone_dict[v_call]])
+                if len(array_result) == 1:
+                    clone_dict[ir_vgene_family] = array_result[0]
+                else:
+                    print("ERROR: Ambiguous v_call, not storing clone family information.")
+            if d_call in clone_dict:
+                array_result =  Annotation.setGeneGene([clone_dict[d_call]])
+                if len(array_result) == 1:
+                    clone_dict[ir_dgene_gene] = array_result[0]
+                else:
+                    print("ERROR: Ambiguous d_call, not storing clone gene information.")
+
+                array_result = Annotation.setGeneFamily([clone_dict[d_call]])
+                if len(array_result) == 1:
+                    clone_dict[ir_dgene_family] = array_result[0]
+                else:
+                    print("ERROR: Ambiguous d_call, not storing clone family information.")
+            if j_call in clone_dict:
+                array_result =  Annotation.setGeneGene([clone_dict[j_call]])
+                if len(array_result) == 1:
+                    clone_dict[ir_jgene_gene] = array_result[0]
+                else:
+                    print("ERROR: Ambiguous j_call, not storing clone gene information.")
+
+                array_result = Annotation.setGeneFamily([clone_dict[j_call]])
+                if len(array_result) == 1:
+                    clone_dict[ir_jgene_family] = array_result[0]
+                else:
+                    print("ERROR: Ambiguous d_call, not storing clone family information.")
+
+            # Process the junction_aa to generate our substring optimization
+            junction_aa = airr_map.getMapping("junction_aa",
+                                              ireceptor_tag, repository_tag)
+            ir_substring = airr_map.getMapping("ir_substring",
+                                               ireceptor_tag, repository_tag)
+            if junction_aa in clone_dict:
+                clone_dict[ir_substring] = Annotation.get_substring(clone_dict[junction_aa])
+
+            # Get the all important link field that maps repertoires to clones.
             rep_clone_link_field = airr_map.getMapping(
                                              clone_link_field,
                                              ireceptor_tag, repository_tag)
