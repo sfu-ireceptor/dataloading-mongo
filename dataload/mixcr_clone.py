@@ -178,9 +178,9 @@ class MiXCR_Clone(Clone):
             # Junction AA substrings. Also calculate junction AA length
             junction_aa = airr_map.getMapping("junction_aa",
                                               ireceptor_tag, repository_tag)
-            ir_substring = airr_map.getMapping("ir_substring",
+            ir_substring = airr_map.getMapping("ir_substring_clone",
                                                ireceptor_tag, repository_tag)
-            ir_junc_aa_len = airr_map.getMapping("ir_junction_aa_length",
+            ir_junc_aa_len = airr_map.getMapping("ir_junction_aa_length_clone",
                                                ireceptor_tag, repository_tag)
             if junction_aa in df_chunk:
                 if self.verbose():
@@ -209,17 +209,17 @@ class MiXCR_Clone(Clone):
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
-            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene",
+            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene_clone",
                                                 ireceptor_tag, repository_tag)
-            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene", 
+            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene_clone", 
                                                 ireceptor_tag, repository_tag)
-            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene", 
+            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene_clone", 
                                                 ireceptor_tag, repository_tag)
-            ir_vgene_family = airr_map.getMapping("ir_vgene_family", 
+            ir_vgene_family = airr_map.getMapping("ir_vgene_family_clone", 
                                                 ireceptor_tag, repository_tag)
-            ir_dgene_family = airr_map.getMapping("ir_dgene_family", 
+            ir_dgene_family = airr_map.getMapping("ir_dgene_family_clone", 
                                                 ireceptor_tag, repository_tag)
-            ir_jgene_family = airr_map.getMapping("ir_jgene_family", 
+            ir_jgene_family = airr_map.getMapping("ir_jgene_family_clone", 
                                                 ireceptor_tag, repository_tag)
 
             # Build the v_call field, as an array if there is more than one gene
@@ -259,9 +259,9 @@ class MiXCR_Clone(Clone):
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.
             now_str = self.getDateTimeNowUTC()
-            ir_created_at = airr_map.getMapping("ir_created_at", 
+            ir_created_at = airr_map.getMapping("ir_created_at_clone", 
                                                 ireceptor_tag, repository_tag)
-            ir_updated_at = airr_map.getMapping("ir_updated_at",
+            ir_updated_at = airr_map.getMapping("ir_updated_at_clone",
                                                 ireceptor_tag, repository_tag)
             df_chunk[ir_created_at] = now_str
             df_chunk[ir_updated_at] = now_str
