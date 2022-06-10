@@ -190,17 +190,17 @@ class AIRR_Clone(Clone):
             v_call = airr_map.getMapping("v_call", ireceptor_tag, repository_tag)
             d_call = airr_map.getMapping("d_call", ireceptor_tag, repository_tag)
             j_call = airr_map.getMapping("j_call", ireceptor_tag, repository_tag)
-            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene",
+            ir_vgene_gene = airr_map.getMapping("ir_vgene_gene_clone",
                                                 ireceptor_tag, repository_tag)
-            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene",
+            ir_dgene_gene = airr_map.getMapping("ir_dgene_gene_clone",
                                                 ireceptor_tag, repository_tag)
-            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene",
+            ir_jgene_gene = airr_map.getMapping("ir_jgene_gene_clone",
                                                 ireceptor_tag, repository_tag)
-            ir_vgene_family = airr_map.getMapping("ir_vgene_family",
+            ir_vgene_family = airr_map.getMapping("ir_vgene_family_clone",
                                                 ireceptor_tag, repository_tag)
-            ir_dgene_family = airr_map.getMapping("ir_dgene_family",
+            ir_dgene_family = airr_map.getMapping("ir_dgene_family_clone",
                                                 ireceptor_tag, repository_tag)
-            ir_jgene_family = airr_map.getMapping("ir_jgene_family",
+            ir_jgene_family = airr_map.getMapping("ir_jgene_family_clone",
                                                 ireceptor_tag, repository_tag)
 
             # Convert the gene call to a valid gene and family for each of the VDJ calls.
@@ -244,7 +244,7 @@ class AIRR_Clone(Clone):
             # Process the junction_aa to generate our substring optimization
             junction_aa = airr_map.getMapping("junction_aa",
                                               ireceptor_tag, repository_tag)
-            ir_substring = airr_map.getMapping("ir_substring",
+            ir_substring = airr_map.getMapping("ir_substring_clone",
                                                ireceptor_tag, repository_tag)
             if junction_aa in clone_dict:
                 clone_dict[ir_substring] = Annotation.get_substring(clone_dict[junction_aa])
