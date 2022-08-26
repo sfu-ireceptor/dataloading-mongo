@@ -784,5 +784,6 @@ class Parser:
 
     @staticmethod
     def getDateTimeNowUTC():
-        return datetime.now(timezone.utc).strftime("%a %b %d %Y %H:%M:%S %Z")
+        # Use AIRR Standard/YAML data-time ISO standard.
+        return datetime.now(timezone.utc).isoformat()
 
