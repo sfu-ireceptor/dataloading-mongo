@@ -248,9 +248,9 @@ class AIRR_TSV(Rearrangement):
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
-            ir_created_at = airr_map.getMapping("ir_created_at",
+            ir_created_at = airr_map.getMapping("ir_created_at_rearrangement",
                                                  ireceptor_tag, repository_tag)
-            ir_updated_at = airr_map.getMapping("ir_updated_at",
+            ir_updated_at = airr_map.getMapping("ir_updated_at_rearrangement",
                                                  ireceptor_tag, repository_tag)
             airr_df[ir_created_at] = now_str
             airr_df[ir_updated_at] = now_str

@@ -633,8 +633,8 @@ class IMGT(Rearrangement):
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
         now_str = Rearrangement.getDateTimeNowUTC()
-        ir_created_at = airr_map.getMapping("ir_created_at", ireceptor_tag, repository_tag)
-        ir_updated_at = airr_map.getMapping("ir_updated_at", ireceptor_tag, repository_tag)
+        ir_created_at = airr_map.getMapping("ir_created_at_rearrangement", ireceptor_tag, repository_tag)
+        ir_updated_at = airr_map.getMapping("ir_updated_at_rearrangement", ireceptor_tag, repository_tag)
         mongo_concat[ir_created_at] = now_str
         mongo_concat[ir_updated_at] = now_str
 
