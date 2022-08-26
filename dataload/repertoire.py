@@ -91,6 +91,36 @@ class Repertoire(Parser):
                                               self.getAIRRTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
+        # Get the mappings for the create and update fields. Both our local ones and
+        # the ADC related ones. ADC fields are 'adc_publish_date' and 'adc_update_data'
+        # If they aren't in the mapping, force the fields to be stored anyway.
+        adc_publish_date =  self.getAIRRMap().getMapping("adc_publish_date",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if adc_publish_date is None:
+            adc_publish_date = "adc_publish_date"
+
+        adc_update_date =  self.getAIRRMap().getMapping("adc_update_date",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if adc_update_date is None:
+            adc_update_date = "adc_update_date"
+
+        ir_updated_at =  self.getAIRRMap().getMapping("ir_updated_at",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if ir_updated_at is None:
+            ir_updated_at = "ir_updated_at"
+
+        ir_created_at =  self.getAIRRMap().getMapping("ir_created_at",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getRepertoireClass())
+        if ir_created_at is None:
+            ir_created_at = "ir_created_at"
 
         # Get the repertoire_id that we are trying to insert from the JSON,
         # None if not present.
@@ -165,7 +195,8 @@ class Repertoire(Parser):
                             return None
 
             # Store in our internal field the update time.
-            json_document["ir_updated_at"] = self.getDateTimeNowUTC()
+            json_document[ir_updated_at] = self.getDateTimeNowUTC()
+            json_document[adc_update_date] = self.getDateTimeNowUTC()
 
             # Update the repertoire with the JSON data. Note that this is a non-destructive
             # and conservative update. That is, it won't remove any information AND it ONLY
@@ -229,8 +260,11 @@ class Repertoire(Parser):
                     return None
 
             # Store in our internal field the creation and update time.
-            json_document["ir_updated_at"] = self.getDateTimeNowUTC()
-            json_document["ir_created_at"] = self.getDateTimeNowUTC()
+            now_str = self.getDateTimeNowUTC()
+            json_document[ir_updated_at] = now_str
+            json_document[ir_created_at] = now_str
+            json_document[adc_publish_date] = now_str
+            json_document[adc_update_date] = now_str
 
             # Initialize the internal rearrangement count field to 0
             rearrangement_count_field = self.getRearrangementCountField()
