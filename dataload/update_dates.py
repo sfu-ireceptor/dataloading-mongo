@@ -24,7 +24,7 @@ db_cm = mng_db[collection_name]
 
 insert_date_field = sys.argv[4]
 update_date_field = sys.argv[5]
-db_date_format == sys.argv[6]
+db_date_format = sys.argv[6]
 
 #filename = "master_metadata_20171031.csv"
 
