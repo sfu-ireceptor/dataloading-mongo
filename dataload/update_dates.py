@@ -41,7 +41,7 @@ def updateDocument(doc, targetCollections):
     if (old_insert_date is None):
         new_insert_date = None
     else:
-        old_insert_datetime = datetime.datetime(old_insert_date, db_date_format)
+        old_insert_datetime = datetime.datetime.strptime(old_insert_date, db_date_format)
         new_insert_date = old_insert_date.isoformat()
 
     new_update_date = datetime.datetime.now().isoformat()
