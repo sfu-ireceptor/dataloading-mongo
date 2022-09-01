@@ -38,15 +38,19 @@ def updateDocument(doc, targetCollections):
     except:
         old_insert_date = None
 
+    # try to convert old insert date to new format. If it doesn't exist, or is null, keep it so
+    #   otherwise, if conversion with supplied mask can be applied, convert it, otherwise, leave it unchanged
     if (old_insert_date is None):
         new_insert_date = None
     else:
-        old_insert_datetime = datetime.datetime.strptime(old_insert_date, db_date_format)
-        new_insert_date = old_insert_datetime.isoformat()
+        try:
+            old_insert_datetime = datetime.datetime.strptime(old_insert_date, db_date_format)
+            new_insert_date = old_insert_datetime.isoformat()
+        except:
+            new_insert_date = old_insert_date
 
     new_update_date = datetime.datetime.now().isoformat()
 
-    #print (id, ": ", old_insert_date ," to " , new_insert_date, " |  to ", new_update_date, "\n")
     db_cm.update({"_id": id},{"$set":{insert_date_field: new_insert_date, update_date_field: new_update_date}})
 
 record_count = 0
