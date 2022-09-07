@@ -25,9 +25,9 @@ db_cm = mng_db[sample_collection_name]
 # set the database fields we'll need: keywords_study to update, 
 #  field that determines if study is single cell to find paired chains and
 #  field that determines
-keywords_study_field = sys.argv[5]
-single_cell_field = sys.argv[6]
-sequence_count_field = sys.argv[7]
+keywords_study_field = sys.argv[4]
+single_cell_field = sys.argv[5]
+sequence_count_field = sys.argv[6]
 
 
 keyword_translation = { "contains_ig": "contains_ig", 
