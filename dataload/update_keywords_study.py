@@ -68,7 +68,6 @@ def updateDocument(doc, targetCollections):
     if has_single_cell and "has_paired_chain" not in updated_keywords_study:
         updated_keywords_study.append("has_paired_chain")
 
-    print (id, ": ", *old_keywords_study ," to " , *updated_keywords_study, "\n")
     db_cm.update({"_id": id},{"$set":{keywords_study_field: updated_keywords_study}})
 
 record_count = 0
