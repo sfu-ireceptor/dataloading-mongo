@@ -626,6 +626,23 @@ class IMGT(Rearrangement):
                         print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
                               (vquest_calc_fields[index], value), flush=True)
 
+
+
+
+        # Check to see if sequence_id exists, and if so, store it in the special
+        # ADC sequence_id record, since sequence_id is overwritten in the repository.
+        # NOTE: IMGT doesn't have a mapping for rearrangement_id in the mapping file,
+        # so this will never happen. So IMGT data will not have an annotation tool specific
+        # sequence ID.
+        airr_seq_id = airr_map.getMapping("rearrangement_id",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getRearrangementClass())
+        ir_seq_id = airr_map.getMapping("ir_sequence_id_rearrangement",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRRearrangementClass())
+        if airr_seq_id in mongo_concat:
+            mongo_concat[ir_seq_id] = mongo_concat[airr_seq_id].apply(str)
+
         # Check to make sure all AIRR required columns exist
         if not self.checkAIRRRequired(mongo_concat, airr_fields):
             return False

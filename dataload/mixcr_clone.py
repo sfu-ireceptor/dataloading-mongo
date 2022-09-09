@@ -238,6 +238,18 @@ class MiXCR_Clone(Clone):
                                              ireceptor_tag, repository_tag)
             df_chunk[productive] = True
 
+            # Check to see if clone_id exists, and if so, store it in the special
+            # ADC clone_id record, since clone_id is overwritten in the repository.
+            airr_clone_id = airr_map.getMapping("clone_id_clone",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getCloneClass())
+            ir_clone_id = airr_map.getMapping("ir_clone_id_clone",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRCloneClass())
+            if airr_clone_id in df_chunk:
+                df_chunk[ir_clone_id] = df_chunk[airr_clone_id].apply(str)
+
+            # Add the link field.
             rep_rearrangement_link_field = airr_map.getMapping(
                                              rearrangement_link_field,
                                              ireceptor_tag, repository_tag)

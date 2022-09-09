@@ -240,6 +240,17 @@ class AIRR_TSV(Rearrangement):
                                                     ireceptor_tag, repository_tag)
             airr_df[rep_rearrangement_link_field]=repertoire_link_id
 
+            # Check to see if sequence_id exists, and if so, store it in the special
+            # ADC sequence_id record, since sequence_id is overwritten in the repository.
+            airr_seq_id = airr_map.getMapping("rearrangement_id",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getRearrangementClass())
+            ir_seq_id = airr_map.getMapping("ir_sequence_id_rearrangement",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRRearrangementClass())
+            if airr_seq_id in airr_df:
+                airr_df[ir_seq_id] = airr_df[airr_seq_id].apply(str)
+
             # Set the relevant IDs for the record being inserted. If it fails, don't
             # load any data.
             if not self.checkIDFields(airr_df, repertoire_link_id):
