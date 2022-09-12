@@ -643,6 +643,29 @@ class IMGT(Rearrangement):
         if airr_seq_id in mongo_concat:
             mongo_concat[ir_seq_id] = mongo_concat[airr_seq_id].apply(str)
 
+
+        # Check to see if there is a cell_id, and if so, copy it to the ADC specific
+        # cell ID field so we keep track of it.
+        airr_cell_id = airr_map.getMapping("cell_id_cell",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getCellClass())
+        ir_cell_id = airr_map.getMapping("ir_cell_id_cell",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRCellClass())
+        if airr_cell_id in mongo_concat:
+            mongo_concat[ir_cell_id] = mongo_concat[airr_cell_id].apply(str)
+
+        # Check to see if clone_id exists, and if so, store it in the special
+        # ADC clone_id record, since clone_id is overwritten in the repository.
+        airr_clone_id = airr_map.getMapping("clone_id_clone",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getCloneClass())
+        ir_clone_id = airr_map.getMapping("ir_clone_id_clone",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRCloneClass())
+        if airr_clone_id in mongo_concat:
+            mongo_concat[ir_clone_id] = mongo_concat[airr_clone_id].apply(str)
+
         # Check to make sure all AIRR required columns exist
         if not self.checkAIRRRequired(mongo_concat, airr_fields):
             return False
