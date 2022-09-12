@@ -65,8 +65,8 @@ def updateDocument(doc, targetCollections):
     if sequence_count > 0 and "contains_schema_rearrangement" not in updated_keywords_study: 
         updated_keywords_study.append("contains_schema_rearrangement")
 
-    if has_single_cell and "has_paired_chain" not in updated_keywords_study:
-        updated_keywords_study.append("has_paired_chain")
+    if has_single_cell and "contains_paired_chain" not in updated_keywords_study:
+        updated_keywords_study.append("contains_paired_chain")
 
     db_cm.update({"_id": id},{"$set":{keywords_study_field: updated_keywords_study}})
 
