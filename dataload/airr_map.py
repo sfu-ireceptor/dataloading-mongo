@@ -10,7 +10,7 @@ class AIRRMap:
         self.rearrangement_class = "Rearrangement"
         self.clone_class = "Clone"
         self.cell_class = "Cell"
-        self.expression_class = "GeneExpression"
+        self.expression_class = "CellExpression"
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
