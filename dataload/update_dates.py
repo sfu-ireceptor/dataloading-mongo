@@ -148,7 +148,7 @@ def updateDocument(doc, targetCollections):
             had_warnings = True
             new_insert_date = old_insert_date
             if (verbose == True):            
-                print ("Document", id, "update date", old_update_date, "does not match the format provided" ,
+                print ("Document", id, "insert date", old_insert_date, "does not match the format provided" ,
                     flush=True)
 
     #we want to change update date only if the insert date has been updated
@@ -197,9 +197,9 @@ print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
 if (had_warnings == True):
     print ("There were issues with some of the attempted updates", flush=True)
     if (verbose == True):
-        print ("Please consult the program output for warnings")
+        print ("Please consult the program output for warnings", flush=True)
     else: 
-        print ("Consider running the script with verbose or check-verbose option")
+        print ("Consider running the script with verbose or check-verbose option", flush=True)
 
 #if we were in check mode and there was a possible update, return 1, otherwise 0
 #else, return 1 if something went wrong, and 0 if not
