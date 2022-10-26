@@ -25,8 +25,9 @@ update_date_field = sys.argv[5]
 
 # database fields we'll be updating to - value and unit, and we want to 
 #  preserve the legacy field
-template_amount_unit_field = "template_amount_units"
-template_amount_value_field = "template_amount_value"
+template_amount_unit_field = "template_amount_unit"
+template_amount_value_field = "template_amount"
+template_amount_unit_id_field = "template_amount_unit_id"
 template_amount_legacy_field = "ir-v1-3-template_amount"
 
 # create the regular expression - we can only handle template amounts of 
@@ -67,12 +68,25 @@ unit_translation = { "ng": "nanogram",
     "ngs": "nanogram",
     "nanogram": "nanogram",
     "nanograms": "nanogram", 
+    "ug": "microgram",
+    "ugs": "microgram",
+    "microgram": "microgram",
+    "micrograms": "microgram",
     "mg": "miligram", 
     "mgs": "miligram",
     "miligram": "miligram",
     "miligrams": "miligram",
+    "g": "gram",
+    "gs": "gram",
+    "gram": "gram",
+    "grams": "gram"
     }
 
+unit_id_translation = { "nanogram": "UO:0000024",
+    "microgram": "UO_0000023",
+    "milligram": "UO:0000022",
+    "gram" : "UO_0000021"
+    }
 def updateDocument(doc, targetCollections):
     id = doc["_id"]
     template_amount = doc[old_template_amount_field]
@@ -93,6 +107,7 @@ def updateDocument(doc, targetCollections):
 
     try:
         new_units = unit_translation[units]
+        unit_id = unit_id_translation[new_units]
         has_update = True
     except:
         had_warnings = True 
@@ -105,10 +120,11 @@ def updateDocument(doc, targetCollections):
         possible_update = True
         new_update_date = datetime.datetime.now().isoformat()
         if (verbose == True):
-            print ("Updating", id, "from", template_amount,"to",amount, new_units, flush=True)
+            print ("Updating", id, "from", template_amount,"to",amount, unit_id, new_units, flush=True)
         if (update == True):
             db_cm.update({"_id": id},{"$set":{template_amount_legacy_field: template_amount, 
                 template_amount_unit_field: new_units, template_amount_value_field: amount,
+                template_amount_unit_id_field: unit_id,
                 update_date_field: new_update_date}})
 
 record_count = 0

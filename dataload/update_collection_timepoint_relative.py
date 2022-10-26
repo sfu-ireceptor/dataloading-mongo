@@ -33,8 +33,8 @@ update_date_field = sys.argv[5]
 # database fields we'll be updating to - value and unit, and we want to 
 #  preserve the legacy field
 collection_time_point_field = "collection_time_point_relative"
-collection_time_point_unit_field = "collection_time_point_relative_unit_id"
-collection_time_point_value_field = "collection_time_point_relative_unit_value"
+collection_time_point_unit_field = "collection_time_point_relative_unit"
+collection_time_point_unit_id_field = "collection_time_point_relative_unit_id"
 collection_time_point_legacy_field = "ir_v1-3_collection_time_point_relative"
 
 # create the regular expression - we can only handle template amounts of 
@@ -152,9 +152,9 @@ def updateDocument(doc, targetCollections):
             print ("Updating", id, "from", old_collection_timepoint, "to", amount, new_id, new_units, flush=True)
         if (update):
             db_cm.update({"_id": id},{"$set":{collection_time_point_legacy_field: old_collection_timepoint, 
-                collection_time_point_value_field: amount,
+                collection_time_point_field: amount,
                 collection_time_point_unit_field: new_units,
-                collection_time_point_field: new_id,
+                collection_time_point_unit_id_field: new_id,
                 update_date_field: new_update_date}})
 
 record_count = 0
