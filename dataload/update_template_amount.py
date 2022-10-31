@@ -33,7 +33,7 @@ template_amount_legacy_field = "ir-v1-3-template_amount"
 # create the regular expression - we can only handle template amounts of 
 #  format like "40 mg" or "20nanograms"
 
-pattern = re.compile("([0-9]+\.?[0-9]+)[\s]*([a-zA-z]+)")
+pattern = re.compile("([0-9]+\.?[0-9]*)[\s]*([a-zA-z]+)")
 
 # optional noupdate argument if user wants to test what an update would do
 #   without affecting the database
@@ -72,10 +72,10 @@ unit_translation = { "ng": "nanogram",
     "ugs": "microgram",
     "microgram": "microgram",
     "micrograms": "microgram",
-    "mg": "miligram", 
-    "mgs": "miligram",
-    "miligram": "miligram",
-    "miligrams": "miligram",
+    "mg": "milligram", 
+    "mgs": "milligram",
+    "milligram": "milligram",
+    "milligrams": "milligram",
     "g": "gram",
     "gs": "gram",
     "gram": "gram",
