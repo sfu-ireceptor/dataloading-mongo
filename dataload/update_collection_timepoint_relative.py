@@ -112,18 +112,40 @@ id_translation = {
 def updateDocument(doc, targetCollections):
     id = doc["_id"]
     old_collection_timepoint = doc[old_collection_time_point_field]
+    new_update_date = datetime.datetime.now().isoformat()
     global possible_update
     global had_warnings
     has_update = False
 
+    #if timepoint is not set, auto-set the value, unit and unit id to null
+    if (old_collection_timepoint is None):
+        had_warnings == True
+        possible_update == True
+        if (verbose == True):
+            print ("For sample _id ", id, "collection time point relative does not exist")
+        if (update == True):
+            db_cm.update({"_id": id},{"$set":{collection_time_point_legacy_field: old_collection_timepoint, 
+                collection_time_point_field: None, collection_time_point_unit_field: None,
+                collection_time_point_unit_id_field: None,
+                update_date_field: new_update_date}})
+        return()
+    #if the unit or unit id fields exist, the update script was run already, so skip
+    if (collection_time_point_unit_field in doc or 
+        collection_time_point_unit_id_field in doc):
+        had_warnings = True
+        if (verbose == True):
+            print ("For sample _id ", id, "it looks like the script was run already", 
+                flush=True)
+        return()
+
     try:
         match = pattern1.match(old_collection_timepoint)
-        amount = match.group(2)
+        amount = int(match.group(2))
         units = match.group(1)    
     except:
         try: 
             match = pattern2.match(old_collection_timepoint)
-            amount = match.group(1)
+            amount = float(match.group(1))
             units = match.group(2) 
         except: 
             if (verbose):
@@ -131,6 +153,12 @@ def updateDocument(doc, targetCollections):
                     "could not find the collection time point relative I could process ", 
                     old_collection_timepoint, flush=True)
             had_warnings = True
+            possible_update == True
+            if (update == True):
+                db_cm.update({"_id": id},{"$set":{collection_time_point_legacy_field: old_collection_timepoint, 
+                    collection_time_point_field: None, collection_time_point_unit_field: None,
+                    collection_time_point_unit_id_field: None,
+                    update_date_field: new_update_date}})
             return()
 
     try:
@@ -143,6 +171,12 @@ def updateDocument(doc, targetCollections):
                 "could not translate the collection timepoint unit", 
                 units, "to an ontology", flush=True)
         had_warnings = True
+        possible_update == True
+        if (update == True):
+            db_cm.update({"_id": id},{"$set":{collection_time_point_legacy_field: old_collection_timepoint, 
+                collection_time_point_field: None, collection_time_point_unit_field: None,
+                collection_time_point_unit_id_field: None,
+                update_date_field: new_update_date}})
         return
          
     if (has_update):

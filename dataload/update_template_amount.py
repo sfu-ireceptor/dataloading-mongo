@@ -90,19 +90,47 @@ unit_id_translation = { "nanogram": "UO:0000024",
 def updateDocument(doc, targetCollections):
     id = doc["_id"]
     template_amount = doc[old_template_amount_field]
+    new_update_date = datetime.datetime.now().isoformat()
     global possible_update
     global had_warnings
     has_update = False
 
+    #if template amount is not set, auto-set the value, unit and unit id to null
+    if (template_amount is None):
+        had_warnings == True
+        possible_update == True
+        if (verbose == True):
+            print ("For sample _id ", id, "template amount does not exist")
+        if (update == True):
+            db_cm.update({"_id": id},{"$set":{template_amount_legacy_field: template_amount, 
+                template_amount_unit_field: None, template_amount_value_field: None,
+                template_amount_unit_id_field: None,
+                update_date_field: new_update_date}})
+        return()
+
+    #if the unit or unit id fields exist, the update script was run already, so skip
+    if (template_amount_unit_field in doc or 
+        template_amount_unit_id_field in doc):
+        had_warnings = True
+        if (verbose == True):
+            print ("For sample _id ", id, "it looks like the script was run already", 
+                flush=True)
+        return()
+
     try:
         match = pattern.match(template_amount)
-        amount = match.group(1)
+        amount = float(match.group(1))
         units = match.group(2)    
     except: 
         had_warnings = True
         if (verbose == True):
             print ("For sample _id", id, "could not find the template amount I could process", 
                 template_amount, flush=True)
+        if (update == True):
+            db_cm.update({"_id": id},{"$set":{template_amount_legacy_field: template_amount, 
+                template_amount_unit_field: None, template_amount_value_field: None,
+                template_amount_unit_id_field: None,
+                update_date_field: new_update_date}})
         return()
 
     try:
@@ -114,11 +142,15 @@ def updateDocument(doc, targetCollections):
         if (verbose == True):
             print ("For sample _id", id, "could not find the template amount unit I could process", 
                 template_amount, flush=True)
+        if (update == True):
+            db_cm.update({"_id": id},{"$set":{template_amount_legacy_field: template_amount, 
+                template_amount_unit_field: None, template_amount_value_field: None,
+                template_amount_unit_id_field: None,
+                update_date_field: new_update_date}})
         return()
 
     if (has_update == True):
         possible_update = True
-        new_update_date = datetime.datetime.now().isoformat()
         if (verbose == True):
             print ("Updating", id, "from", template_amount,"to",amount, unit_id, new_units, flush=True)
         if (update == True):
