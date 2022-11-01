@@ -40,8 +40,8 @@ collection_time_point_legacy_field = "ir_v1-3_collection_time_point_relative"
 # create the regular expression - we can only handle template amounts of 
 #  format like "3 days" or "Month 3" or "1year"
 
-pattern2 = re.compile("([0-9]+)[\s]*([a-zA-Z]+)", re.IGNORECASE)
-pattern1 = re.compile("([a-zA-Z]+)[\s]*([0-9]+)", re.IGNORECASE)
+pattern2 = re.compile("([0-9]+[\.]?[0-9]*)\s*([a-zA-Z]+)$", re.IGNORECASE)
+pattern1 = re.compile("([a-zA-Z]+)\s*([0-9]+[\.]?[0-9]*)$", re.IGNORECASE)
 # optional noupdate argument if user wants to test what an update would do
 #   without affecting the database
 # used values are "check", "verbose" and "check-verbose"
@@ -137,10 +137,10 @@ def updateDocument(doc, targetCollections):
             print ("For sample _id ", id, "it looks like the script was run already", 
                 flush=True)
         return()
-
+    old_collection_timepoint = old_collection_timepoint.strip()
     try:
         match = pattern1.match(old_collection_timepoint)
-        amount = int(match.group(2))
+        amount = float(match.group(2))
         units = match.group(1)    
     except:
         try: 
@@ -150,7 +150,7 @@ def updateDocument(doc, targetCollections):
         except: 
             if (verbose):
                 print ("For sample _id", id, 
-                    "could not find the collection time point relative I could process ", 
+                    "could not find the collection time point relative I could process", 
                     old_collection_timepoint, flush=True)
             had_warnings = True
             possible_update == True

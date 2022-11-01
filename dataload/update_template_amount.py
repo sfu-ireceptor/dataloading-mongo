@@ -33,7 +33,7 @@ template_amount_legacy_field = "ir-v1-3-template_amount"
 # create the regular expression - we can only handle template amounts of 
 #  format like "40 mg" or "20nanograms"
 
-pattern = re.compile("([0-9]+\.?[0-9]*)[\s]*([a-zA-z]+)")
+pattern = re.compile("([0-9]+\.?[0-9]*)[\s]*([a-zA-z]+)", re.IGNORECASE)
 
 # optional noupdate argument if user wants to test what an update would do
 #   without affecting the database
@@ -117,6 +117,7 @@ def updateDocument(doc, targetCollections):
                 flush=True)
         return()
 
+    template_amount = template_amount.strip()
     try:
         match = pattern.match(template_amount)
         amount = float(match.group(1))
