@@ -141,13 +141,10 @@ for r in record_list:
 if (verbose):
     print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
 #print out any warnings in verbose mode
-if (had_warnings == True):
+if (had_warnings == True and verbose==True):
     print ("There were issues with some of the attempted updates", flush=True)
-    if (verbose == True):
-        print ("Please consult the program output for warnings")
-    else: 
-        print ("Consider running the script with verbose or check-verbose option")
-
+    print ("Please consult the program output for warnings")
+ 
 #if we were in check mode and there was a possible update, return 1, otherwise 0
 #else, return 1 if something went wrong, and 0 if not
 if (update == False):
