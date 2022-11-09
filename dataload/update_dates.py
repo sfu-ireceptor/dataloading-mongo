@@ -183,7 +183,8 @@ if (update == False and collection_name in rearrangement_names):
     record_list = db_cm.find().limit(1)
 else: 
     record_list = db_cm.find()
-print ("Starting the proces at ",datetime.datetime.now().isoformat(), flush=True )
+if (verbose):
+    print ("Starting the proces at ",datetime.datetime.now().isoformat(), flush=True )
 for r in record_list:
     record_count +=1
     if (update == False):
@@ -192,7 +193,8 @@ for r in record_list:
         updateDocument(r,db_cm)
     if (record_count % 1000000 == 0 and verbose == True):
         print ("Processing record ", record_count, flush=True)
-print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
+if (verbose):
+    print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
 #print out any warnings in verbose mode
 if (had_warnings == True):
     print ("There were issues with some of the attempted updates", flush=True)

@@ -193,14 +193,16 @@ def updateDocument(doc, targetCollections):
 
 record_count = 0
 record_list = db_cm.find();
-print ("Starting the proces at ",datetime.datetime.now().isoformat(), flush=True )
+if (verbose):
+    print ("Starting the proces at ",datetime.datetime.now().isoformat(), flush=True )
 for r in record_list:
     record_count +=1
     updateDocument(r,db_cm)
     if (record_count % 100 == 0):
         if (verbose):
             print ("Processing record ", record_count, flush=True)
-print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
+if (verbose):
+    print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
 #print out any warnings in verbose mode
 if (had_warnings == True):
     print ("There were issues with some of the attempted updates", flush=True)
