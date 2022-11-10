@@ -395,23 +395,42 @@ class Adaptive(Rearrangement):
             # Process the v/d/j_call conversion. Adaptive does not use the IMGT 
             # nomenclature so we need to conver their v/d/j_call values to something
             # that is AIRR compatible.
-            gene_df_chunk = df_chunk[[v_call,"ad_v_allele_ties",
-                                     "ad_v_gene_ties","ad_v_family_ties"]]
-            df_chunk[v_call] = gene_df_chunk.apply(
-                              lambda x : Adaptive.mapAdaptiveGene(
-                                             x[0], x[1], x[2], x[3]), axis=1)
+            # We compute the correct AIRR compliant gene calls from the resolved,
+            # allele_ties, gene_ties, and family_ties fileds for each of V,D,J.
+            # If these fields doen't exist, we have an error situtation and we 
+            # should abort!
+            adaptive_vfields = ["ad_v_resolved","ad_v_allele_ties",
+                                "ad_v_gene_ties","ad_v_family_ties"]
+            if set(adaptive_vfields).issubset(df_chunk.columns):
+                gene_df_chunk = df_chunk[adaptive_vfields]
+                df_chunk[v_call] = gene_df_chunk.apply(
+                                  lambda x : Adaptive.mapAdaptiveGene(
+                                                 x[0], x[1], x[2], x[3]), axis=1)
+            else:
+                print("ERROR: Adaptive fields for computing v_call not present")
+                return False
 
-            gene_df_chunk = df_chunk[[d_call,"ad_d_allele_ties",
-                                     "ad_d_gene_ties","ad_d_family_ties"]]
-            df_chunk[d_call] = gene_df_chunk.apply(
-                              lambda x : Adaptive.mapAdaptiveGene(
-                                             x[0], x[1], x[2], x[3]), axis=1)
+            adaptive_dfields = ["ad_d_resolved","ad_d_allele_ties",
+                                "ad_d_gene_ties","ad_d_family_ties"]
+            if set(adaptive_dfields).issubset(df_chunk.columns):
+                gene_df_chunk = df_chunk[adaptive_dfields]
+                df_chunk[d_call] = gene_df_chunk.apply(
+                                  lambda x : Adaptive.mapAdaptiveGene(
+                                                 x[0], x[1], x[2], x[3]), axis=1)
+            else:
+                print("ERROR: Adaptive fields for computing d_call not present")
+                return False
 
-            gene_df_chunk = df_chunk[[j_call,"ad_j_allele_ties",
-                                     "ad_j_gene_ties","ad_j_family_ties"]]
-            df_chunk[j_call] = gene_df_chunk.apply(
-                              lambda x : Adaptive.mapAdaptiveGene(
-                                             x[0], x[1], x[2], x[3]), axis=1)
+            adaptive_jfields = ["ad_j_resolved","ad_j_allele_ties",
+                                "ad_j_gene_ties","ad_j_family_ties"]
+            if set(adaptive_jfields).issubset(df_chunk.columns):
+                gene_df_chunk = df_chunk[adaptive_jfields]
+                df_chunk[j_call] = gene_df_chunk.apply(
+                                  lambda x : Adaptive.mapAdaptiveGene(
+                                                 x[0], x[1], x[2], x[3]), axis=1)
+            else:
+                print("ERROR: Adaptive fields for computing j_call not present")
+                return False
 
             df_chunk[v_call] = df_chunk[v_call].apply(Adaptive.convertGeneCall)
             df_chunk[d_call] = df_chunk[d_call].apply(Adaptive.convertGeneCall)
