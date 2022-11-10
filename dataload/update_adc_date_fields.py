@@ -18,7 +18,6 @@ mng_db = mng_client[db_name]
 collection_name = sys.argv[3]
 db_cm = mng_db[collection_name]
 
-
 ir_insert_date_field = "ir_created_at"
 ir_update_date_field = "ir_updated_at"
 
