@@ -87,14 +87,16 @@ def updateDocument(doc, targetCollections):
         if (verbose == True):
             print ("Setting new adc_publish_date for _id", id, "to", adc_insert_date, 
                 flush=True)
-        db_cm.update({"_id": id},{"$set":{adc_insert_date_field: adc_insert_date}})
+        if (update == True):
+            db_cm.update({"_id": id},{"$set":{adc_insert_date_field: adc_insert_date}})
 
     if (ir_update_date is not None):
         if (verbose == True):
             print ("Setting new adc_update_date for _id", id, "to", adc_update_date, 
                 flush=True)
-        db_cm.update({"_id": id},{"$set":{adc_update_date_field: adc_update_date, 
-            ir_update_date_field : ir_update_date}})
+        if (update == True):    
+            db_cm.update({"_id": id},{"$set":{adc_update_date_field: adc_update_date, 
+               ir_update_date_field : ir_update_date}})
 
 record_count = 0
 record_list = db_cm.find();
