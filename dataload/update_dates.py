@@ -58,6 +58,14 @@ if (noupdate == 'check-verbose'):
 # list of names that are used for rearrangement collection
 rearrangement_names = ["sequence", "sequences", "rearrangement", "rearrangements"]
 
+#for samples, we want to be detailed and report progress every 100 entries
+#for sequences, report only every million entries, and don't show every update
+sample_context = True
+counter_report = 100
+if ( collection_name  in rearrangement_names):
+    sample_context = False
+    counter_report = 1000000
+
 #function to check if a document insert or update date (if it exists) matches 
 #  the provided date format, if not, report error
 def check_document(doc):
@@ -127,7 +135,7 @@ def updateDocument(doc, targetCollections):
         old_insert_date = doc[insert_date_field]
     except:
         old_insert_date = None
-        if (verbose == True):
+        if (verbose == True and sample_context == True):
             print ("Document", id,"does not have the insert field ", insert_date_field, flush=True)
 
     try:
@@ -147,7 +155,7 @@ def updateDocument(doc, targetCollections):
         except:
             had_warnings = True
             new_insert_date = old_insert_date
-            if (verbose == True):            
+            if (verbose == True and sample_context == True):            
                 print ("Document", id, "insert date", old_insert_date, "does not match the format provided" ,
                     flush=True)
 
@@ -161,14 +169,14 @@ def updateDocument(doc, targetCollections):
             new_update_date = datetime.datetime.now().isoformat()
             has_update = True
         except:
-            if (verbose == True):            
+            if (verbose == True and sample_context == True):            
                 print ("Document ", id, "update date", old_update_date, "does not match the format provided" ,
                     flush=True)
             new_update_date = old_update_date
 
     if (has_update):
         possible_update = True
-        if (verbose == True):
+        if (verbose == True and sample_context == True):
             print ("Setting new values for _id", id, "insert date", new_insert_date, 
                 "update_date", new_update_date, flush=True)
         db_cm.update({"_id": id},{"$set":{insert_date_field: new_insert_date, 
@@ -191,7 +199,7 @@ for r in record_list:
         check_document(r)
     else:
         updateDocument(r,db_cm)
-    if (record_count % 1000000 == 0 and verbose == True):
+    if (verbose == True and record_count % counter_report == 0 ):
         print ("Processing record ", record_count, flush=True)
 if (verbose):
     print ("Ended the process at ", datetime.datetime.now().isoformat(), flush=True)
