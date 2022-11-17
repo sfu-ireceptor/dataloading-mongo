@@ -127,7 +127,8 @@ def updateDocument(doc, targetCollections):
             db_cm.update({"_id": id},{"$set":{keywords_study_field: updated_keywords_study, 
                 update_date_field: new_update_date}})
     else: 
-        print ("For _id", id, "there is no need to update the keywords", old_keywords_study, flush=True)
+        if (verbose == True):
+            print ("For _id", id, "there is no need to update the keywords", old_keywords_study, flush=True)
 
 record_count = 0
 record_list = db_cm.find();
