@@ -259,15 +259,23 @@ class AIRR_Clone(Clone):
                 print("ERROR: Could not get repertoire link field from AIRR mapping.")
                 return False
 
+            # Check to see if clone_id exists, and if so, store it in the special
+            # ADC clone_id record, since clone_id is overwritten in the repository.
+            airr_clone_id = airr_map.getMapping("clone_id_clone",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getCloneClass())
+            ir_clone_id = airr_map.getMapping("ir_clone_id_clone",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRCloneClass())
+            if airr_clone_id in clone_dict:
+                clone_dict[ir_clone_id] = clone_dict[airr_clone_id]
+
+
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
             # load any data.
             if (not self.checkIDFieldsJSON(clone_dict, repertoire_link_id)):
                 return False
-
-            # Check to make sure all AIRR required columns exist
-            #####if not self.checkAIRRRequired(df_chunk, airr_fields):
-            #####    return False
 
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.
@@ -282,19 +290,8 @@ class AIRR_Clone(Clone):
             clone_dict[ir_created_at] = now_str
             clone_dict[ir_updated_at] = now_str
 
-            # Transform the data frame so that it meets the repository type requirements
-            ####if not self.mapToRepositoryType(df_chunk,
-            ####                                airr_map.getRearrangementClass(),
-            ####                                airr_map.getIRRearrangementClass()):
-            ####    print("ERROR: Unable to map data to the repository")
-            ####    return False
-
             # Insert the chunk of records into Mongo.
-            ####num_records = len(df_chunk)
-            ####print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
-            ####records = json.loads(df_chunk.T.to_json()).values()
-            ####self.repositoryInsertRecords(records)
             self.repositoryInsertRecords(clone_dict)
             t_end = time.perf_counter()
 

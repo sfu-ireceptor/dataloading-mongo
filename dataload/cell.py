@@ -41,13 +41,17 @@ class Cell(Annotation):
         if record_ids is None:
             return False
         # Get the field we want to map for the cell ID for each record.
-        cell_id_field =  self.getAIRRMap().getMapping("cell_id",
+        cell_id_field =  self.getAIRRMap().getMapping("cell_id_cell",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getCellClass())
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the cell_id field.
         if not cell_id_field is None:
+            # Check to make sure we have a list if a single instance is returned.
+            if not isinstance(record_ids, list): 
+                record_ids = [ record_ids ]
+            # Over write the field.    
             for record_id in record_ids:
                 self.repository.updateCellField("_id", record_id,
                                                  cell_id_field, str(record_id))

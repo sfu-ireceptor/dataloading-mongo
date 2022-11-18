@@ -626,6 +626,46 @@ class IMGT(Rearrangement):
                         print("Warning: calculation required to convert %s  -> %s - NOT IMPLEMENTED "%
                               (vquest_calc_fields[index], value), flush=True)
 
+
+
+
+        # Check to see if sequence_id exists, and if so, store it in the special
+        # ADC sequence_id record, since sequence_id is overwritten in the repository.
+        # NOTE: IMGT doesn't have a mapping for rearrangement_id in the mapping file,
+        # so this will never happen. So IMGT data will not have an annotation tool specific
+        # sequence ID.
+        airr_seq_id = airr_map.getMapping("rearrangement_id",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getRearrangementClass())
+        ir_seq_id = airr_map.getMapping("ir_sequence_id_rearrangement",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRRearrangementClass())
+        if airr_seq_id in mongo_concat:
+            mongo_concat[ir_seq_id] = mongo_concat[airr_seq_id].apply(str)
+
+
+        # Check to see if there is a cell_id, and if so, copy it to the ADC specific
+        # cell ID field so we keep track of it.
+        airr_cell_id = airr_map.getMapping("cell_id_cell",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getCellClass())
+        ir_cell_id = airr_map.getMapping("ir_cell_id_cell",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRCellClass())
+        if airr_cell_id in mongo_concat:
+            mongo_concat[ir_cell_id] = mongo_concat[airr_cell_id].apply(str)
+
+        # Check to see if clone_id exists, and if so, store it in the special
+        # ADC clone_id record, since clone_id is overwritten in the repository.
+        airr_clone_id = airr_map.getMapping("clone_id_clone",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getCloneClass())
+        ir_clone_id = airr_map.getMapping("ir_clone_id_clone",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRCloneClass())
+        if airr_clone_id in mongo_concat:
+            mongo_concat[ir_clone_id] = mongo_concat[airr_clone_id].apply(str)
+
         # Check to make sure all AIRR required columns exist
         if not self.checkAIRRRequired(mongo_concat, airr_fields):
             return False
@@ -633,8 +673,8 @@ class IMGT(Rearrangement):
         # Create the created and update values for this block of records. Note that this
         # means that each block of inserts will have the same date.
         now_str = Rearrangement.getDateTimeNowUTC()
-        ir_created_at = airr_map.getMapping("ir_created_at", ireceptor_tag, repository_tag)
-        ir_updated_at = airr_map.getMapping("ir_updated_at", ireceptor_tag, repository_tag)
+        ir_created_at = airr_map.getMapping("ir_created_at_rearrangement", ireceptor_tag, repository_tag)
+        ir_updated_at = airr_map.getMapping("ir_updated_at_rearrangement", ireceptor_tag, repository_tag)
         mongo_concat[ir_created_at] = now_str
         mongo_concat[ir_updated_at] = now_str
 

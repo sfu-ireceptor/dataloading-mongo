@@ -240,6 +240,40 @@ class AIRR_TSV(Rearrangement):
                                                     ireceptor_tag, repository_tag)
             airr_df[rep_rearrangement_link_field]=repertoire_link_id
 
+            # Check to see if sequence_id exists, and if so, store it in the special
+            # ADC sequence_id record, since sequence_id is overwritten in the repository.
+            airr_seq_id = airr_map.getMapping("rearrangement_id",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getRearrangementClass())
+            ir_seq_id = airr_map.getMapping("ir_sequence_id_rearrangement",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRRearrangementClass())
+            if airr_seq_id in airr_df:
+                airr_df[ir_seq_id] = airr_df[airr_seq_id].apply(str)
+
+            # Check to see if there is a cell_id, and if so, copy it to the ADC specific
+            # cell ID field so we keep track of it.
+            airr_cell_id = airr_map.getMapping("cell_id_cell",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getCellClass())
+            ir_cell_id = airr_map.getMapping("ir_cell_id_cell",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRCellClass())
+            if airr_cell_id in airr_df:
+                airr_df[ir_cell_id] = airr_df[airr_cell_id].apply(str)
+
+            # Check to see if clone_id exists, and if so, store it in the special
+            # ADC clone_id record, since clone_id is overwritten in the repository.
+            airr_clone_id = airr_map.getMapping("clone_id_clone",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getCloneClass())
+            ir_clone_id = airr_map.getMapping("ir_clone_id_clone",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRCloneClass())
+            if airr_clone_id in airr_df:
+                airr_df[ir_clone_id] = airr_df[airr_clone_id].apply(str)
+
+
             # Set the relevant IDs for the record being inserted. If it fails, don't
             # load any data.
             if not self.checkIDFields(airr_df, repertoire_link_id):
@@ -248,9 +282,9 @@ class AIRR_TSV(Rearrangement):
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.
             now_str = Rearrangement.getDateTimeNowUTC()
-            ir_created_at = airr_map.getMapping("ir_created_at",
+            ir_created_at = airr_map.getMapping("ir_created_at_rearrangement",
                                                  ireceptor_tag, repository_tag)
-            ir_updated_at = airr_map.getMapping("ir_updated_at",
+            ir_updated_at = airr_map.getMapping("ir_updated_at_rearrangement",
                                                  ireceptor_tag, repository_tag)
             airr_df[ir_created_at] = now_str
             airr_df[ir_updated_at] = now_str

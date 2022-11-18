@@ -41,13 +41,17 @@ class Clone(Annotation):
         if record_ids is None:
             return False
         # Get the field we want to map for the clone ID for each record.
-        clone_id_field =  self.getAIRRMap().getMapping("clone_id",
+        clone_id_field =  self.getAIRRMap().getMapping("clone_id_clone",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getCloneClass())
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the clone_id field.
         if not clone_id_field is None:
+            # Check to make sure we have a list if a single instance is returned.
+            if not isinstance(record_ids, list):
+                record_ids = [ record_ids ]
+            # Over write the field.
             for record_id in record_ids:
                 self.repository.updateCloneField("_id", record_id,
                                                  clone_id_field, str(record_id))
