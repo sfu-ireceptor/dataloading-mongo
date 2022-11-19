@@ -271,7 +271,7 @@ if __name__ == "__main__":
     query = {cell_link_field: {'$eq': cell_link_id}}
     cell_cursor = repository.cell.find(query)
     for cell in cell_cursor:
-        cell_dictionary[cell['adc_annotation_cell_id']] = cell['cell_id']
+        cell_dictionary[cell['adc_annotation_cell_id']] = {"repo_cell_id":cell['cell_id'],"sequences":[]}
         #print("Info:     %s = %s"%(cell['adc_annotation_cell_id'],cell['cell_id']))
 
     print("Info: Cells found = %d"%(len(cell_dictionary)))
@@ -289,8 +289,24 @@ if __name__ == "__main__":
                 #rearrangement['adc_annotation_cell_id'],
                 #rearrangement['cell_id'],
                 #cell_dictionary[rearrangement['cell_id']]))
-        repository.updateRearrangementField('sequence_id',rearrangement['sequence_id'],'cell_id',cell_dictionary[rearrangement['cell_id']])
-        update_count = update_count + 1
+        this_sequence_id = rearrangement['sequence_id']
+        this_cell_id = rearrangement['cell_id']
+        if this_cell_id in cell_dictionary:
+            cell_dict = cell_dictionary[this_cell_id]
+            repository_cell_id = cell_dict['repo_cell_id']
+            repository.updateRearrangementField('sequence_id',this_sequence_id,
+                                                'cell_id',repository_cell_id)
+            update_count = update_count + 1
+        else:
+            cell_info_array = cell_dictionary.values()
+            cell_updated_info = list(filter(lambda cell_info: cell_info["repo_cell_id"] == this_cell_id, cell_info_array))
+            #print("This cell id = %s"%(this_cell_id))
+            #print("Cell updated info = %s"%(str(cell_updated_info)))
+            if len(cell_updated_info) > 0:
+                print("Warning: Cell id for sequence %s already set (cell_id = %s)"%(this_sequence_id,this_cell_id))
+            else:
+                print("Warning: Could not find a Cell for sequence %s"%(this_sequence_id))
+
 
     print("Info: Update of %d rearrangements"%(update_count))
     sys.exit(1)
