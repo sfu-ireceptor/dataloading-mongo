@@ -177,6 +177,18 @@ class AIRR_Expression(Expression):
         # to look up repository keys all the time. This is a huge overhead without the
         # cache.
         airr_class = self.getAIRRMap().getExpressionClass()
+
+        # Get the field names for the cell_id. When loading we want to copy the
+        # cell_id field from the AIRR Standard into a annotation tool specific
+        # cell id for the ADC. We don't want to lose the original barcode.
+        airr_cell_id = airr_map.getMapping("cell_id_expression",
+                                           ireceptor_tag, repository_tag,
+                                           airr_class)
+        ir_cell_id = airr_map.getMapping("ir_cell_id_expression",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRExpressionClass())
+
+        # Create an empty dictionary
         repository_keymap = dict()
 
         # Iterate over the expression records in the array.
@@ -246,6 +258,10 @@ class AIRR_Expression(Expression):
 
             # Set the link field to link back to the repertoire object
             airr_expression_dict[rep_expression_link_field] = repertoire_link_id
+
+            # Check to see if cell_id exists, and if so, store it in the special
+            # ADC cell_id record, since cell_id is overwritten in the repository.
+            airr_expression_dict[ir_cell_id] = airr_expression_dict[airr_cell_id]
 
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
