@@ -13,22 +13,10 @@ import sys
 from airr_map import AIRRMap
 # Repository class - hides the DB implementation
 from repository import Repository
-# Repertoire loader classes 
-from ir_repertoire import IRRepertoire
-from airr_repertoire import AIRRRepertoire
 # Rearrangement loader classes
 from rearrangement import Rearrangement
-from imgt import IMGT
-from mixcr import MiXCR
-from airr_tsv import AIRR_TSV
-from adaptive import Adaptive
-# Clone loader classes
-from mixcr_clone import MiXCR_Clone
-from airr_clone import AIRR_Clone
 # Cell loader classes
-from airr_cell import AIRR_Cell
-# Gene Expression loader classes
-from airr_expression import AIRR_Expression
+from cell import Cell
 
 # Get the command line arguments...
 def getArguments():
@@ -202,230 +190,174 @@ if __name__ == "__main__":
         sys.exit(1)
 
     
-    # Start timing the file loading
+    # Start timing the processing
     t_start = time.perf_counter()
 
-    parser = Rearrangement(options.verbose, options.database_map, options.database_chunk,
-                           airr_map, repository)
-    # Set the tag for the repository that we are using. Note this should
-    # be refactored so that it is a parameter provided so that we can use
-    # multiple repositories.
-    repository_tag = parser.getRepositoryTag()
+    # Create parser objects. We don't actually parse these data, but we use the
+    # objects to ensure we use the iReceptor fields in these objects correctly
+    rearrangementParser = Rearrangement(options.verbose, options.database_map,
+                                        options.database_chunk, airr_map, repository)
+    cellParser = Cell(options.verbose, options.database_map,
+                      options.database_chunk, airr_map, repository)
+    # Set the tag for the repository that we are using.
+    repository_tag = rearrangementParser.getRepositoryTag()
 
     # Get the tag to use for iReceptor specific mappings
-    ireceptor_tag = parser.getiReceptorTag()
+    ireceptor_tag = rearrangementParser.getiReceptorTag()
 
     # Get the fields to use for finding repertoire IDs, either using those IDs
     # directly or by looking for a repertoire ID based on a annotation file
     # name.
-    repertoire_link_field = parser.getRepertoireLinkIDField()
-    repertoire_file_field = parser.getRepertoireFileField()
+    repertoire_link_field = rearrangementParser.getRepertoireLinkIDField()
+    repertoire_file_field = rearrangementParser.getRepertoireFileField()
 
     # Get the sample ID of the data we are processing. We use the file name for
     # this at the moment, but this may not be the most robust method.
     file_field = airr_map.getMapping(repertoire_file_field,
                                      ireceptor_tag, repository_tag)
-
-    # We get the link id for rearrangement file of interest
-    #db.sample.find({data_processing_files:"ERS1-IGH.tsv"},{repertoire_id:1,ir_annotation_set_metadata_id:1})
-    #{ "_id" : ObjectId("635af09d3891ed552fe4dc9d"), "repertoire_id" : "PRJCA002413-ERS1-IGH", "ir_annotation_set_metadata_id" : "635af09d3891ed552fe4dc9d" }
-
-    #rearrangement_repertoire_info = parser.getRepertoireInfo(options.rearrangement_file)
-    #cell_repertoire_info = parser.getRepertoireInfo(options.cell_file)
-    #print("Info: rearrangement info = %s"%(str(rearrangement_repertoire_info)))
-    #print("Info: cell info = %s"%(str(cell_repertoire_info)))
     print("Info: repertoire file field = %s"%(str(file_field)))
     print("Info: link field = %s"%(repertoire_link_field))
 
+    # Get the list of repertoires that are associated with the Rearrangement file. There
+    # should only be one, if more than on this is an error.
     repertoires = repository.getRepertoires(file_field, options.rearrangement_file)
     if not len(repertoires) == 1:
         print("ERROR: Could not find unique repertoire for file %s"%(options.rearrangement_file))
         sys.exit(1)
     repertoire = repertoires[0]
+
+    # Check to make sure we have the link field that links repertoire and rearrangement
+    # data in the repertoire object. If so, get the link ID that we use to link to
+    # the rearrangements for this file. This is what we use to look up rearrangements
     if not repertoire_link_field in repertoire:
         print("ERROR: Could not find Rearrangement link field %s"%(repertoire_link_field))
         sys.exit(1)
     rearrangement_link_id = repertoire[repertoire_link_field]
 
-    #cell_repertoire_info = parser.getRepertoireInfo(options.cell_file)
-    #print("Info: cell info = %s"%(str(cell_repertoire_info)))
-
-    #sys.exit(0)
-
-    # We get the link id for rearrangement file of interest
-    #db.sample.find({data_processing_files:"ERS1-vdj_b-cells.json"},{repertoire_id:1,ir_annotation_set_metadata_id:1})
+    # Get the list of repertoire that are associated with the Cell file. Again, there should
+    # onlybe one.
     repertoires = repository.getRepertoires(file_field, options.cell_file)
     if not len(repertoires) == 1:
         print("ERROR: Could not find unique repertoire for file %s"%(options.cell_file))
         sys.exit(1)
     repertoire = repertoires[0]
+
+    # Check to make sure we have a link field from the repertoire, and if we do get it.
+    # This is what we use to look up Cells.
     if not repertoire_link_field in repertoire:
         print("ERROR: Could not find Cell link field %s"%(repertoire_link_field))
         sys.exit(1)
     cell_link_id = repertoire[repertoire_link_field]
-    cell_link_field = 'ir_annotation_set_metadata_id_cell'
-    print("Info: rearrangement link id = %s (%d)"%(rearrangement_link_id, repository.countRearrangements(parser.annotation_linkid_field,rearrangement_link_id)))
-    print("Info: cell link id = %s (%d)"%(str(cell_link_id),repository.countCells(cell_link_field,cell_link_id)))
     
-    cell_dictionary = dict()
+    # Get the related link fields for the Rearrangement and Cell collections
+    rearrangement_link_field = rearrangementParser.annotation_linkid_field 
+    cell_link_field = cellParser.annotation_linkid_field
+
+    # Get the counts for these fields and output some info.
+    rearrangement_count = repository.countRearrangements(rearrangement_link_field,
+                                                         rearrangement_link_id)
+    cell_count = repository.countCells(cell_link_field, cell_link_id)
+    print("Info: rearrangement link id = %s (%d)"%(rearrangement_link_id, rearrangement_count ))
+    print("Info: cell link id = %s (%d)"%(cell_link_id,cell_count))
+    
+    # Get the field names for the AIRR field (which is our unique ID) and the annotation tool field
+    # which we use to find relevant cells from the rearrangements (typically a barcode).
+    airr_cell_field = airr_map.getMapping("cell_id_cell",
+                                       ireceptor_tag, repository_tag,
+                                       airr_map.getCellClass())
+    tool_cell_field = airr_map.getMapping("ir_cell_id_cell",
+                                       ireceptor_tag, repository_tag,
+                                       airr_map.getIRCellClass())
+
+    # Create a dictionary, indexed by the annotation tools cell_id field. This is typically
+    # a barcode. We want the dictionary keyed on barcode, because we are going to look up cell
+    # barcodes for each rearrangement.
+    cell_id_dict = dict()
+    # Create a dictionary keyed on unique repository cell id to keep track of sequences for each
+    # cell
+    cell_seq_dict = dict()
+
+    # Execute the query to find all cells in the Cell collection that are from the cell file
+    # provided. Note this DOES NOT look at the file, it looks in the database to find all Cells
+    # that are associated with the file.
     query = {cell_link_field: {'$eq': cell_link_id}}
     cell_cursor = repository.cell.find(query)
+    # For each cell
     for cell in cell_cursor:
-        cell_dictionary[cell['adc_annotation_cell_id']] = {"repo_cell_id":cell['cell_id'],"sequences":[]}
-        #print("Info:     %s = %s"%(cell['adc_annotation_cell_id'],cell['cell_id']))
+        # For each cell (keyed by the barcode), keep track of the repository cell_id (which
+        # is unique to the repository and a list of sequences related to that cell (empty for now).
+        cell_id_dict[cell[tool_cell_field]] = cell[airr_cell_field]
+        cell_seq_dict[cell[airr_cell_field]] = []
+        #print("Info:     %s = %s"%(cell[tool_cell_field],cell[airr_cell_field]))
 
-    print("Info: Cells found = %d"%(len(cell_dictionary)))
+    print("Info: Cells found = %d (%s)"%(len(cell_id_dict), cell_count))
+    print("Info: Rearrangements found = %d"%(rearrangement_count))
 
-    # Get the number of rearrangements to process:
-    #db.sequence.find({ir_annotation_set_metadata_id_rearrangement:"635af09d3891ed552fe4dc9d"}).count()
-    # Get all the sequences: 
-    #db.sequence.find({ir_annotation_set_metadata_id_rearrangement:"635af09d3891ed552fe4dc9d"})
-    query = {parser.annotation_linkid_field: {'$eq': rearrangement_link_id}}
+    # Get the field names for the AIRR field (which we overwrite) and the annotation tool field
+    # which we preserve.
+    airr_sequence_id_field = airr_map.getMapping("rearrangement_id",
+                                       ireceptor_tag, repository_tag,
+                                       airr_map.getRearrangementClass())
+    airr_cell_id_field = airr_map.getMapping("cell_id",
+                                       ireceptor_tag, repository_tag,
+                                       airr_map.getRearrangementClass())
+    tool_cell_field = airr_map.getMapping("ir_cell_id_rearrangement",
+                                       ireceptor_tag, repository_tag,
+                                       airr_map.getIRRearrangementClass())
+    print("Info: Looking up %s in Cell, setting %s in Rearrangement"%(
+           tool_cell_field, airr_cell_id_field))
+
+    # Execute the query to find all rearrangemetns in the Rearrangement collection that are
+    # associated with the rearrangement link ID (associated with the file). Note this DOES NOT
+    # look at the file, it looks in the database to find all Rearrangements that are
+    # associated with the file.
+    query = {rearrangement_link_field: {'$eq': rearrangement_link_id}}
     rearrangement_cursor = repository.rearrangement.find(query)
+    # Keep track of the number of updates as we iterate over the cursor.
     update_count = 0
     for rearrangement in rearrangement_cursor:
-        #print("Info:     %s,%s,%s,%s"%(
-                #rearrangement['sequence_id'],
-                #rearrangement['adc_annotation_cell_id'],
-                #rearrangement['cell_id'],
-                #cell_dictionary[rearrangement['cell_id']]))
-        this_sequence_id = rearrangement['sequence_id']
-        this_cell_id = rearrangement['cell_id']
-        if this_cell_id in cell_dictionary:
-            cell_dict = cell_dictionary[this_cell_id]
-            repository_cell_id = cell_dict['repo_cell_id']
-            repository.updateRearrangementField('sequence_id',this_sequence_id,
-                                                'cell_id',repository_cell_id)
+        #print("Info:     %s,%s,%s"%(
+        #        rearrangement[airr_sequence_id_field],
+        #        rearrangement[tool_cell_field],
+        #        rearrangement[airr_cell_id_field]))
+        # Sequence ID - needed to update this sequence in the repository
+        this_sequence_id = rearrangement[airr_sequence_id_field]
+        # Get the AIRR cell ID field, this is the field we overwrite.
+        this_cell_id = rearrangement[airr_cell_id_field]
+        # The cell dictionary is keyed on the tool cell ID, which is not unique in the DB.
+        # If the rearrangement has a tool cell ID in the DB unique cell ID field, we are not
+        # unique. If so we need to update the cell ID field in the rearrangement collection
+        # with the unique cell id field which is in the dictionary. 
+        if this_cell_id in cell_id_dict:
+            # Get the Cell collection unique ID from the dictionary.
+            repository_cell_id = cell_id_dict[this_cell_id]
+            # Set the rearrangement cell_id to be the unqique cell_id from the Cell object.
+            repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
+                                                airr_cell_id_field, repository_cell_id)
+            # Add the sequence ID to the cell list of rearrangements.
+            cell_seq_dict[repository_cell_id].append(this_sequence_id)
+            # Update our count.
             update_count = update_count + 1
         else:
-            cell_info_array = cell_dictionary.values()
-            cell_updated_info = list(filter(lambda cell_info: cell_info["repo_cell_id"] == this_cell_id, cell_info_array))
-            #print("This cell id = %s"%(this_cell_id))
-            #print("Cell updated info = %s"%(str(cell_updated_info)))
-            if len(cell_updated_info) > 0:
+            # In this case we can't find the rearrangement cell ID in the dictionary. Why?
+            if this_cell_id in cell_id_dict.values():
+                # Check whether the dictionary contains this_cell_id in its values. If it does,
+                # then it is likely that the rearrangement cell_id has already been set to be
+                # the repository unique cell_id.
                 print("Warning: Cell id for sequence %s already set (cell_id = %s)"%(this_sequence_id,this_cell_id))
             else:
+                # If nothing then we could not find a cell for a sequence, print a warning.
                 print("Warning: Could not find a Cell for sequence %s"%(this_sequence_id))
+    # If we want to store rearrangement object in the Cell collection, we can do so by looping
+    # over the sequence dictionary, but we need to check what is there, append, and make unique
+    # so we don't have any duplicates. Not necessary so leaving out for now.
+    #for repository_cell_id, sequence_list in cell_seq_dict.items():
+    #    print("Info: %s %s"%(repository_cell_id,sequence_list))
 
 
+
+    # time end
+    t_end = time.perf_counter()
     print("Info: Update of %d rearrangements"%(update_count))
-    sys.exit(1)
-    rearrangements = repository.getRearrangements(rearrangement_set_id)
-    for rearrangement in rearrangements:
-        rearrangement_id = rearrangement['sequence_id']
-        rearrangement_cell_id = rearrangement['cell_id']
-        if rearrangement_cell_id in cell_dictionary:
-            repository.updateRearrangementField('sequence_id',rearrangement_id,
-                                                'cell_id', cell_dictionary[rearrangement_cell_id])
-    # We are done!!!
-    # time end
-    t_end = time.perf_counter()
     print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
-    sys.exit(1)
-
-
-
-
-    # We can only update for Repertoires
-    if (options.update and not 
-           (options.type == "iReceptor Repertoire" or 
-            options.type == "AIRR Repertoire")):
-        print("Error: Update is only possible on Repertoire metadata")
-        sys.exit(1)
-
-    if options.type == "iReceptor Repertoire":
-        # process iReceptor Repertoire metadata 
-        print("Info: Processing iReceptor repertoire metadata file: {}".format(options.filename))
-        parser = IRRepertoire(options.verbose, options.database_map, options.database_chunk,
-                              airr_map, repository)
-    elif options.type == "AIRR Repertoire":
-        # process AIRR Repertoire metadata
-        print("Info: Processing AIRR repertoire metadata file: {}".format(options.filename))
-        parser = AIRRRepertoire(options.verbose, options.database_map, options.database_chunk,
-                                airr_map, repository)
-    elif options.type == "IMGT V-Quest":
-        # process imgt
-        print("Info: Processing IMGT data file: {}".format(options.filename))
-        parser = IMGT(options.verbose, options.database_map, options.database_chunk,
-                      airr_map, repository)
-    elif options.type == "MiXCR":
-        # process mixcr
-        print("Info: Processing MiXCR data file: {}".format(options.filename))
-        parser = MiXCR(options.verbose, options.database_map, options.database_chunk,
-                       airr_map, repository)
-    elif options.type == "MiXCR-v3":
-        # process mixcr
-        print("Info: Processing MiXCR data file: {}".format(options.filename))
-        parser = MiXCR(options.verbose, options.database_map, options.database_chunk,
-                       airr_map, repository)
-        parser.setFileMapping("mixcr_v3")
-    elif options.type == "AIRR TSV":
-        # process AIRR TSV
-        print("Info: Processing AIRR TSV annotation data file: ", options.filename)
-        parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
-                          airr_map, repository)
-    elif options.type == "Adaptive":
-        # process Adaptive
-        print("Info: Processing Adaptive annotation data file: ", options.filename)
-        parser = Adaptive(options.verbose, options.database_map, options.database_chunk,
-                          airr_map, repository)
-    elif options.type == "ir_general":
-        # process a general file (non annotation tool specific)
-        print("Info: Processing a general TSV annotation data file: ", options.filename)
-        parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
-                          airr_map, repository)
-        # Override the default file mapping that the parser subclass sets. This allows us
-        # to map an arbitrary set of fields in a file to the repository. This requires that
-        # an ir_general column exists in the AIRR Mapping file.
-        parser.setFileMapping(options.type)
-    elif options.type == "MiXCR Clone":
-        # process mixcr clone data
-        print("Info: Processing MiXCR Clone data file: {}".format(options.filename))
-        parser = MiXCR_Clone(options.verbose, options.database_map,
-                             options.database_chunk, airr_map, repository)
-    elif options.type == "AIRR Clone":
-        # process AIRR clone data
-        print("Info: Processing AIRR Clone data file: {}".format(options.filename))
-        parser = AIRR_Clone(options.verbose, options.database_map,
-                            options.database_chunk, airr_map, repository)
-    elif options.type == "AIRR Cell":
-        # process AIRR Cell JSON data
-        print("Info: Processing AIRR JSON Cell data file: {}".format(options.filename))
-        parser = AIRR_Cell(options.verbose, options.database_map,
-                           options.database_chunk, airr_map, repository)
-    elif options.type == "AIRR Expression":
-        # process AIRR Expression JSON data
-        print("Info: Processing AIRR JSON Gene Expression data file: {}".format(options.filename))
-        parser = AIRR_Expression(options.verbose, options.database_map,
-                                 options.database_chunk, airr_map, repository)
-    else:
-        print("ERROR: unknown data type '{}'".format(options.type))
-        sys.exit(4)
-
-    # Check for a valid parser.
-    if not parser.checkValidity():
-        print("ERROR: Parser not contructed correctly, exiting...")
-        sys.exit(4)
-
-    # Override what the default annotation tool that the Parser subclass set by default.
-    if not options.annotation_tool == "":
-        parser.setAnnotationTool(options.annotation_tool)
-
-    parse_ok = parser.process(options.filename)
-    operation = "loaded"
-    if options.update:
-        operation = "updated"
-    if parse_ok:
-        print("Info: %s file %s %s successfully"%(options.type,options.filename,operation))
-    else:
-        print("ERROR: %s file %s not %s successfully"%(options.type,options.filename,operation))
-
-    # time end
-    t_end = time.perf_counter()
-    print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
-
-    # Return success
-    if parse_ok:
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    sys.exit(0)
