@@ -141,20 +141,6 @@ def getArguments():
         help="File that contains two columns with headers, first column is a Rearrangement file name used in data loading, the second is a cell file name used in data loading where the cell_id from the Rearrangement can be looked up in the Cell collection of the repository."
     )
 
-   
-    #path_group.add_argument(
-    #    "--rearrangement_file",
-    #    dest="rearrangement_file",
-    #    default="",
-    #    help="Name of the Rearrangement file to use for linking."
-    #)
-    #path_group.add_argument(
-    #    "--cell_file",
-    #    dest="cell_file",
-    #    default="",
-    #    help="Name of the Cell file to use for linking."
-    #)
-
     options = parser.parse_args()
 
     if options.verbose:
@@ -166,8 +152,6 @@ def getArguments():
         print('DATABASE_MAP       :', options.database_map)
         print('MAPFILE            :', options.mapfile)
         print('FILE               :', options.file_map)
-        #print('REARRANGEMENT_NAME :', options.rearrangement_file)
-        #print('CELL_NAME          :', options.cell_file)
 
     return options
 
