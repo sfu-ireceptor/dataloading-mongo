@@ -1,13 +1,18 @@
 #! /opt/ireceptor/data/bin/python
 """
- ireceptor_data_loader.py is a batch loading script for loading
- iReceptor repertoire metadata and sequence rearrangement annotations
- 
+ link_rearrangement2cell.py is a script to link cell_ids in the
+ Rearrangement collection to the unique Cell id for a Cell in the
+ Cell collection. This linking is based on files (as specified at load
+ time) to identify the correct sequences and cells in question. It uses
+ the tool annotation cell ID to make the original link and replaces
+ cell_id in the Rearrangemetn collection with the appropriate unique
+ cell_id in the repository.
 """
 import os
 import argparse
 import time
 import sys
+import pandas as pd
 
 # AIRR Mapping class.
 from airr_map import AIRRMap
@@ -131,18 +136,24 @@ def getArguments():
     )
 
     path_group = parser.add_argument_group("file options")
-    path_group.add_argument(
-        "--rearrangement_file",
-        dest="rearrangement_file",
-        default="",
-        help="Name of the Rearrangement file to use for linking."
+    parser.add_argument(
+        "file_map",
+        help="File that contains two columns with headers, first column is a Rearrangement file name used in data loading, the second is a cell file name used in data loading where the cell_id from the Rearrangement can be looked up in the Cell collection of the repository."
     )
-    path_group.add_argument(
-        "--cell_file",
-        dest="cell_file",
-        default="",
-        help="Name of the Cell file to use for linking."
-    )
+
+   
+    #path_group.add_argument(
+    #    "--rearrangement_file",
+    #    dest="rearrangement_file",
+    #    default="",
+    #    help="Name of the Rearrangement file to use for linking."
+    #)
+    #path_group.add_argument(
+    #    "--cell_file",
+    #    dest="cell_file",
+    #    default="",
+    #    help="Name of the Cell file to use for linking."
+    #)
 
     options = parser.parse_args()
 
@@ -154,51 +165,19 @@ def getArguments():
         print('DATABASE           :', options.database)
         print('DATABASE_MAP       :', options.database_map)
         print('MAPFILE            :', options.mapfile)
-        print('REARRANGEMENT_NAME :', options.rearrangement_file)
-        print('CELL_NAME          :', options.rearrangement_file)
+        print('FILE               :', options.file_map)
+        #print('REARRANGEMENT_NAME :', options.rearrangement_file)
+        #print('CELL_NAME          :', options.cell_file)
 
     return options
 
-if __name__ == "__main__":
-    # Get the command line arguments.
-    options = getArguments()
-
-    # Create the repository object, which establishes the repository connection.
-    repository = Repository(options.user, options.password,
-                            options.host, options.port,
-                            options.database,
-                            options.repertoire_collection,
-                            options.rearrangement_collection,
-                            options.clone_collection,
-                            options.cell_collection,
-                            options.expression_collection,
-                            options.skipload, options.update,
-                            options.verbose)
-    # Check on the successful creation of the repository
-    if repository is None or not repository:
-        sys.exit(1)
-
-    # Create the AIRR mapping object, which has the mapping of fields between
-    # the various components. This is essentially a mapping between the AIRR
-    # standard fields, the fields in the input file being parsed, and the fields
-    # that are stored in the repository.
-    airr_map = AIRRMap(options.verbose)
-    airr_map.readMapFile(options.mapfile)
-    if airr_map.getRearrangementMapColumn(options.database_map) is None:
-        print("ERROR: Could not find repository mapping %s in AIRR Mappings"%
-              (options.database_map))
-        sys.exit(1)
-
-    
+def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
+                          rearrangementParser, cellParser, options):
+    print('Info:')
+    print('Info: Processing - Rearrangement file = %s, Cell file = %s'%(rearrangement_file, cell_file))
     # Start timing the processing
     t_start = time.perf_counter()
 
-    # Create parser objects. We don't actually parse these data, but we use the
-    # objects to ensure we use the iReceptor fields in these objects correctly
-    rearrangementParser = Rearrangement(options.verbose, options.database_map,
-                                        options.database_chunk, airr_map, repository)
-    cellParser = Cell(options.verbose, options.database_map,
-                      options.database_chunk, airr_map, repository)
     # Set the tag for the repository that we are using.
     repository_tag = rearrangementParser.getRepositoryTag()
 
@@ -215,15 +194,15 @@ if __name__ == "__main__":
     # this at the moment, but this may not be the most robust method.
     file_field = airr_map.getMapping(repertoire_file_field,
                                      ireceptor_tag, repository_tag)
-    print("Info: repertoire file field = %s"%(str(file_field)))
-    print("Info: link field = %s"%(repertoire_link_field))
+    print("Info: repertoire file field = %s"%(file_field))
+    print("Info: repertoire link field = %s"%(repertoire_link_field))
 
     # Get the list of repertoires that are associated with the Rearrangement file. There
     # should only be one, if more than on this is an error.
-    repertoires = repository.getRepertoires(file_field, options.rearrangement_file)
+    repertoires = repository.getRepertoires(file_field, rearrangement_file)
     if not len(repertoires) == 1:
-        print("ERROR: Could not find unique repertoire for file %s"%(options.rearrangement_file))
-        sys.exit(1)
+        print("ERROR: Could not find unique repertoire for file %s"%(rearrangement_file))
+        return False
     repertoire = repertoires[0]
 
     # Check to make sure we have the link field that links repertoire and rearrangement
@@ -231,22 +210,22 @@ if __name__ == "__main__":
     # the rearrangements for this file. This is what we use to look up rearrangements
     if not repertoire_link_field in repertoire:
         print("ERROR: Could not find Rearrangement link field %s"%(repertoire_link_field))
-        sys.exit(1)
+        return False
     rearrangement_link_id = repertoire[repertoire_link_field]
 
     # Get the list of repertoire that are associated with the Cell file. Again, there should
     # onlybe one.
-    repertoires = repository.getRepertoires(file_field, options.cell_file)
+    repertoires = repository.getRepertoires(file_field, cell_file)
     if not len(repertoires) == 1:
-        print("ERROR: Could not find unique repertoire for file %s"%(options.cell_file))
-        sys.exit(1)
+        print("ERROR: Could not find unique repertoire for file %s"%(cell_file))
+        return False
     repertoire = repertoires[0]
 
     # Check to make sure we have a link field from the repertoire, and if we do get it.
     # This is what we use to look up Cells.
     if not repertoire_link_field in repertoire:
         print("ERROR: Could not find Cell link field %s"%(repertoire_link_field))
-        sys.exit(1)
+        return False
     cell_link_id = repertoire[repertoire_link_field]
     
     # Get the related link fields for the Rearrangement and Cell collections
@@ -357,7 +336,63 @@ if __name__ == "__main__":
 
 
     # time end
-    t_end = time.perf_counter()
     print("Info: Update of %d rearrangements"%(update_count))
+    t_end = time.perf_counter()
     print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
-    sys.exit(0)
+    return True
+
+if __name__ == "__main__":
+    # Get the command line arguments.
+    options = getArguments()
+
+    # Create the repository object, which establishes the repository connection.
+    repository = Repository(options.user, options.password,
+                            options.host, options.port,
+                            options.database,
+                            options.repertoire_collection,
+                            options.rearrangement_collection,
+                            options.clone_collection,
+                            options.cell_collection,
+                            options.expression_collection,
+                            options.skipload, options.update,
+                            options.verbose)
+    # Check on the successful creation of the repository
+    if repository is None or not repository:
+        sys.exit(1)
+
+    # Create the AIRR mapping object, which has the mapping of fields between
+    # the various components. This is essentially a mapping between the AIRR
+    # standard fields, the fields in the input file being parsed, and the fields
+    # that are stored in the repository.
+    airr_map = AIRRMap(options.verbose)
+    airr_map.readMapFile(options.mapfile)
+    if airr_map.getRearrangementMapColumn(options.database_map) is None:
+        print("ERROR: Could not find repository mapping %s in AIRR Mappings"%
+              (options.database_map))
+        sys.exit(1)
+
+    # Create parser objects. We don't actually parse these data, but we use the
+    # objects to ensure we use the iReceptor fields in these objects correctly
+    rearrangementParser = Rearrangement(options.verbose, options.database_map,
+                                        options.database_chunk, airr_map, repository)
+    cellParser = Cell(options.verbose, options.database_map,
+                      options.database_chunk, airr_map, repository)
+
+    t_total_start = time.perf_counter()
+
+    # Open the file map - it has two columns, one for Rearrangement files and one for Cell files.
+    files_df = pd.read_csv(options.file_map, sep='\t')
+    # For each row, call processRearrangements with two file names along with the other required
+    # objects (repository, airr_map, and rearrangement and cell parsers. We get back a list with
+    # True or False for each row processed.
+    result_list = [processRearrangements(rearrangement_file, cell_file, repository, airr_map, rearrangementParser, cellParser, options) for rearrangement_file, cell_file in zip(files_df['Rearrangement'], files_df['Cell'])]
+
+    # Output timing
+    t_total_end = time.perf_counter()
+    print("Info: Finished total processing in {:.2f} mins".format((t_total_end - t_total_start) / 60))
+    # Check final results and exit. If all are True we are good, otherwise give a ERROR message.
+    if all(result_list):
+        sys.exit(0)
+    else:
+        print('ERROR: one or more conversions failed.')
+        sys.exit(1)
