@@ -322,7 +322,8 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
     # time end
     print("Info: Update of %d rearrangements"%(update_count))
     t_end = time.perf_counter()
-    print("Info: Finished processing in {:.2f} mins".format((t_end - t_start) / 60))
+    print("Info: Finished processing in %f seconds (%f updates/s)"%(
+           (t_end - t_start),(update_count/(t_end-t_start))),flush=True)
     return True
 
 if __name__ == "__main__":
