@@ -301,6 +301,9 @@ def processGEX(gex_file, cell_file, repository, airr_map,
                                              airr_cell_id_field, repository_cell_id)
             # Update our count.
             update_count = update_count + 1
+            if update_count % 10000 == 0:
+                print("Info: Total records so far = %d (%.2f %%)"%(update_count,(update_count/gex_count)*100), flush=True)
+
         else:
             # In this case we can't find the gex cell ID in the dictionary. Why?
             if this_cell_id in cell_id_dict.values():
