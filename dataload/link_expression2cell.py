@@ -219,7 +219,9 @@ def processGEX(gex_file, cell_file, repository, airr_map,
     # Get the counts for these fields and output some info.
     gex_count = repository.countExpression(gex_link_field, gex_link_id)
     cell_count = repository.countCells(cell_link_field, cell_link_id)
+    print("Info: gex link field = %s"%(gex_link_field))
     print("Info: gex link id = %s (%d)"%(gex_link_id, gex_count ))
+    print("Info: cell link field = %s"%(cell_link_field))
     print("Info: cell link id = %s (%d)"%(cell_link_id,cell_count))
     
     # Get the field names for the AIRR field (which is our unique ID) and the annotation tool field
@@ -242,13 +244,17 @@ def processGEX(gex_file, cell_file, repository, airr_map,
     query = {cell_link_field: {'$eq': cell_link_id}}
     cell_cursor = repository.cell.find(query)
     # For each cell
+    cell_duplicates = 0
     for cell in cell_cursor:
         # For each cell (keyed by the barcode), keep track of the repository cell_id (which
         # is unique to the repository 
+        if cell[tool_cell_field] in cell_id_dict:
+            print("Warning: cell %s already in dictionary"%(cell[tool_cell_field]))
+            cell_duplicates = cell_duplicates + 1
         cell_id_dict[cell[tool_cell_field]] = cell[airr_cell_field]
-        print("Info:     %s = %s"%(cell[tool_cell_field],cell[airr_cell_field]))
+        #print("Info:     %s = %s"%(cell[tool_cell_field],cell[airr_cell_field]))
 
-    print("Info: Cells found = %d (%s)"%(len(cell_id_dict), cell_count))
+    print("Info: Cells found = %d, unique = %d, duplicates = %d"%(cell_count, len(cell_id_dict), cell_duplicates))
     print("Info: GEXs found = %d"%(gex_count))
 
     # Get the field names for the AIRR field (which we overwrite) and the annotation tool field
@@ -291,8 +297,8 @@ def processGEX(gex_file, cell_file, repository, airr_map,
             # Get the Cell collection unique ID from the dictionary.
             repository_cell_id = cell_id_dict[this_cell_id]
             # Set the gex cell_id to be the unqique cell_id from the Cell object.
-            repository.updateGEXField(airr_expression_id_field, this_expression_id,
-                                                airr_cell_id_field, repository_cell_id)
+            repository.updateExpressionField(airr_expression_id_field, this_expression_id,
+                                             airr_cell_id_field, repository_cell_id)
             # Update our count.
             update_count = update_count + 1
         else:
