@@ -142,6 +142,22 @@ class AIRR_Cell(Cell):
         if self.verbose():
             print("Info: Read %d Cell objects"%(len(cell_array)), flush=True)
 
+        # Check for duplicate barcodes in the file, fail if we find them. We
+        # need the barcode to be unique for mapping cells and rearrangements.
+        barcode_list = list()
+        barcode_field = airr_map.getMapping('ir_cell_id_cell',
+                                             ireceptor_tag, airr_tag)
+        # Loop over the cells
+        for cell_dict in cell_array:
+            # If the barcode field is in the dict
+            if barcode_field in cell_dict:
+                # Check to see if we have see it already (is it in barcode_list)
+                if cell_dict[barcode_field] in barcode_list:
+                    print("ERROR: Can't load cells with duplicate barcodes (%s)"%(cell_dict[barcode_field]))
+                    return False
+                else:
+                    barcode_list.append(cell_dict[barcode_field])
+
         # Iterate over each element in the array 
         total_records = 0
         for cell_dict in cell_array:
