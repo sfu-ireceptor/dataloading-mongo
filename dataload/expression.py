@@ -46,7 +46,10 @@ class Expression(Annotation):
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getExpressionClass())
         # If we found a repository record, write a string repersentation of the ID 
-        # returned into the clone_id field.
+        # returned into the expression_id field.
+        # TODO: This can probably be optimized and is quite slow! If we didn't
+        # have to update this, loading would be very fast - this is doing a DB
+        # Op per record!
         if not gex_id_field is None:
             for record_id in record_ids:
                 self.repository.updateExpressionField("_id", record_id,
