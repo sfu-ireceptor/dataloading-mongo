@@ -90,6 +90,13 @@ $start_time = microtime(true);
 	// Helper function to simply set the stats array for each rearrangement
 	function process_stats($rearrangement, &$stats, $gene_fields, $count_fields)
 	{
+	    // Define our special keys we generate stats for
+	    $rearrangement_count_stat = "rearrangement_count";
+	    $rearrangement_count_productive_stat = "rearrangement_count_productive";
+	    $duplicate_count_string = "duplicate_count";
+	    $duplicate_count_stat = "duplicate_count";
+	    $duplicate_count_productive_stat = "duplicate_count_productive";
+
 	    // Get the gene data for each gene field from the rearrangement record.
 	    foreach ($gene_fields as $gene_stat=>$gene_field)
 	    {
@@ -102,10 +109,13 @@ $start_time = microtime(true);
 	        $count_data[$count_field] = isset($rearrangement[$count_field])? $rearrangement[$count_field] :"";
                 //echo "data: ".$count_field." = ".$count_data[$count_field]."\n";
 	    }
-	    // Store the productive value for alter use.
+	    // Store the productive value for later use.
 	    $productive_string = 'productive';
 	    $productive = isset($rearrangement[$productive_string])?$rearrangement[$productive_string] :false;
             //echo "productive: ".$productive."\n";
+
+	    // Get our duplicate_count if we have one. If not defined then it should be one.
+	    $duplicate_count = isset($rearrangement[$duplicate_count_string])?$rearrangement[$duplicate_count_string] :1;
 
 	    // Calculate the productive stats.
 	    if ($productive)
@@ -145,6 +155,24 @@ $start_time = microtime(true);
 		        //echo ".";
 		    }
 	    	}
+		// Count productive rearrangements
+		if (isset($stats[$rearrangement_count_productive_stat][$rearrangement_count_productive_stat]))
+		{
+		    $stats[$rearrangement_count_productive_stat][$rearrangement_count_productive_stat]++;
+		}
+		else
+		{
+		    $stats[$rearrangement_count_productive_stat][$rearrangement_count_productive_stat]=1;
+		}
+		// Sum up all productive duplicate counts
+		if (isset($stats[$duplicate_count_productive_stat][$duplicate_count_productive_stat]))
+		{
+		    $stats[$duplicate_count_productive_stat][$duplicate_count_productive_stat] += $duplicate_count;
+		}
+		else
+		{
+		    $stats[$duplicate_count_productive_stat][$duplicate_count_productive_stat] = $duplicate_count;
+		}
 	    }
 
 	    // Process the gene stats for each gene field. This iterates over the gene fields we
@@ -181,6 +209,24 @@ $start_time = microtime(true);
 		    //echo ".";
 	        }
     	    }
+	    // Count rearrangements
+	    if (isset($stats[$rearrangement_count_stat][$rearrangement_count_stat]))
+	    {
+	        $stats[$rearrangement_count_stat][$rearrangement_count_stat]++;
+	    }
+	    else
+	    {
+	        $stats[$rearrangement_count_stat][$rearrangement_count_stat]=1;
+	    }
+	    // Sum up all duplicate counts
+	    if (isset($stats[$duplicate_count_stat][$duplicate_count_stat]))
+	    {
+	        $stats[$duplicate_count_stat][$duplicate_count_stat] += $duplicate_count;
+	    }
+	    else
+	    {
+	        $stats[$duplicate_count_stat][$duplicate_count_stat] = $duplicate_count;
+	    }
 	}
 
 
@@ -315,10 +361,14 @@ $start_time = microtime(true);
 			$stats[$stat_name] = Array();
 
 		}
+		// Create aggregate count stats.
+                $stats["rearrangement_count"] = Array();
+                $stats["rearrangement_count_productive"] = Array();
+                $stats["duplicate_count"] = Array();
+                $stats["duplicate_count_productive"] = Array();
 
 		$rearrangement_count = $rearrangement_collection->count([$rearrangement_id_field=>$repertoire_id]);
                 echo "Processing repertoire ".$repertoire_id.", rearrangement count = " . $rearrangement_count . "\n";
-		$rearrangement_count_productive = $rearrangement_collection->count([$rearrangement_id_field=>$repertoire_id, 'productive'=>True]);
 		$rearrangement_result = $rearrangement_collection->find([$rearrangement_id_field=>$repertoire_id]);
 
 		// process the rearrangements into stats arrays
@@ -339,17 +389,7 @@ $start_time = microtime(true);
 		$out_file = fopen ( $file_name, "w");
                 echo "Writing stats to ".$file_name."\n";
 
-                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "rearrangement_count", "rearrangement_count", $rearrangement_count);
-		fwrite($out_file, $line);
-                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "rearrangement_count_productive", "rearrangement_count_productive", $rearrangement_count_productive);
-		fwrite($out_file, $line);
-                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "duplicate_count", "duplicate_count", $rearrangement_count);
-		fwrite($out_file, $line);
-                $line = generate_stats_line($repertoire_id_field, $repertoire_id, "duplicate_count_productive", "duplicate_count_productive", $rearrangement_count_productive);
-		fwrite($out_file, $line);
-		fflush($out_file);
-
-                // Output V-gene stats
+                // Output stats
 
 		//echo "DUMP STAT\n";
 		foreach ($stats as $stat=>$data)

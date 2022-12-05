@@ -40,17 +40,20 @@ class Expression(Annotation):
         record_ids = self.repository.insertExpression(json_records)
         if record_ids is None:
             return False
-        # Get the field we want to map for the clone ID for each record.
-        #gex_id_field =  self.getAIRRMap().getMapping("cell_id",
-        #                                      self.getiReceptorTag(),
-        #                                      self.getRepositoryTag(),
-        #                                      self.getAIRRMap().getExpressionClass())
+        # Get the field we want to map for the GEX ID for each record.
+        gex_id_field =  self.getAIRRMap().getMapping("expression_id_expression",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getExpressionClass())
         # If we found a repository record, write a string repersentation of the ID 
-        # returned into the clone_id field.
-        #if not cell_id_field is None:
-        #    for record_id in record_ids:
-        #        self.repository.updateExpressionField("_id", record_id,
-        #                                         cell_id_field, str(record_id))
+        # returned into the expression_id field.
+        # TODO: This can probably be optimized and is quite slow! If we didn't
+        # have to update this, loading would be very fast - this is doing a DB
+        # Op per record!
+        if not gex_id_field is None:
+            for record_id in record_ids:
+                self.repository.updateExpressionField("_id", record_id,
+                                                 gex_id_field, str(record_id))
 
         return True
 

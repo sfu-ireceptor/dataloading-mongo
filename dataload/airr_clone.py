@@ -92,6 +92,37 @@ class AIRR_Clone(Clone):
             print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
 
+        # Look up the repertoire data for the record of interest. This is an array
+        # and it should be of length 1
+        repertoires = self.repository.getRepertoires(repertoire_link_field,
+                                                     repertoire_link_id)
+        if not len(repertoires) == 1:
+            print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
+            return False
+        repertoire = repertoires[0]
+        
+        # Get mapping of the ID fields we want to generate.
+        map_class = self.getAIRRMap().getRepertoireClass()
+        rep_id_field = self.getAIRRRepositoryField("repertoire_id", map_class)
+        data_id_field = self.getAIRRRepositoryField("data_processing_id", map_class)
+        sample_id_field = self.getAIRRRepositoryField("sample_processing_id", map_class)
+
+        # Cache some data we need to use often.
+        if rep_id_field in repertoire:
+            repertoire_id_value = repertoire[rep_id_field]
+        else:
+            repertoire_id_value = None
+
+        if data_id_field in repertoire:
+            data_processing_id_value = repertoire[data_id_field]
+        else:
+            data_processing_id_value = None
+
+        if sample_id_field in repertoire:
+            sample_processing_id_value = repertoire[sample_id_field]
+        else:
+            sample_processing_id_value = None
+
         # Get the column of values from the AIRR tag. We only want the
         # Clone related fields.
         map_column = self.getAIRRMap().getIRCloneMapColumn(airr_tag)
@@ -274,7 +305,12 @@ class AIRR_Clone(Clone):
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
             # load any data.
-            if (not self.checkIDFieldsJSON(clone_dict, repertoire_link_id)):
+            if (not self.checkIDFieldsJSON(clone_dict,
+                                           repertoire_link_field, repertoire_link_id,
+                                           repertoire_id_value,
+                                           data_processing_id_value,
+                                           sample_processing_id_value)):
+
                 return False
 
             # Create the created and update values for this block of records. Note that

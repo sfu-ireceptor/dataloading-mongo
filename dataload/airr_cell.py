@@ -92,6 +92,37 @@ class AIRR_Cell(Cell):
             print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
 
+        # Look up the repertoire data for the record of interest. This is an array
+        # and it should be of length 1
+        repertoires = self.repository.getRepertoires(repertoire_link_field,
+                                                     repertoire_link_id)
+        if not len(repertoires) == 1:
+            print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
+            return False
+        repertoire = repertoires[0]
+
+        # Get mapping of the ID fields we want to generate.
+        map_class = self.getAIRRMap().getRepertoireClass()
+        rep_id_field = self.getAIRRRepositoryField("repertoire_id", map_class)
+        data_id_field = self.getAIRRRepositoryField("data_processing_id", map_class)
+        sample_id_field = self.getAIRRRepositoryField("sample_processing_id", map_class)
+
+        # Cache some data we need to use often.
+        if rep_id_field in repertoire:
+            repertoire_id_value = repertoire[rep_id_field]
+        else:
+            repertoire_id_value = None
+
+        if data_id_field in repertoire:
+            data_processing_id_value = repertoire[data_id_field]
+        else:
+            data_processing_id_value = None
+
+        if sample_id_field in repertoire:
+            sample_processing_id_value = repertoire[sample_id_field]
+        else:
+            sample_processing_id_value = None
+
         # Get the column of values from the AIRR tag. We only want the
         # Cell related fields.
         map_column = self.getAIRRMap().getIRCellMapColumn(airr_tag)
@@ -141,6 +172,22 @@ class AIRR_Cell(Cell):
         cell_array = json.load(file_handle)
         if self.verbose():
             print("Info: Read %d Cell objects"%(len(cell_array)), flush=True)
+
+        # Check for duplicate barcodes in the file, fail if we find them. We
+        # need the barcode to be unique for mapping cells and rearrangements.
+        barcode_list = list()
+        barcode_field = airr_map.getMapping('ir_cell_id_cell',
+                                             ireceptor_tag, airr_tag)
+        # Loop over the cells
+        for cell_dict in cell_array:
+            # If the barcode field is in the dict
+            if barcode_field in cell_dict:
+                # Check to see if we have see it already (is it in barcode_list)
+                if cell_dict[barcode_field] in barcode_list:
+                    print("ERROR: Can't load cells with duplicate barcodes (%s)"%(cell_dict[barcode_field]))
+                    return False
+                else:
+                    barcode_list.append(cell_dict[barcode_field])
 
         # Iterate over each element in the array 
         total_records = 0
@@ -204,7 +251,12 @@ class AIRR_Cell(Cell):
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
             # load any data.
-            if (not self.checkIDFieldsJSON(cell_dict, repertoire_link_id)):
+            if (not self.checkIDFieldsJSON(cell_dict,
+                                           repertoire_link_field, repertoire_link_id,
+                                           repertoire_id_value,
+                                           data_processing_id_value,
+                                           sample_processing_id_value)):
+
                 return False
 
             # Create the created and update values for this block of records. Note that

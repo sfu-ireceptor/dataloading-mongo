@@ -98,6 +98,37 @@ class AIRR_Expression(Expression):
             print("ERROR: Could not link file %s to a valid repertoire"%(filename))
             return False
 
+        # Look up the repertoire data for the record of interest. This is an array
+        # and it should be of length 1
+        repertoires = self.repository.getRepertoires(repertoire_link_field,
+                                                     repertoire_link_id)
+        if not len(repertoires) == 1:
+            print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
+            return False
+        repertoire = repertoires[0]
+        
+        # Get mapping of the ID fields we want to generate.
+        map_class = self.getAIRRMap().getRepertoireClass()
+        rep_id_field = self.getAIRRRepositoryField("repertoire_id", map_class)
+        data_id_field = self.getAIRRRepositoryField("data_processing_id", map_class)
+        sample_id_field = self.getAIRRRepositoryField("sample_processing_id", map_class)
+
+        # Cache some data we need to use often.
+        if rep_id_field in repertoire:
+            repertoire_id_value = repertoire[rep_id_field]
+        else:
+            repertoire_id_value = None
+
+        if data_id_field in repertoire:
+            data_processing_id_value = repertoire[data_id_field]
+        else:
+            data_processing_id_value = None
+
+        if sample_id_field in repertoire:
+            sample_processing_id_value = repertoire[sample_id_field]
+        else:
+            sample_processing_id_value = None
+
         # Get the column of values from the AIRR tag. We only want the
         # Expression related fields.
         map_column = self.getAIRRMap().getExpressionMapColumn(airr_tag)
@@ -168,15 +199,27 @@ class AIRR_Expression(Expression):
         # Timing stuff
         t_start = time.perf_counter()
         # Left in timing code (commented out) in case we want to go back and optimize.
-        #t_flatten = 0.0
-        #t_check = 0.0
-        #t_append = 0.0
-        #t_copy = 0.0
+        t_flatten = 0.0
+        t_check = 0.0
+        t_append = 0.0
+        t_copy = 0.0
 
         # Do some setup, including getting a repository key map cache so we don't have
         # to look up repository keys all the time. This is a huge overhead without the
         # cache.
         airr_class = self.getAIRRMap().getExpressionClass()
+
+        # Get the field names for the cell_id. When loading we want to copy the
+        # cell_id field from the AIRR Standard into a annotation tool specific
+        # cell id for the ADC. We don't want to lose the original barcode.
+        airr_cell_id = airr_map.getMapping("cell_id_expression",
+                                           ireceptor_tag, repository_tag,
+                                           airr_class)
+        ir_cell_id = airr_map.getMapping("ir_cell_id_expression",
+                                         ireceptor_tag, repository_tag,
+                                         airr_map.getIRExpressionClass())
+
+        # Create an empty dictionary
         repository_keymap = dict()
 
         # Iterate over the expression records in the array.
@@ -247,14 +290,22 @@ class AIRR_Expression(Expression):
             # Set the link field to link back to the repertoire object
             airr_expression_dict[rep_expression_link_field] = repertoire_link_id
 
+            # Check to see if cell_id exists, and if so, store it in the special
+            # ADC cell_id record, since cell_id is overwritten in the repository.
+            airr_expression_dict[ir_cell_id] = airr_expression_dict[airr_cell_id]
+
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
             # load any data.
-            #t_local_start = time.perf_counter()
-            if (not self.checkIDFieldsJSON(airr_expression_dict, repertoire_link_id)):
+            t_local_start = time.perf_counter()
+            if (not self.checkIDFieldsJSON(airr_expression_dict, 
+                                           repertoire_link_field, repertoire_link_id,
+                                           repertoire_id_value,
+                                           data_processing_id_value,
+                                           sample_processing_id_value)):
                 return False
-            #t_local_end = time.perf_counter()
-            #t_check = t_check + (t_local_end - t_local_start)
+            t_local_end = time.perf_counter()
+            t_check = t_check + (t_local_end - t_local_start)
 
             # Create the created and update values for this record. Note that
             # this means that each block of inserts will have the same date.
@@ -271,21 +322,21 @@ class AIRR_Expression(Expression):
             # We want to insert into mongo in blocks of chunk_size records.
             block_count = block_count + 1
             if block_count == chunk_size:
-                #t_insert_start = time.perf_counter()
+                t_insert_start = time.perf_counter()
                 self.repositoryInsertRecords(block_array)
-                #t_insert_end = time.perf_counter()
+                t_insert_end = time.perf_counter()
                 t_end = time.perf_counter()
 
-                #print("Info: insert time = %f"% (t_insert_end-t_insert_start),flush=True)
+                print("Info: insert time = %f"% (t_insert_end-t_insert_start),flush=True)
                 #print("Info: flatten time = %f"% (t_flatten),flush=True)
-                #print("Info: check time = %f"% (t_check),flush=True)
+                print("Info: check time = %f"% (t_check),flush=True)
                 #print("Info: append time = %f"% (t_append),flush=True)
                 #print("Info: copy time = %f"% (t_copy),flush=True)
                 print("Info: Inserted %d records, time = %f (%f records/s, %f percent)"%
                         (chunk_size, t_end-t_start, chunk_size/(t_end-t_start),
                         (total_records/expression_records)*100),flush=True)
                 #t_flatten = 0
-                #t_check = 0
+                t_check = 0
                 #t_append = 0
                 #t_copy = 0
                 block_count = 0
