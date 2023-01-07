@@ -22,7 +22,7 @@ Changes that are cosmetic in nature and do not add anything substantial to the s
 
 * Ask any question about how to use the iReceptor project by using mailto:support@ireceptor.org.
 
-#### ** Please join us!**
+#### **Please join us!**
 
 The iReceptor project is only as strong as the community around it, and we rely on our colleagues in the AIRR Community and beyond to contribute. We encourage you to pitch in and add your suggestions.
 
