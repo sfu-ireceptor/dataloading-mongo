@@ -370,6 +370,7 @@ if __name__ == "__main__":
         # to map an arbitrary set of fields in a file to the repository. This requires that
         # an ir_general column exists in the AIRR Mapping file.
         parser.setFileMapping(options.type)
+        parser.setAnnotationTool(options.type)
     elif options.type == "MiXCR Clone":
         # process mixcr clone data
         print("Info: Processing MiXCR Clone data file: {}".format(options.filename))

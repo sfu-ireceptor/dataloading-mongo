@@ -79,7 +79,7 @@ class AIRR_TSV(Rearrangement):
         rearrangement_link_field = self.getAnnotationLinkIDField()
 
         # Set the tag for the file mapping that we are using. Ths is essentially the
-        # look up into the columns of the AIRR Mapping that we are using. For the IgBLAST
+        # look up into the columns of the AIRR Mapping that we are using. For the AIRR
         # parser it is normally the "igblast" column (which is essentially the same as 
         # AIRR TSV), but it can be overridden by the user.
         filemap_tag = self.getFileMapping()
@@ -91,18 +91,21 @@ class AIRR_TSV(Rearrangement):
         # file becasue that is too expensive of an operation.
         # Validate header by trying to read the first record. If it throws
         # an error then we have a problem.
+        # If the user is using this with a different column other than igblast
+        # (which means AIRR format) then don't do an AIRR consistency test.
         airr_reader = RearrangementReader(file_handle, validate=True, debug=True)
-        airr_valid = True
-        try:
-            airr_iterator = iter(airr_reader)
-            first_record = next(airr_iterator)
-        except ValidationError as e:
-            airr_valid = False
-            print("ERROR: File %s is not a valid AIRR TSV file, %s"
-                  %(path, e))
-            return False
-        if airr_valid:
-            print("Info: File %s has a valid AIRR TSV header"%(path))
+        if filemap_tag == 'igblast':
+            airr_valid = True
+            try:
+                airr_iterator = iter(airr_reader)
+                first_record = next(airr_iterator)
+            except ValidationError as e:
+                airr_valid = False
+                print("ERROR: File %s is not a valid AIRR TSV file, %s"
+                      %(path, e))
+                return False
+            if airr_valid:
+                print("Info: File %s has a valid AIRR TSV header"%(path))
 
         # Get root filename from the path
         filename = os.path.basename(path)
@@ -128,7 +131,6 @@ class AIRR_TSV(Rearrangement):
 
         # We need to build the set of fields that the repository can store. We don't
         # want to extract fields that the repository doesn't want.
-        igblastColumns = []
         columnMapping = {}
         if self.verbose():
             print("Info: Dumping expected %s (%s) to repository mapping"%
@@ -140,7 +142,6 @@ class AIRR_TSV(Rearrangement):
             # If the repository column has a value for the field in the file, track the 
             # field from both the file and repository side.
             if not pd.isnull(row[repository_tag]):
-                igblastColumns.append(row[filemap_tag])
                 columnMapping[row[filemap_tag]] = row[repository_tag]
             else:
                 print("Info:     Repository does not support " +
@@ -163,11 +164,11 @@ class AIRR_TSV(Rearrangement):
                           ", adding to repository without mapping.")
 
         # Determine if we are missing any repository columns from the input data.
-        for igblast_column, mongo_column in columnMapping.items():
-            if not igblast_column in airr_reader.fields:
+        for file_column, mongo_column in columnMapping.items():
+            if not file_column in airr_reader.fields:
                 if self.verbose():
                     print("Info: Missing data in input " + self.getAnnotationTool() +
-                          " file for " + igblast_column)
+                          " file for " + file_column)
 
         # Create a reader for the data frame with step size "chunk_size"
         if self.verbose():
