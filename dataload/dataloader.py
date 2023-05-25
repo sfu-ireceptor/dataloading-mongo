@@ -139,6 +139,15 @@ def getArguments():
 
     # Process a general rearrangement mapping
     type_group.add_argument(
+        "--10x_contig",
+        action='store_const',
+        const="10x_contig",
+        dest="type",
+        help="The file to be loaded is a 10X contig file as produced by the 10X VDJ pipeline. If using a post v4.0 version of the 10X pipeline, we recommend you use the airr_annotations.tsv file and the airr format for data loading."
+    )
+
+    # Process a general rearrangement mapping
+    type_group.add_argument(
         "--general",
         action='store_const',
         const="ir_general",
@@ -361,6 +370,16 @@ if __name__ == "__main__":
         print("Info: Processing Adaptive annotation data file: ", options.filename)
         parser = Adaptive(options.verbose, options.database_map, options.database_chunk,
                           airr_map, repository)
+    elif options.type == "10x_contig":
+        # process a general file (non annotation tool specific)
+        print("Info: Processing a 10X contig annotation file: ", options.filename)
+        parser = AIRR_TSV(options.verbose, options.database_map, options.database_chunk,
+                          airr_map, repository)
+        # Override the default file mapping that the parser subclass sets. We use the AIRR Parser
+        # since it is a TSV file, but if the type isn't AIRR then it doesn't check for AIRR fields
+        # and just treats it as a TSV file.
+        parser.setFileMapping(options.type)
+        parser.setAnnotationTool(options.type)
     elif options.type == "ir_general":
         # process a general file (non annotation tool specific)
         print("Info: Processing a general TSV annotation data file: ", options.filename)

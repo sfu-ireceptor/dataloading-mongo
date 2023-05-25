@@ -93,8 +93,8 @@ class AIRR_TSV(Rearrangement):
         # an error then we have a problem.
         # If the user is using this with a different column other than igblast
         # (which means AIRR format) then don't do an AIRR consistency test.
-        airr_reader = RearrangementReader(file_handle, validate=True, debug=True)
         if filemap_tag == 'igblast':
+            airr_reader = RearrangementReader(file_handle, validate=True, debug=True)
             airr_valid = True
             try:
                 airr_iterator = iter(airr_reader)
@@ -106,6 +106,14 @@ class AIRR_TSV(Rearrangement):
                 return False
             if airr_valid:
                 print("Info: File %s has a valid AIRR TSV header"%(path))
+
+        # Get the first two lines of the file so we can process columns.
+        # Handle the case where we have a CSV rather than a TSV.
+        if path.endswith(".csv"):
+            airr_df_reader = pd.read_csv(path, chunksize=2)
+        else:
+            airr_df_reader = pd.read_csv(path, sep='\t', chunksize=2)
+        airr_df = airr_df_reader.get_chunk(1)
 
         # Get root filename from the path
         filename = os.path.basename(path)
@@ -147,10 +155,10 @@ class AIRR_TSV(Rearrangement):
                 print("Info:     Repository does not support " +
                       str(row[filemap_tag]) + ", not inserting into repository")
 
-        # Get the field names from the file from the airr_reader object. 
+        # Get the field names from the file from the airr_df_reader object. 
         # Determing the mapping from the file input to the repository.
         finalMapping = {}
-        for airr_field in airr_reader.fields:
+        for airr_field in airr_df.columns:
             if airr_field in columnMapping:
                 if self.verbose():
                     print("Info: Mapping %s field in file: %s -> %s"%
@@ -165,17 +173,21 @@ class AIRR_TSV(Rearrangement):
 
         # Determine if we are missing any repository columns from the input data.
         for file_column, mongo_column in columnMapping.items():
-            if not file_column in airr_reader.fields:
+            if not file_column in airr_df.columns:
                 if self.verbose():
                     print("Info: Missing data in input " + self.getAnnotationTool() +
                           " file for " + file_column)
 
-        # Create a reader for the data frame with step size "chunk_size"
-        if self.verbose():
-            print("Info: Processing raw data frame...")
-        airr_df_reader = pd.read_csv(path, sep='\t', chunksize=chunk_size)
+        # Re-create a reader for the data frame with step size "chunk_size"
+        # Handle the case where we have a CSV rather than a TSV.
+        if path.endswith(".csv"):
+            airr_df_reader = pd.read_csv(path, chunksize=chunk_size)
+        else:
+            airr_df_reader = pd.read_csv(path, sep='\t', chunksize=chunk_size)
 
         # Iterate over the file with data frames of size "chunk_size"
+        if self.verbose():
+            print("Info: Processing raw data frame...")
         total_records = 0
         for airr_df in airr_df_reader:
             # Remap the column names. We need to remap because the columns may be in a 
