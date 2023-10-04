@@ -82,6 +82,7 @@ class Parser:
         self.clone_count_field = "ir_clone_count"
         self.cell_count_field = "ir_cell_count"
         self.expression_count_field = "ir_expression_count"
+        self.receptor_count_field = "ir_receptor_count"
 
         # We need to keep track of the field (identified by an iReceptor 
         # field name) in the annotation collection that points to the
@@ -117,6 +118,9 @@ class Parser:
 
     def getExpressionCountField(self):
         return self.expression_count_field
+
+    def getReceptorCountField(self):
+        return self.receptor_count_field
 
     def getAnnotationLinkIDField(self):
         return self.annotation_linkid_field
