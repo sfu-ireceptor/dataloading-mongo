@@ -134,6 +134,12 @@ def getArguments():
         default="expression",
         help="The collection to use for storing and searching gene expression. This is the collection that data is inserted into when the --airr-expression option is used to load files. Defaults to 'expression', which is the collection in the iReceptor Turnkey repository."
     )
+    db_group.add_argument(
+        "--receptor_collection",
+        dest="receptor_collection",
+        default="receptor",
+        help="The collection to use for storing and searching receptor. This is the collection that data is inserted into when the --airr-receptor option is used to load files. Defaults to 'receptor', which is the collection in the iReceptor Turnkey repository."
+    )
 
     path_group = parser.add_argument_group("file options")
     parser.add_argument(
@@ -157,8 +163,8 @@ def getArguments():
 
 def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
                           rearrangementParser, cellParser, options):
-    print('Info:')
-    print('Info: Processing - Rearrangement file = %s, Cell file = %s'%(rearrangement_file, cell_file))
+    print('Info:', flush=True)
+    print('Info: Processing - Rearrangement file = %s, Cell file = %s'%(rearrangement_file, cell_file), flush=True)
     # Start timing the processing
     t_start = time.perf_counter()
 
@@ -178,14 +184,14 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
     # this at the moment, but this may not be the most robust method.
     file_field = airr_map.getMapping(repertoire_file_field,
                                      ireceptor_tag, repository_tag)
-    print("Info: repertoire file field = %s"%(file_field))
-    print("Info: repertoire link field = %s"%(repertoire_link_field))
+    print("Info: repertoire file field = %s"%(file_field), flush=True)
+    print("Info: repertoire link field = %s"%(repertoire_link_field), flush=True)
 
     # Get the list of repertoires that are associated with the Rearrangement file. There
     # should only be one, if more than on this is an error.
     repertoires = repository.getRepertoires(file_field, rearrangement_file)
     if not len(repertoires) == 1:
-        print("ERROR: Could not find unique repertoire for file %s"%(rearrangement_file))
+        print("ERROR: Could not find unique repertoire for file %s"%(rearrangement_file), flush=True)
         return False
     repertoire = repertoires[0]
 
@@ -193,7 +199,7 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
     # data in the repertoire object. If so, get the link ID that we use to link to
     # the rearrangements for this file. This is what we use to look up rearrangements
     if not repertoire_link_field in repertoire:
-        print("ERROR: Could not find Rearrangement link field %s"%(repertoire_link_field))
+        print("ERROR: Could not find Rearrangement link field %s"%(repertoire_link_field), flush=True)
         return False
     rearrangement_link_id = repertoire[repertoire_link_field]
 
@@ -201,14 +207,14 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
     # onlybe one.
     repertoires = repository.getRepertoires(file_field, cell_file)
     if not len(repertoires) == 1:
-        print("ERROR: Could not find unique repertoire for file %s"%(cell_file))
+        print("ERROR: Could not find unique repertoire for file %s"%(cell_file), flush=True)
         return False
     repertoire = repertoires[0]
 
     # Check to make sure we have a link field from the repertoire, and if we do get it.
     # This is what we use to look up Cells.
     if not repertoire_link_field in repertoire:
-        print("ERROR: Could not find Cell link field %s"%(repertoire_link_field))
+        print("ERROR: Could not find Cell link field %s"%(repertoire_link_field), flush=True)
         return False
     cell_link_id = repertoire[repertoire_link_field]
     
@@ -220,8 +226,8 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
     rearrangement_count = repository.countRearrangements(rearrangement_link_field,
                                                          rearrangement_link_id)
     cell_count = repository.countCells(cell_link_field, cell_link_id)
-    print("Info: rearrangement link id = %s (%d)"%(rearrangement_link_id, rearrangement_count ))
-    print("Info: cell link id = %s (%d)"%(cell_link_id,cell_count))
+    print("Info: rearrangement link id = %s (%d)"%(rearrangement_link_id, rearrangement_count ), flush=True)
+    print("Info: cell link id = %s (%d)"%(cell_link_id,cell_count), flush=True)
     
     # Get the field names for the AIRR field (which is our unique ID) and the annotation tool field
     # which we use to find relevant cells from the rearrangements (typically a barcode).
@@ -253,8 +259,8 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
         cell_seq_dict[cell[airr_cell_field]] = []
         #print("Info:     %s = %s"%(cell[tool_cell_field],cell[airr_cell_field]))
 
-    print("Info: Cells found = %d (%s)"%(len(cell_id_dict), cell_count))
-    print("Info: Rearrangements found = %d"%(rearrangement_count))
+    print("Info: Cells found = %d (%s)"%(len(cell_id_dict), cell_count), flush=True)
+    print("Info: Rearrangements found = %d"%(rearrangement_count), flush=True)
 
     # Get the field names for the AIRR field (which we overwrite) and the annotation tool field
     # which we preserve.
@@ -268,7 +274,7 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
                                        ireceptor_tag, repository_tag,
                                        airr_map.getIRRearrangementClass())
     print("Info: Looking up %s in Cell, setting %s in Rearrangement"%(
-           tool_cell_field, airr_cell_id_field))
+           tool_cell_field, airr_cell_id_field), flush=True)
 
     # Execute the query to find all rearrangemetns in the Rearrangement collection that are
     # associated with the rearrangement link ID (associated with the file). Note this DOES NOT
@@ -307,10 +313,10 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
                 # Check whether the dictionary contains this_cell_id in its values. If it does,
                 # then it is likely that the rearrangement cell_id has already been set to be
                 # the repository unique cell_id.
-                print("Warning: Cell id for sequence %s already set (cell_id = %s)"%(this_sequence_id,this_cell_id))
+                print("Warning: Cell id for sequence %s already set (cell_id = %s)"%(this_sequence_id,this_cell_id), flush=True)
             else:
                 # If nothing then we could not find a cell for a sequence, print a warning.
-                print("Warning: Could not find a Cell for sequence %s"%(this_sequence_id))
+                print("Warning: Could not find a Cell for sequence %s"%(this_sequence_id), flush=True)
     # If we want to store rearrangement object in the Cell collection, we can do so by looping
     # over the sequence dictionary, but we need to check what is there, append, and make unique
     # so we don't have any duplicates. Not necessary so leaving out for now.
@@ -320,7 +326,7 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
 
 
     # time end
-    print("Info: Update of %d rearrangements"%(update_count))
+    print("Info: Update of %d rearrangements"%(update_count), flush=True)
     t_end = time.perf_counter()
     print("Info: Finished processing in %f seconds (%f updates/s)"%(
            (t_end - t_start),(update_count/(t_end-t_start))),flush=True)
@@ -339,6 +345,7 @@ if __name__ == "__main__":
                             options.clone_collection,
                             options.cell_collection,
                             options.expression_collection,
+                            options.receptor_collection,
                             options.skipload, options.update,
                             options.verbose)
     # Check on the successful creation of the repository
@@ -367,6 +374,11 @@ if __name__ == "__main__":
 
     # Open the file map - it has two columns, one for Rearrangement files and one for Cell files.
     files_df = pd.read_csv(options.file_map, sep='\t')
+    if not 'Rearrangement' in files_df.columns or not 'Cell' in files_df.columns:
+        print("ERROR: Could not find 'Rearrangement' or 'Cell' column in file %s"%
+                (options.file_map))
+        sys.exit(1)
+
     # For each row, call processRearrangements with two file names along with the other required
     # objects (repository, airr_map, and rearrangement and cell parsers. We get back a list with
     # True or False for each row processed.
