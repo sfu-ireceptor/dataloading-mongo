@@ -169,7 +169,17 @@ class AIRR_Cell(Cell):
         # per the AIRR spec.
         if self.verbose():
             print("Info: Reading the Cell JSON array", flush=True)
-        cell_array = json.load(file_handle)
+        try:
+            cell_array = json.load(file_handle)
+        except json.JSONDecodeError as error:
+            print("ERROR: %s"%(error))
+            print("ERROR: Invalid JSON in file %s"%(filename))
+            return False
+        except Exception as error:
+            print("ERROR: %s"%(error))
+            return False
+
+            
         if self.verbose():
             print("Info: Read %d Cell objects"%(len(cell_array)), flush=True)
 
