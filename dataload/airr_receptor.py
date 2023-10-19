@@ -170,7 +170,16 @@ class AIRR_Receptor(Receptor):
         # per the AIRR spec.
         if self.verbose():
             print("Info: Reading the Receptor JSON array", flush=True)
-        receptor_array = json.load(file_handle)
+        try:
+            receptor_array = json.load(file_handle)
+        except json.JSONDecodeError as error:
+            print("ERROR: %s"%(error))
+            print("ERROR: Invalid JSON in file %s"%(filename))
+            return False
+        except Exception as error:
+            print("ERROR: %s"%(error))
+            return False
+
         if self.verbose():
             print("Info: Read %d Receptor objects"%(len(receptor_array)), flush=True)
 
