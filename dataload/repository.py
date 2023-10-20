@@ -5,7 +5,8 @@ import pymongo
 class Repository:
     def __init__(self, user, password, host, port, database,
                  repertoire_collection, rearrangement_collection, clone_collection,
-                 cell_collection, expression_collection, receptor_collection,
+                 cell_collection, expression_collection,
+                 receptor_collection, reactivity_collection,
                  skipload, update, verbose=False):
         """Create an interface to the Mongo repository
 
@@ -21,6 +22,7 @@ class Repository:
           - cell_collection: name of the cell collection in the database
           - expression_collection: name of the expression collection in the database
           - receptor_collection: name of the receptor collection in the database
+          - reactivity_collection: name of the reactivity collection in the database
           - skipload: flag to determine if we skip the data load operation.
           - update: flag to determine if we are updating rather than inserting
             (repertoire only).
@@ -37,6 +39,7 @@ class Repository:
         self.cell_collection = cell_collection
         self.expression_collection = expression_collection
         self.receptor_collection = receptor_collection
+        self.reactivity_collection = reactivity_collection
         self.skipload = skipload
         self.update = update
         self.verbose = verbose
@@ -47,6 +50,7 @@ class Repository:
         self.cell = None
         self.expression = None
         self.receptor = None
+        self.reactivity = None
 
         # Connect with Mongo db
         self.username = urllib.parse.quote_plus(self.username)
@@ -103,6 +107,7 @@ class Repository:
         self.cell = self.mongo_db[self.cell_collection]
         self.expression = self.mongo_db[self.expression_collection]
         self.receptor = self.mongo_db[self.receptor_collection]
+        self.reactivity = self.mongo_db[self.reactivity_collection]
 
 
     # Return the update flag so clients can determine if we are in update mode or not.
@@ -355,6 +360,45 @@ class Repository:
 
         # If sucessful return the count.
         return receptor_count
+
+    # Write the set of JSON records provided to the "reactivity" collection.
+    # This is hiding the repository implementation.
+    # Return a list of the ids on success None on failure.
+    def insertReactivity(self, json_records):
+        if not self.skipload:
+            try:
+                record_ids = self.reactivity.insert(json_records)
+            except Exception as err:
+                print("ERROR: Unable to write records to repository, %s"%(err))
+                return None
+        return record_ids
+
+    # Update the update_field to update_value wherever search_field is equal to
+    # search value.
+    def updateReactivityField(self, search_field, search_value, update_field, update_value):
+        if not self.skipload:
+            update = {"$set": {update_field:update_value}}
+            self.reactivity.update( {search_field:search_value}, update)
+
+    # Count the number of reactivity that belong to a specific repertoire. 
+    # Return -1 on error. 
+    def countReactivity(self, repertoire_field, repertoire_id):
+        # Check for valid fields
+        if repertoire_field is None or repertoire_id is None:
+            print("ERROR: Invalid repertoire field (%s) or repertoire_id (%s)"%
+                  (repertoire_field, repertoire_id))
+            return -1
+        # Build the query and try to perform it. 
+        query = {repertoire_field:{'$eq':repertoire_id}}
+        try:
+            reactivity_count = self.reactivity.find(query).count()
+        except Exception as err:
+            print("ERROR: Query failed for repertoire field (%s) or repertoire_id (%s)"%
+                  (repertoire_field, repertoire_id))
+            return -1
+
+        # If sucessful return the count.
+        return reactivity_count
 
     # Update the update_field to update_value wherever search_field is equal to
     # search value.

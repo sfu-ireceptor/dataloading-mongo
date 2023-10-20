@@ -12,6 +12,7 @@ class AIRRMap:
         self.cell_class = "Cell"
         self.expression_class = "CellExpression"
         self.receptor_class = "Receptor"
+        self.reactivity_class = "ReceptorReactivity"
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
@@ -20,6 +21,7 @@ class AIRRMap:
         self.ir_cell_class = "IR_Cell"
         self.ir_expression_class = "IR_Expression"
         self.ir_receptor_class = "IR_Receptor"
+        self.ir_reactivity_class = "IR_ReceptorReactivity"
 
         # Keep track of the mapfile being used.
         self.mapfile = ""
@@ -38,8 +40,11 @@ class AIRRMap:
         self.airr_expression_map = []
         # AIRR receptor mappings only
         self.airr_receptor_map = []
+        # AIRR reactivity mappings only
+        self.airr_reactivity_map = []
         # AIRR repertoire mappings only
         self.airr_repertiore_map = []
+        
         # AIRR and IR repertoire mapping only
         self.ir_repertiore_map = []
         # AIRR and IR rearrangement mappings only
@@ -52,6 +57,8 @@ class AIRRMap:
         self.ir_expression_map = []
         # AIRR and IR receptor mappings only
         self.ir_receptor_map = []
+        # AIRR and IR reactivity mappings only
+        self.ir_reactivity_map = []
         
     # Read in a map file given a file name.
     def readMapFile(self, mapfile):
@@ -151,6 +158,20 @@ class AIRRMap:
         self.ir_receptor_map = self.airr_mappings.loc[labels]
 
         #
+        # Reactivity mappings
+        #
+        # Get the labels for all of the fields that are in the airr reactivity class.
+        labels = self.airr_mappings['ir_class'].isin([self.reactivity_class])
+        # Get all of the rows that have the reactivity class labels.
+        self.airr_reactivity_map = self.airr_mappings.loc[labels]
+
+        # Get the labels for all of the fields that are in the airr and IR reactivity class.
+        labels = self.airr_mappings['ir_class'].isin([self.reactivity_class,
+                                                      self.ir_reactivity_class])
+        # Get all of the rows that have the reactivity class labels.
+        self.ir_reactivity_map = self.airr_mappings.loc[labels]
+
+        #
         # Repertoire mappings
         #
         # Get the labels for all of the fields that are in the airr repertoire class.
@@ -204,6 +225,12 @@ class AIRRMap:
     def getIRReceptorClass(self):
         return self.ir_receptor_class
 
+    def getReactivityClass(self):
+        return self.reactivity_class
+
+    def getIRReactivityClass(self):
+        return self.ir_reactivity_class
+
     # Utility function to determine if the mapping has a specific column
     def hasColumn(self, column_name):
         if column_name in self.airr_mappings:
@@ -227,6 +254,8 @@ class AIRRMap:
            mapping = self.airr_expression_map
         elif map_class == self.receptor_class: 
            mapping = self.airr_receptor_map
+        elif map_class == self.reactivity_class: 
+           mapping = self.airr_reactivity_map
         elif map_class == self.repertoire_class: 
            mapping = self.airr_repertoire_map
         elif map_class == self.ir_repertoire_class: 
@@ -241,6 +270,8 @@ class AIRRMap:
            mapping = self.ir_expression_map
         elif map_class == self.ir_receptor_class: 
            mapping = self.ir_receptor_map
+        elif map_class == self.ir_reactivity_class: 
+           mapping = self.ir_reactivity_map
         else:
             print("Warning: Invalid maping class %s"%(map_class))
             return None
@@ -416,6 +447,34 @@ class AIRRMap:
     # Receptor table size.
     def getIRReceptorRows(self, extract_flags):
         return self.ir_receptor_map.loc[extract_flags]
+
+    # Return a full column of the Reactivity mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getReactivityMapColumn(self, column_name):
+        if column_name in self.airr_reactivity_map:
+            return self.airr_reactivity_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the reactivity table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Reactivity table size.
+    def getReactivityRows(self, extract_flags):
+        return self.airr_reactivity_map.loc[extract_flags]
+
+    # Return a full column of the Reactivity mapping based on the name given.
+    # Return None if the column is not in the mapping.
+    def getIRReactivityMapColumn(self, column_name):
+        if column_name in self.ir_reactivity_map:
+            return self.ir_reactivity_map[column_name]
+        else:
+            return None
+
+    # Return the rows in the reactivity table that are marked as true in the 
+    # boolean array provided. The boolean array must be the same size as the
+    # Reactivity table size.
+    def getIRReactivityRows(self, extract_flags):
+        return self.ir_reactivity_map.loc[extract_flags]
 
     # Return a full column of the Repertoire mapping based on the name given.
     # Return None if the column is not in the mapping.

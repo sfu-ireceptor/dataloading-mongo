@@ -28,8 +28,10 @@ from airr_clone import AIRR_Clone
 from airr_cell import AIRR_Cell
 # Gene Expression loader classes
 from airr_expression import AIRR_Expression
-# Receptr loader classes
+# Receptor loader classes
 from airr_receptor import AIRR_Receptor
+# Reactivity loader classes
+from airr_reactivity import AIRR_Reactivity
 
 # Get the command line arguments...
 def getArguments():
@@ -202,6 +204,15 @@ def getArguments():
         help="The file to be loaded is a text (or compressed text) AIRR Receptor JSON file."
     )
 
+    # Processing AIRR Reactivity JSON data
+    type_group.add_argument(
+        "--airr-reactivity",
+        action='store_const',
+        const="AIRR Reactivity",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) AIRR Reactivity JSON file."
+    )
+
     db_group = parser.add_argument_group("database options")
     db_group.add_argument(
         "--host",
@@ -286,6 +297,12 @@ def getArguments():
         default="receptor",
         help="The collection to use for storing and searching receptors. This is the collection that data is inserted into when the --airr-receptor option is used to load files. Defaults to 'receptor', which is the collection in the iReceptor Turnkey repository."
     )
+    db_group.add_argument(
+        "--reactivity_collection",
+        dest="reactivity_collection",
+        default="reactivity",
+        help="The collection to use for storing and searching reactivity data. This is the collection that data is inserted into when the --airr-reactivity option is used to load files. Defaults to 'reactivity', which is the collection in the iReceptor Turnkey repository."
+    )
 
     path_group = parser.add_argument_group("file options")
     path_group.add_argument(
@@ -325,6 +342,7 @@ if __name__ == "__main__":
                             options.cell_collection,
                             options.expression_collection,
                             options.receptor_collection,
+                            options.reactivity_collection,
                             options.skipload, options.update,
                             options.verbose)
     # Check on the successful creation of the repository
@@ -433,6 +451,11 @@ if __name__ == "__main__":
         print("Info: Processing AIRR JSON Receptor data file: {}".format(options.filename))
         parser = AIRR_Receptor(options.verbose, options.database_map,
                                options.database_chunk, airr_map, repository)
+    elif options.type == "AIRR Reactivity":
+        # process AIRR Reactivity JSON data
+        print("Info: Processing AIRR JSON Reactivity data file: {}".format(options.filename))
+        parser = AIRR_Reactivity(options.verbose, options.database_map,
+                                options.database_chunk, airr_map, repository)
     else:
         print("ERROR: unknown data type '{}'".format(options.type))
         sys.exit(4)
