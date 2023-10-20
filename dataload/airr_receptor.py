@@ -237,14 +237,14 @@ class AIRR_Receptor(Receptor):
 
             # Check to see if receptor_id exists, and if so, store it in the special
             # ADC receptor_id record, since receptor_id is overwritten in the repository.
-            #airr_receptor_id = airr_map.getMapping("receptor_id_receptor",
-            #                                    ireceptor_tag, repository_tag,
-            #                                    airr_map.getReceptorClass())
-            #ir_receptor_id = airr_map.getMapping("ir_receptor_id_receptor",
-            #                                 ireceptor_tag, repository_tag,
-            #                                 airr_map.getIRReceptorClass())
-            #if airr_receptor_id in receptor_dict:
-            #    receptor_dict[ir_receptor_id] = receptor_dict[airr_receptor_id]
+            airr_receptor_id = airr_map.getMapping("receptor_id_receptor",
+                                                ireceptor_tag, repository_tag,
+                                                airr_map.getReceptorClass())
+            ir_receptor_id = airr_map.getMapping("ir_receptor_id_receptor",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getIRReceptorClass())
+            if airr_receptor_id in receptor_dict:
+                receptor_dict[ir_receptor_id] = receptor_dict[airr_receptor_id]
 
 
             # Set the relevant IDs for the record being inserted. It updates the dictionary
