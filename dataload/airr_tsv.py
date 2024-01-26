@@ -93,7 +93,8 @@ class AIRR_TSV(Rearrangement):
         # an error then we have a problem.
         # If the user is using this with a different column other than igblast
         # (which means AIRR format) then don't do an AIRR consistency test.
-        if filemap_tag == 'igblast':
+        # If it is a CSV file we skip the check as AIRR library doesn't handle CSV
+        if filemap_tag == 'igblast' and not path.endswith(".csv"):
             airr_reader = RearrangementReader(file_handle, validate=True, debug=True)
             airr_valid = True
             try:
