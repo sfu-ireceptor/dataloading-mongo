@@ -175,6 +175,104 @@ class Adaptive(Rearrangement):
         gene_call = gene_call.replace("IGLJ0", "IGLJ")
         gene_call = gene_call.replace("IGKJ0", "IGKJ")
 
+        # Adaptive uses incorrect gene names when the correct IMGT/HUGO
+        # names do not have sub-families (e.g. TRAJ1 there is no TRAJ1-1)
+        # Remove inappropriate sub-family naming in TRAJ and TRBD genes
+        # There are no subfamilies for TRAJ and TRBD
+        # Reused from: https://github.com/JamieHeather/immunoseq2airr/blob/master/immunoseq2airr.py
+        if 'TRAJ' in gene_call or 'TRBD' in gene_call:
+            gene_call = gene_call.replace('-1', '')
+        # We need a mapping to do this for TRBV since it is non-trivial.
+        # TODO add mappings for other loci to make applicable to all chains
+        # TODO transfer to supplementary file to make it easier to change?
+        elif 'TRBV' in gene_call or 'TRAV' in gene_call or 'TRDV' in gene_call:
+
+            adaptive_v_convert = {
+                      'TRBV1-1': 'TRBV1',
+                      'TRBV2-1': 'TRBV2',
+                      'TRBV9-1': 'TRBV9',
+                      'TRBV13-1': 'TRBV13',
+                      'TRBV14-1': 'TRBV14',
+                      'TRBV15-1': 'TRBV15',
+                      'TRBV16-1': 'TRBV16',
+                      'TRBV17-1': 'TRBV17',
+                      'TRBV18-1': 'TRBV18',
+                      'TRBV19-1': 'TRBV19',
+                      'TRBV26-1': 'TRBV26',
+                      'TRBV27-1': 'TRBV27',
+                      'TRBV28-1': 'TRBV28',
+                      'TRBV30-1': 'TRBV30',
+                      'TRAV14-1': 'TRAV14/DV4',
+                      'TRAV23-1': 'TRAV23/DV6',
+                      'TRAV29-1': 'TRAV29/DV5',
+                      'TRAV36-1': 'TRAV36/DV7',
+                      'TRAV10-1': 'TRAV10',
+                      'TRAV11-1': 'TRAV11',
+                      'TRAV15-1': 'TRAV15',
+                      'TRAV16-1': 'TRAV16',
+                      'TRAV17-1': 'TRAV17',
+                      'TRAV18-1': 'TRAV18',
+                      'TRAV19-1': 'TRAV19',
+                      'TRAV2-1': 'TRAV2',
+                      'TRAV20-1': 'TRAV20',
+                      'TRAV21-1': 'TRAV21',
+                      'TRAV22-1': 'TRAV22',
+                      'TRAV24-1': 'TRAV24',
+                      'TRAV25-1': 'TRAV25',
+                      'TRAV27-1': 'TRAV27',
+                      'TRAV28-1': 'TRAV28',
+                      'TRAV3-1': 'TRAV3',
+                      'TRAV30-1': 'TRAV30',
+                      'TRAV31-1': 'TRAV31',
+                      'TRAV32-1': 'TRAV32',
+                      'TRAV33-1': 'TRAV33',
+                      'TRAV34-1': 'TRAV34',
+                      'TRAV35-1': 'TRAV35',
+                      'TRAV37-1': 'TRAV37',
+                      'TRAV39-1': 'TRAV39',
+                      'TRAV4-1': 'TRAV4',
+                      'TRAV40-1': 'TRAV40',
+                      'TRAV41-1': 'TRAV41',
+                      'TRAV46-1': 'TRAV46',
+                      'TRAV5-1': 'TRAV5',
+                      'TRAV6-1': 'TRAV6',
+                      'TRAV7-1': 'TRAV7',
+                      'TRDV1-1': 'TRDV1',
+                      'TRDV2-1': 'TRDV2',
+                      'TRDV3-1': 'TRDV3'
+                      }
+            # Now do the conversion. We need to split on , in case we have
+            # more than one call.
+            gene_list = gene_call.split(',')
+
+            # For each of those, check to see if it needs to be replaced.
+            converted_list = []
+            for gene in gene_list:
+
+                # Again, we use the code from Jamie Heather at:
+                # https://github.com/JamieHeather/immunoseq2airr
+                # Split of the allele part.
+                gene_bits = gene.split('*')
+
+                if len(gene_bits) == 1:
+                    # If we have no allele, check if the gene needs to be fixed and 
+                    # fix it if necessary, otherwise keep the original
+                    if gene in adaptive_v_convert:
+                        converted_list = converted_list + [adaptive_v_convert[gene]]
+                    else:
+                        converted_list = converted_list + [gene]
+                elif len(gene_bits) == 2:
+                    # If we have an allele, check if the gene needs to be fixed and 
+                    # fix it if necessary and then add the allele back on 
+                    if gene_bits[0] in adaptive_v_convert:
+                        converted_list = converted_list + [adaptive_v_convert[gene_bits[0]] + '*' + gene_bits[1]]
+                    else:
+                        converted_list = converted_list + [gene]
+            # After we are done, join the list of genes back together.
+            gene_call = ','.join(converted_list)
+
+        # Sigh - after cleaning up the massive Adaptive gene calling mess
+        # we return what should have been the correct gene call in the first place!!!
         return gene_call
         
 
