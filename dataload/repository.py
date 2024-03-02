@@ -1,6 +1,7 @@
 import os
 import urllib.parse
 import pymongo
+from parser import Parser
 
 class Repository:
     def __init__(self, user, password, host, port, database,
@@ -167,9 +168,11 @@ class Repository:
     # Update the update_field to update_value wherever search_field is equal to
     # search value.
     def updateRearrangementField(self, search_field, search_value,
-                                 update_field, update_value):
+                                 update_field, update_value, update_time_field):
         if not self.skipload:
-            update = {"$set": {update_field:update_value}}
+            # Get the current time, and add it to the update information.
+            now_str = Parser.getDateTimeNowUTC()
+            update = {"$set": {update_field:update_value, update_time_field:now_str}}
             self.rearrangement.update( {search_field:search_value}, update)
 
     # Count the number of rearrangements that belong to a specific repertoire. 
@@ -209,9 +212,12 @@ class Repository:
 
     # Update the update_field to update_value wherever search_field is equal to
     # search value.
-    def updateCloneField(self, search_field, search_value, update_field, update_value):
+    def updateCloneField(self, search_field, search_value,
+                         update_field, update_value, update_time_field):
         if not self.skipload:
-            update = {"$set": {update_field:update_value}}
+            # Get the current time, and add it to the update information.
+            now_str = Parser.getDateTimeNowUTC()
+            update = {"$set": {update_field:update_value, update_time_field:now_str}}
             self.clone.update( {search_field:search_value}, update)
 
     # Count the number of clones that belong to a specific repertoire. 
@@ -248,9 +254,12 @@ class Repository:
 
     # Update the update_field to update_value wherever search_field is equal to
     # search value.
-    def updateCellField(self, search_field, search_value, update_field, update_value):
+    def updateCellField(self, search_field, search_value,
+                        update_field, update_value, update_time_field):
         if not self.skipload:
-            update = {"$set": {update_field:update_value}}
+            # Get the current time, and add it to the update information.
+            now_str = Parser.getDateTimeNowUTC()
+            update = {"$set": {update_field:update_value, update_time_field:now_str}}
             self.cell.update( {search_field:search_value}, update)
 
     # Count the number of cells that belong to a specific repertoire. 
@@ -288,9 +297,12 @@ class Repository:
 
     # Update the update_field to update_value wherever search_field is equal to
     # search value.
-    def updateExpressionField(self, search_field, search_value, update_field, update_value):
+    def updateExpressionField(self, search_field, search_value,
+                              update_field, update_value, , update_time_field):
         if not self.skipload:
-            update = {"$set": {update_field:update_value}}
+            # Get the current time, and add it to the update information.
+            now_str = Parser.getDateTimeNowUTC()
+            update = {"$set": {update_field:update_value, update_time_field:now_str}}
             self.expression.update( {search_field:search_value}, update)
 
     # Count the number of gene expression values that belong to a specific repertoire. 
@@ -315,9 +327,12 @@ class Repository:
 
     # Update the update_field to update_value wherever search_field is equal to
     # search value.
-    def updateField(self, search_field, search_value, update_field, update_value):
+    def updateField(self, search_field, search_value,
+                    update_field, update_value, update_time_field):
         if not self.skipload:
-            update = {"$set": {update_field:update_value}}
+            # Get the current time, and add it to the update information.
+            now_str = Parser.getDateTimeNowUTC()
+            update = {"$set": {update_field:update_value, update_time_field:now_str}}
             return self.repertoire.update( {search_field:search_value}, update)
 
     # Update a repertoire document in the repertoire collection. Takes a single 
@@ -325,7 +340,8 @@ class Repository:
     # record it updates that record with the document provided. This is a non
     # destructive update, as it will add and overwrite fields, but it does not 
     # delete any fields that are existing that are not overwritten.
-    def updateRepertoire( self, search_field, search_value, doc):
+    def updateRepertoire( self, search_field, search_value, doc, update_time_field):
+
         try:
             # Get the number of records. We expect there to be 1, error if not.
             num_records = self.repertoire.count_documents({search_field:search_value})
@@ -354,7 +370,7 @@ class Repository:
                         print("Info: Updating %s: %s => %s"%(k,old_value,v))
                     # Don't do anything if we are skipping loading.
                     if not self.skipload:
-                        self.updateField(search_field, search_value, k, v)
+                        self.updateField(search_field, search_value, k, v, update_time_field)
             #results = self.repertoire.update({search_field:search_value},{"$set":doc})
         except Exception as err:
             print("ERROR: Repository repertoire update failed, %s"%(err))
@@ -367,7 +383,7 @@ class Repository:
     # in the link_field field for reference without having to access the internal
     # _id.  Returns the string value of the record ID on success, return 
     # None on failure.
-    def insertRepertoire( self, doc, link_field ):
+    def insertRepertoire( self, doc, link_field, update_time_field ):
         try:
             if not self.skipload:
                 results = self.repertoire.insert(doc)
@@ -376,7 +392,7 @@ class Repository:
             return None
 
         # Store the internal ID as a string in the link_field.
-        self.updateField("_id", results, link_field, str(results))
+        self.updateField("_id", results, link_field, str(results), update_time_field)
         # Return a string repersentation of the internal ID
         return str(results)
 

@@ -45,6 +45,11 @@ class Expression(Annotation):
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getExpressionClass())
+        ir_updated_at_gex =  self.getAIRRMap().getMapping("ir_updated_at_expression",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getIRExpressionClass())
+
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the expression_id field.
         # TODO: This can probably be optimized and is quite slow! If we didn't
@@ -53,7 +58,8 @@ class Expression(Annotation):
         if not gex_id_field is None:
             for record_id in record_ids:
                 self.repository.updateExpressionField("_id", record_id,
-                                                 gex_id_field, str(record_id))
+                                                 gex_id_field, str(record_id),
+                                                 ir_updated_at_gex)
 
         return True
 
@@ -74,9 +80,14 @@ class Expression(Annotation):
         count_field = self.airr_map.getMapping(self.getExpressionCountField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
+        ir_updated_at =  self.airr_map.getMapping("ir_updated_at",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.airr_map.getRepertoireClass())
+
         if count_field is None:
            return False
         else:
             return self.repository.updateField(repertoire_field, repertoire_id,
-                                                    count_field, count)
+                                               count_field, count, ir_updated_at )
 

@@ -45,6 +45,11 @@ class Clone(Annotation):
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getCloneClass())
+        ir_updated_at_clone =  self.getAIRRMap().getMapping("ir_updated_at_clone",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getIRCloneClass())
+
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the clone_id field.
         if not clone_id_field is None:
@@ -54,7 +59,8 @@ class Clone(Annotation):
             # Over write the field.
             for record_id in record_ids:
                 self.repository.updateCloneField("_id", record_id,
-                                                 clone_id_field, str(record_id))
+                                                 clone_id_field, str(record_id),
+                                                 ir_updated_at_clone)
 
         return True
 
@@ -75,9 +81,14 @@ class Clone(Annotation):
         count_field = self.airr_map.getMapping(self.getCloneCountField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
+        ir_updated_at =  self.airr_map.getMapping("ir_updated_at",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.airr_map.getRepertoireClass())
+
         if count_field is None:
            return False
         else:
             return self.repository.updateField(repertoire_field, repertoire_id,
-                                                    count_field, count)
+                                               count_field, count, ir_updated_at)
 

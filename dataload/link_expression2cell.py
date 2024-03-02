@@ -269,6 +269,11 @@ def processGEX(gex_file, cell_file, repository, airr_map,
     tool_cell_field = airr_map.getMapping("ir_cell_id_expression",
                                        ireceptor_tag, repository_tag,
                                        airr_map.getIRExpressionClass())
+    ir_updated_at_gex =  airr_map.getMapping("ir_updated_at_expression",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              airr_map.getIRExpressionClass())
+
     print("Info: Looking up %s in Cell, setting %s in GEX"%(
            tool_cell_field, airr_cell_id_field))
 
@@ -298,7 +303,8 @@ def processGEX(gex_file, cell_file, repository, airr_map,
             repository_cell_id = cell_id_dict[this_cell_id]
             # Set the gex cell_id to be the unqique cell_id from the Cell object.
             repository.updateExpressionField(airr_expression_id_field, this_expression_id,
-                                             airr_cell_id_field, repository_cell_id)
+                                             airr_cell_id_field, repository_cell_id,
+                                             ir_updated_at_gex)
             # Update our count.
             update_count = update_count + 1
             if update_count % 10000 == 0:

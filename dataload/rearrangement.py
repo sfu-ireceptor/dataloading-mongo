@@ -128,12 +128,17 @@ class Rearrangement(Annotation):
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRearrangementClass())
+        # Get the field in the repository that is used to store data update time
+        updated_at_field = self.getAIRRMap().getMapping("ir_updated_at_rearrangement",
+                                              Parser.ireceptor_tag,
+                                              Parser.repository_tag)
+
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the rearrangement_id field.
         if not rearrange_id_field is None:
             for record_id in record_ids:
                 self.repository.updateRearrangementField("_id", record_id,
-                                                         rearrange_id_field, str(record_id))
+                                      rearrange_id_field, str(record_id), updated_at_field)
 
         return True
 
@@ -155,6 +160,10 @@ class Rearrangement(Annotation):
         count_field = self.airr_map.getMapping(self.getRearrangementCountField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
+        # Get the field in the repository that is used to store data update time
+        rep_updated_at_field = self.airr_map.getMapping("ir_updated_at",
+                                              Parser.ireceptor_tag,
+                                              Parser.repository_tag)
         return self.repository.updateField(repertoire_field, repertoire_id,
-                                           count_field, count)
+                                           count_field, count, rep_updated_at_field)
 

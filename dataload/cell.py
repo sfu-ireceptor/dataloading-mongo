@@ -45,6 +45,11 @@ class Cell(Annotation):
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getCellClass())
+        ir_updated_at_cell =  self.getAIRRMap().getMapping("ir_updated_at_cell",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.getAIRRMap().getIRCellClass())
+
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the cell_id field.
         if not cell_id_field is None:
@@ -54,7 +59,8 @@ class Cell(Annotation):
             # Over write the field.    
             for record_id in record_ids:
                 self.repository.updateCellField("_id", record_id,
-                                                 cell_id_field, str(record_id))
+                                                 cell_id_field, str(record_id),
+                                                 ir_updated_at_cell)
 
         return True
 
@@ -75,9 +81,14 @@ class Cell(Annotation):
         count_field = self.airr_map.getMapping(self.getCellCountField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
+        ir_updated_at =  self.airr_map.getMapping("ir_updated_at",
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag(),
+                                              self.airr_map.getRepertoireClass())
+
         if count_field is None:
            return False
         else:
             return self.repository.updateField(repertoire_field, repertoire_id,
-                                                    count_field, count)
+                                               count_field, count, ir_updated_at)
 
