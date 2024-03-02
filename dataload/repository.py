@@ -298,7 +298,7 @@ class Repository:
     # Update the update_field to update_value wherever search_field is equal to
     # search value.
     def updateExpressionField(self, search_field, search_value,
-                              update_field, update_value, , update_time_field):
+                              update_field, update_value, update_time_field):
         if not self.skipload:
             # Get the current time, and add it to the update information.
             now_str = Parser.getDateTimeNowUTC()
