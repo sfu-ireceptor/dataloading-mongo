@@ -28,6 +28,7 @@ class Rearrangement(Annotation):
 
 
     # Method to map a dataframe to the repository type mapping.
+    # TODO: Deprecated - remove
     def mapToRepositoryTypeOld(self, df):
         # time this function
         t_start = time.perf_counter()
@@ -130,8 +131,8 @@ class Rearrangement(Annotation):
                                               self.getAIRRMap().getRearrangementClass())
         # Get the field in the repository that is used to store data update time
         updated_at_field = self.getAIRRMap().getMapping("ir_updated_at_rearrangement",
-                                              Parser.ireceptor_tag,
-                                              Parser.repository_tag)
+                                              self.getiReceptorTag(),
+                                              self.getRepositoryTag())
 
         # If we found a repository record, write a string repersentation of the ID 
         # returned into the rearrangement_id field.
@@ -162,8 +163,8 @@ class Rearrangement(Annotation):
                                                     self.repository_tag)
         # Get the field in the repository that is used to store data update time
         rep_updated_at_field = self.airr_map.getMapping("ir_updated_at",
-                                              Parser.ireceptor_tag,
-                                              Parser.repository_tag)
+                                              self.ireceptor_tag,
+                                              self.repository_tag)
         return self.repository.updateField(repertoire_field, repertoire_id,
                                            count_field, count, rep_updated_at_field)
 
