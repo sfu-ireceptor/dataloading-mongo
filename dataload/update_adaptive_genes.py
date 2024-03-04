@@ -160,14 +160,11 @@ def getArguments():
         print('DATABASE           :', options.database)
         print('DATABASE_MAP       :', options.database_map)
         print('MAPFILE            :', options.mapfile)
-        print('FILE               :', options.file_map)
 
     return options
 
 def processRearrangements(gene_field, allele_field, gene_map_df, repository, airr_map,
-                          rearrangementParser, options):
-    print('Info:')
-    print('Info: Processing - gene_field = %s'%(gene_field))
+                          rearrangementParser, verbose):
     # Start timing the processing
     t_start = time.perf_counter()
 
@@ -194,10 +191,14 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
     # Get the repository field name for the allele field we are processing. 
     repo_allele_field = airr_map.getMapping(allele_field, ireceptor_tag, repository_tag,
                                           airr_map.getIRRearrangementClass())
-    print("Info: gene field = %s"%(gene_field))
-    print("Info: repository gene field = %s"%(repo_gene_field))
-    print("Info: allele field = %s"%(allele_field))
-    print("Info: repository allele field = %s"%(repo_allele_field))
+    if verbose:
+        print("Info: gene field = %s"%(gene_field))
+        print("Info: repository gene field = %s"%(repo_gene_field))
+        print("Info: allele field = %s"%(allele_field))
+        print("Info: repository allele field = %s"%(repo_allele_field))
+
+    # Keep track of how many writes we make.
+    update_count = 0
 
     # For each gene name we need to convert. This is iterating over the list of
     # bad gene names in the Adaptive produced data.
@@ -215,102 +216,57 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
         # with the fixed gene.
         for rearrangement in rearrangement_cursor:
             this_sequence_id = rearrangement[airr_sequence_id_field]
-            print("Info:     sequence_id = %s"%(this_sequence_id))
+            if verbose:
+                print("Info:     sequence_id = %s"%(this_sequence_id))
 
             # Rearrangements have lists of gene calls
             gene_list = rearrangement[repo_gene_field]
-            print("Info:     %s"%(gene_list))
+            #print("Info:     %s"%(gene_list))
             new_gene_list = []
-            update_needed = False
+            update_gene = False
             # Iterate over the gene list and make the change.
             for gene in gene_list:
-                print("Info:         %s"%(gene))
+                #print("Info:         %s"%(gene))
                 if gene == gene_map["Adaptive"]:
-                    update_needed = True
+                    update_gene = True
                     new_gene_list.append(gene_map["Fixed"])
                 else:
                     new_gene_list.append(gene)
-            print("Info:     %s"%(new_gene_list))
+            if verbose:
+                print("Info:     %s -> %s"%(gene_list, new_gene_list))
 
-            
             # Do the same for the allele call.
             # Rearrangements have lists of allele calls
             allele_list = rearrangement[repo_allele_field]
-            print("Info:     %s"%(allele_list))
+            #print("Info:     %s"%(allele_list))
             new_allele_list = []
+            update_allele = False
             # Iterate over the allel list and make the change.
             for allele in allele_list:
-                print("Info:         %s"%(allele))
+                #print("Info:         %s"%(allele))
                 # If the allele is identical to the fix, then we need to make the fix. 
                 # This means there is no allele denoted in the allele call.
                 # If the allele is identical to the fix with a * appended (e.g. TRBD2-1*)
                 # then we need to do the fix. We don't want to apply the fix to TRBD2-10
                 # so the above catches this case.
                 if allele == gene_map["Adaptive"] or gene_map["Adaptive"]+"*" in allele:
-                    update_needed = True
+                    update_allele = True
                     new_allele_list.append(allele.replace(gene_map["Adaptive"],gene_map["Fixed"]))
                 else:
                     new_allele_list.append(allele)
-            print("Info:     %s"%(new_allele_list))
+            if verbose:
+                print("Info:     %s -> %s"%(allele_list, new_allele_list))
             # Set the rearrangement field to contain the new values. 
-            #if update_needed:
-            repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                repo_gene_field, new_gene_list,
-                                                updated_at_field)
-            repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                repo_allele_field, new_allele_list,
-                                                updated_at_field)
-
-                    
-    return
-
-    # Execute the query to find all rearrangemetns in the Rearrangement collection that are
-    # associated with the rearrangement link ID (associated with the file). Note this DOES NOT
-    # look at the file, it looks in the database to find all Rearrangements that are
-    # associated with the file.
-    query = {repo_gene_field: {'$eq': rearrangement_link_id}}
-    rearrangement_cursor = repository.rearrangement.find(query)
-    # Keep track of the number of updates as we iterate over the cursor.
-    update_count = 0
-    for rearrangement in rearrangement_cursor:
-        #print("Info:     %s,%s,%s"%(
-        #        rearrangement[airr_sequence_id_field],
-        #        rearrangement[tool_cell_field],
-        #        rearrangement[airr_cell_id_field]))
-        # Sequence ID - needed to update this sequence in the repository
-        this_sequence_id = rearrangement[airr_sequence_id_field]
-        # Get the AIRR cell ID field, this is the field we overwrite.
-        this_cell_id = rearrangement[airr_cell_id_field]
-        # The cell dictionary is keyed on the tool cell ID, which is not unique in the DB.
-        # If the rearrangement has a tool cell ID in the DB unique cell ID field, we are not
-        # unique. If so we need to update the cell ID field in the rearrangement collection
-        # with the unique cell id field which is in the dictionary. 
-        if this_cell_id in cell_id_dict:
-            # Get the Cell collection unique ID from the dictionary.
-            repository_cell_id = cell_id_dict[this_cell_id]
-            # Set the rearrangement cell_id to be the unqique cell_id from the Cell object.
-            repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                airr_cell_id_field, repository_cell_id)
-            # Add the sequence ID to the cell list of rearrangements.
-            cell_seq_dict[repository_cell_id].append(this_sequence_id)
-            # Update our count.
-            update_count = update_count + 1
-        else:
-            # In this case we can't find the rearrangement cell ID in the dictionary. Why?
-            if this_cell_id in cell_id_dict.values():
-                # Check whether the dictionary contains this_cell_id in its values. If it does,
-                # then it is likely that the rearrangement cell_id has already been set to be
-                # the repository unique cell_id.
-                print("Warning: Cell id for sequence %s already set (cell_id = %s)"%(this_sequence_id,this_cell_id))
-            else:
-                # If nothing then we could not find a cell for a sequence, print a warning.
-                print("Warning: Could not find a Cell for sequence %s"%(this_sequence_id))
-    # If we want to store rearrangement object in the Cell collection, we can do so by looping
-    # over the sequence dictionary, but we need to check what is there, append, and make unique
-    # so we don't have any duplicates. Not necessary so leaving out for now.
-    #for repository_cell_id, sequence_list in cell_seq_dict.items():
-    #    print("Info: %s %s"%(repository_cell_id,sequence_list))
-
+            if update_gene:
+                repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
+                                                    repo_gene_field, new_gene_list,
+                                                    updated_at_field)
+                update_count = update_count + 1
+            if update_allele:
+                repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
+                                                    repo_allele_field, new_allele_list,
+                                                    updated_at_field)
+                update_count = update_count + 1
 
 
     # time end
@@ -361,7 +317,7 @@ if __name__ == "__main__":
     gene_map_df = pd.read_csv(options.gene_map, sep='\t')
     # Process the rearrangements as per the gene_map file.
     processRearrangements(options.gene_field, options.allele_field, gene_map_df, repository,
-                          airr_map, rearrangementParser, options)
+                          airr_map, rearrangementParser, options.verbose)
 
     # Output timing
     t_total_end = time.perf_counter()
