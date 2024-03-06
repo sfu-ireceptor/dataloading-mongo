@@ -162,7 +162,7 @@ class Rearrangement(Annotation):
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
         # Get the field in the repository that is used to store data update time
-        rep_updated_at_field = self.airr_map.getMapping("ir_updated_at",
+        rep_updated_at_field = self.airr_map.getMapping("ir_updated_at_repertoire",
                                               self.ireceptor_tag,
                                               self.repository_tag)
         return self.repository.updateField(repertoire_field, repertoire_id,

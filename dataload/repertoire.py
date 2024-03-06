@@ -108,14 +108,14 @@ class Repertoire(Parser):
         if adc_update_date is None:
             adc_update_date = "adc_update_date"
 
-        ir_updated_at =  self.getAIRRMap().getMapping("ir_updated_at",
+        ir_updated_at =  self.getAIRRMap().getMapping("ir_updated_at_repertoire",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
         if ir_updated_at is None:
             ir_updated_at = "ir_updated_at"
 
-        ir_created_at =  self.getAIRRMap().getMapping("ir_created_at",
+        ir_created_at =  self.getAIRRMap().getMapping("ir_created_at_repertoire",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())

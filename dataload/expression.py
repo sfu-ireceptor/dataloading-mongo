@@ -80,7 +80,7 @@ class Expression(Annotation):
         count_field = self.airr_map.getMapping(self.getExpressionCountField(),
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
-        ir_updated_at =  self.airr_map.getMapping("ir_updated_at",
+        ir_updated_at =  self.airr_map.getMapping("ir_updated_at_repertoire",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.airr_map.getRepertoireClass())
