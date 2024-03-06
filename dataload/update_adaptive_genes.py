@@ -22,6 +22,8 @@ from airr_map import AIRRMap
 from repository import Repository
 # Rearrangement loader classes
 from rearrangement import Rearrangement
+# Parser class
+from parser import Parser
 
 # Get the command line arguments...
 def getArguments():
@@ -164,9 +166,10 @@ def getArguments():
     return options
 
 def processRearrangements(gene_field, allele_field, gene_map_df, repository, airr_map,
-                          rearrangementParser, verbose):
+                          rearrangementParser, verbose, skipload):
     # Start timing the processing
     t_start = time.perf_counter()
+    t_update_total = 0
 
     # Set the tag for the repository that we are using.
     repository_tag = rearrangementParser.getRepositoryTag()
@@ -176,9 +179,9 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
 
     # Get the sequence_id field that is used to identify unique
     # sequences in the repository.
-    airr_sequence_id_field = airr_map.getMapping("rearrangement_id",
-                                       ireceptor_tag, repository_tag,
-                                       airr_map.getRearrangementClass())
+    sequence_id_field = airr_map.getMapping("rearrangement_id",
+                                            ireceptor_tag, repository_tag,
+                                            airr_map.getRearrangementClass())
 
     # Get the field in the repository that is used to store data update time
     updated_at_field = airr_map.getMapping("ir_updated_at_rearrangement",
@@ -203,19 +206,20 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
     # For each gene name we need to convert. This is iterating over the list of
     # bad gene names in the Adaptive produced data.
     for index, gene_map in gene_map_df.iterrows():
-        print("Info: mapping %s to %s"%(gene_map["Adaptive"],gene_map["Fixed"]))
+        print("Info: mapping %s to %s"%(gene_map["Adaptive"],gene_map["Fixed"]), flush=True)
+        t_start_gene = time.perf_counter()
         # Get the counts for each bad gene and output some info.
         rearrangement_count = repository.countRearrangements(repo_gene_field,
                                                              gene_map["Adaptive"])
         print("Info: Found %d rearrangements with %s = %s"%
-              (rearrangement_count, repo_gene_field, gene_map["Adaptive"]))
+              (rearrangement_count, repo_gene_field, gene_map["Adaptive"]), flush=True)
         # Query for the gene we want to fix.
         query = {repo_gene_field: {'$eq': gene_map["Adaptive"]}}
         rearrangement_cursor = repository.rearrangement.find(query)
         # For each rearrangement found with the bad gene, replace it
         # with the fixed gene.
         for rearrangement in rearrangement_cursor:
-            this_sequence_id = rearrangement[airr_sequence_id_field]
+            this_sequence_id = rearrangement[sequence_id_field]
             if verbose:
                 print("Info:     sequence_id = %s"%(this_sequence_id))
 
@@ -257,23 +261,57 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
             if verbose:
                 print("Info:     %s -> %s"%(allele_list, new_allele_list))
             # Set the rearrangement field to contain the new values. 
-            if update_gene:
-                repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                    repo_gene_field, new_gene_list,
-                                                    updated_at_field)
+            t_update_start = time.perf_counter()
+            now_str = rearrangementParser.getDateTimeNowUTC()
+            # Build an update query based on what has changed. We either
+            # update gene, allele, or both
+            if update_gene and update_allele:
+                # Update query, gene and allele
+                update = {"$set": {
+                              repo_gene_field:new_gene_list,
+                              repo_allele_field:new_allele_list,
+                              updated_at_field:now_str}
+                         }
+                # Do the update
+                if not skipload:
+                    repository.rearrangement.update( {sequence_id_field:this_sequence_id}, update)
                 update_count = update_count + 1
-            if update_allele:
-                repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                    repo_allele_field, new_allele_list,
-                                                    updated_at_field)
+            elif update_gene:
+                # Update query, gene only
+                update = {"$set": {
+                              repo_gene_field:new_gene_list,
+                              updated_at_field:now_str}
+                         }
+                # Do the update
+                if not skipload:
+                    repository.rearrangement.update( {sequence_id_field:this_sequence_id}, update)
+                update_count = update_count + 1
+            elif update_allele:
+                # Update query, allele only
+                update = {"$set": {
+                              repo_allele_field:new_allele_list,
+                              updated_at_field:now_str}
+                         }
+                # Do the update
+                if not skipload:
+                    repository.rearrangement.update( {sequence_id_field:this_sequence_id}, update)
                 update_count = update_count + 1
 
+            # Keep track of update time.
+            t_update_total = t_update_total + (time.perf_counter() - t_update_start)
+
+        # Keep track of processing time for this gene.
+        t_end_gene = time.perf_counter()
+        print("Info: Finished processing in %f seconds (%f updates/s)"%(
+               (t_end_gene - t_start_gene),(rearrangement_count/(t_end_gene-t_start_gene))),flush=True)
 
     # time end
-    print("Info: Update of %d rearrangements"%(update_count))
+    print("Info: %d rearrangement database updates made"%(update_count))
     t_end = time.perf_counter()
     print("Info: Finished processing in %f seconds (%f updates/s)"%(
            (t_end - t_start),(update_count/(t_end-t_start))),flush=True)
+    print("Info: Total update time = %f seconds (%.2f%% of total)"%
+           (t_update_total,t_update_total/(t_end - t_start)*100.0))
     return True
 
 if __name__ == "__main__":
@@ -314,10 +352,15 @@ if __name__ == "__main__":
     t_total_start = time.perf_counter()
     # Open the gene map file - it has two columns, the gene name to replace and the
     # gene to use as a replacement. 
-    gene_map_df = pd.read_csv(options.gene_map, sep='\t')
+    try:
+        gene_map_df = pd.read_csv(options.gene_map, sep='\t')
+    except:
+        print("Info: Could not open map file %s"%(options.gene_map))
+        sys.exit(1)
+
     # Process the rearrangements as per the gene_map file.
     processRearrangements(options.gene_field, options.allele_field, gene_map_df, repository,
-                          airr_map, rearrangementParser, options.verbose)
+                          airr_map, rearrangementParser, options.verbose, options.skipload)
 
     # Output timing
     t_total_end = time.perf_counter()
