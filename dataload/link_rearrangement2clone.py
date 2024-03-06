@@ -270,8 +270,8 @@ def processRearrangements(rearrangement_file, clone_file, repository, airr_map,
                                        airr_map.getIRRearrangementClass())
     # Get the field in the repository that is used to store data update time
     updated_at_field = airr_map.getMapping("ir_updated_at_rearrangement",
-                                       Parser.ireceptor_tag,
-                                       Parser.repository_tag)
+                                           ireceptor_tag,
+                                           repository_tag)
 
     print("Info: Looking up %s in Clone, setting %s in Rearrangement"%(
            tool_clone_field, airr_clone_id_field))

@@ -82,9 +82,9 @@ class Clone(Annotation):
                                                     self.ireceptor_tag,
                                                     self.repository_tag)
         ir_updated_at =  self.airr_map.getMapping("ir_updated_at_repertoire",
-                                              self.getiReceptorTag(),
-                                              self.getRepositoryTag(),
-                                              self.airr_map.getRepertoireClass())
+                                                  self.ireceptor_tag,
+                                                  self.repository_tag,
+                                                  self.airr_map.getIRRepertoireClass())
 
         if count_field is None:
            return False

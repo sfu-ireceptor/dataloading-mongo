@@ -270,8 +270,8 @@ def processGEX(gex_file, cell_file, repository, airr_map,
                                        ireceptor_tag, repository_tag,
                                        airr_map.getIRExpressionClass())
     ir_updated_at_gex =  airr_map.getMapping("ir_updated_at_expression",
-                                              self.getiReceptorTag(),
-                                              self.getRepositoryTag(),
+                                              ireceptor_tag,
+                                              repository_tag,
                                               airr_map.getIRExpressionClass())
 
     print("Info: Looking up %s in Cell, setting %s in GEX"%(
