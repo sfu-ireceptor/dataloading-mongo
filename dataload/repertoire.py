@@ -108,14 +108,14 @@ class Repertoire(Parser):
         if adc_update_date is None:
             adc_update_date = "adc_update_date"
 
-        ir_updated_at =  self.getAIRRMap().getMapping("ir_updated_at",
+        ir_updated_at =  self.getAIRRMap().getMapping("ir_updated_at_repertoire",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
         if ir_updated_at is None:
             ir_updated_at = "ir_updated_at"
 
-        ir_created_at =  self.getAIRRMap().getMapping("ir_created_at",
+        ir_created_at =  self.getAIRRMap().getMapping("ir_created_at_repertoire",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRepertoireClass())
@@ -210,7 +210,7 @@ class Repertoire(Parser):
                 print("Info:     %s = %s"% (sample_id_field, sample_processing_id))
             record_id = self.repository.updateRepertoire(link_repository_field,
                                                          link_repository_value,
-                                                         json_document)
+                                                         json_document, ir_updated_at)
             return record_id
         else:
 
@@ -278,7 +278,8 @@ class Repertoire(Parser):
                 json_document[count_field] = 0
 
             # Try to write the record and return record_id as appropriate.
-            record_id = self.repository.insertRepertoire(json_document, link_repository_field)
+            record_id = self.repository.insertRepertoire(json_document, link_repository_field,
+                                                         ir_updated_at)
             if record_id is None:
                 print("ERROR: Unable to write repertoire record to repository")
                 return None
@@ -287,13 +288,13 @@ class Repertoire(Parser):
             # the record_id which is guaranteed to be unique in the repository.
             if repertoire_id is None:
                 self.repository.updateField(link_repository_field, record_id,
-                                            rep_id_field, str(record_id))
+                                            rep_id_field, str(record_id), ir_updated_at)
             if data_processing_id is None:
                 self.repository.updateField(link_repository_field, record_id,
-                                            data_id_field, str(record_id))
+                                            data_id_field, str(record_id), ir_updated_at)
             if sample_processing_id is None:
                 self.repository.updateField(link_repository_field, record_id,
-                                            sample_id_field, str(record_id))
+                                            sample_id_field, str(record_id), ir_updated_at)
             if self.verbose:
                 print("Info: Successfully wrote repertoire record <%s, %s, %s>" %
                       (study, sample, file_names))

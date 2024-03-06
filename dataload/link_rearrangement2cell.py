@@ -267,6 +267,11 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
     tool_cell_field = airr_map.getMapping("ir_cell_id_rearrangement",
                                        ireceptor_tag, repository_tag,
                                        airr_map.getIRRearrangementClass())
+    # Get the field in the repository that is used to store data update time
+    updated_at_field = airr_map.getMapping("ir_updated_at_rearrangement",
+                                           ireceptor_tag,
+                                           repository_tag)
+
     print("Info: Looking up %s in Cell, setting %s in Rearrangement"%(
            tool_cell_field, airr_cell_id_field))
 
@@ -296,7 +301,8 @@ def processRearrangements(rearrangement_file, cell_file, repository, airr_map,
             repository_cell_id = cell_id_dict[this_cell_id]
             # Set the rearrangement cell_id to be the unqique cell_id from the Cell object.
             repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                airr_cell_id_field, repository_cell_id)
+                                                airr_cell_id_field, repository_cell_id,
+                                                updated_at_field)
             # Add the sequence ID to the cell list of rearrangements.
             cell_seq_dict[repository_cell_id].append(this_sequence_id)
             # Update our count.

@@ -268,6 +268,11 @@ def processRearrangements(rearrangement_file, clone_file, repository, airr_map,
     tool_clone_field = airr_map.getMapping("ir_clone_id_rearrangement",
                                        ireceptor_tag, repository_tag,
                                        airr_map.getIRRearrangementClass())
+    # Get the field in the repository that is used to store data update time
+    updated_at_field = airr_map.getMapping("ir_updated_at_rearrangement",
+                                           ireceptor_tag,
+                                           repository_tag)
+
     print("Info: Looking up %s in Clone, setting %s in Rearrangement"%(
            tool_clone_field, airr_clone_id_field))
 
@@ -297,7 +302,8 @@ def processRearrangements(rearrangement_file, clone_file, repository, airr_map,
             repository_clone_id = clone_id_dict[this_clone_id]
             # Set the rearrangement clone_id to be the unqique clone_id from the Clone object.
             repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                airr_clone_id_field, repository_clone_id)
+                                                airr_clone_id_field, repository_clone_id,
+                                                updated_at_field)
             # Add the sequence ID to the clone list of rearrangements.
             clone_seq_dict[repository_clone_id].append(this_sequence_id)
             # Update our count.
