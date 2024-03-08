@@ -221,7 +221,7 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
         for rearrangement in rearrangement_cursor:
             this_sequence_id = rearrangement[sequence_id_field]
             if verbose:
-                print("Info:     sequence_id = %s"%(this_sequence_id))
+                print("Info:     sequence_id = %s"%(this_sequence_id), flush=True)
 
             # Rearrangements have lists of gene calls
             gene_list = rearrangement[repo_gene_field]
@@ -237,7 +237,7 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
                 else:
                     new_gene_list.append(gene)
             if verbose:
-                print("Info:     %s -> %s"%(gene_list, new_gene_list))
+                print("Info:     %s -> %s"%(gene_list, new_gene_list), flush=True)
 
             # Do the same for the allele call.
             # Rearrangements have lists of allele calls
@@ -259,7 +259,7 @@ def processRearrangements(gene_field, allele_field, gene_map_df, repository, air
                 else:
                     new_allele_list.append(allele)
             if verbose:
-                print("Info:     %s -> %s"%(allele_list, new_allele_list))
+                print("Info:     %s -> %s"%(allele_list, new_allele_list), flush=True)
             # Set the rearrangement field to contain the new values. 
             t_update_start = time.perf_counter()
             now_str = rearrangementParser.getDateTimeNowUTC()
