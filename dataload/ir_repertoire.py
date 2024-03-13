@@ -181,13 +181,17 @@ class IRRepertoire(Repertoire):
 
         # Check to make sure all of the curator_fields are present in the file read in.
         # If not, this is an error.
+        curator_errors = 0
         for index, row in curator_fields.iterrows():
             if not row[curation_tag] in df.columns:
                 print("ERROR: Could not find curation field %s in file %s"%
                       (row[curation_tag], filename))
-                return False
+                curator_errors = curator_errors + 1
+        if curator_errors > 0:
+            return False
 
         # Check to make sure all AIRR required columns exist
+        airr_errors = 0
         for index, row in airr_fields.iterrows():
             # If the row is required by the AIRR standard
             if row["airr_required"] == "TRUE":
@@ -198,8 +202,9 @@ class IRRepertoire(Repertoire):
                 if not repository_field in df.columns:
                     print("ERROR: Required AIRR field %s (%s) missing"%
                           (row[self.getAIRRTag()],repository_field))
-                    return False
-
+                    airr_errors = airr_errors + 1
+        if airr_errors > 0:
+            return False
         # Check the type of the columns in the actual file being loaded. Note that
         # it is sufficient to test the type of the column by its first value because 
         # Pandas data frames are stongly typed by column. So if the first value in
