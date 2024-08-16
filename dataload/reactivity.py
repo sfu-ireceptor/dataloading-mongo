@@ -20,7 +20,7 @@ class Reactivity(Annotation):
         Annotation.__init__(self, verbose, repository_tag, repository_chunk,
                             airr_map, repository)
         # We need to keep track of the field (identified by an iReceptor
-        # field name) in the rearrangement collection that points to the
+        # field name) in the reactivity collection that points to the
         # Repertoire ID field in the repertoire collection. This should exist in
         # each annotation record. This overrides the Annotation class value for
         # this field.
