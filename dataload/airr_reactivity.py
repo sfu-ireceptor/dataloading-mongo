@@ -88,41 +88,41 @@ class AIRR_Reactivity(Reactivity):
 
         # Get the single, unique repertoire link id for the filename we are loading. If
         # we can't find one, this is an error and we return failure.
-        #repertoire_link_id = self.getRepertoireInfo(filename)
-        #if repertoire_link_id is None:
-        #    print("ERROR: Could not link file %s to a valid repertoire"%(filename))
-        #    return False
+        repertoire_link_id = self.getRepertoireInfo(filename)
+        if repertoire_link_id is None:
+            print("ERROR: Could not link file %s to a valid repertoire"%(filename))
+            return False
 
         # Look up the repertoire data for the record of interest. This is an array
         # and it should be of length 1
-        #repertoires = self.repository.getRepertoires(repertoire_link_field,
-        #                                             repertoire_link_id)
-        #if not len(repertoires) == 1:
-        #    print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
-        #    return False
-        #repertoire = repertoires[0]
+        repertoires = self.repository.getRepertoires(repertoire_link_field,
+                                                     repertoire_link_id)
+        if not len(repertoires) == 1:
+            print("ERROR: Could not find unique repertoire for id %s"%(repertoire_link_id))
+            return False
+        repertoire = repertoires[0]
         
         # Get mapping of the ID fields we want to generate.
-        #map_class = self.getAIRRMap().getRepertoireClass()
-        #rep_id_field = self.getAIRRRepositoryField("repertoire_id", map_class)
-        #data_id_field = self.getAIRRRepositoryField("data_processing_id", map_class)
-        #sample_id_field = self.getAIRRRepositoryField("sample_processing_id", map_class)
+        map_class = self.getAIRRMap().getRepertoireClass()
+        rep_id_field = self.getAIRRRepositoryField("repertoire_id", map_class)
+        data_id_field = self.getAIRRRepositoryField("data_processing_id", map_class)
+        sample_id_field = self.getAIRRRepositoryField("sample_processing_id", map_class)
 
         # Cache some data we need to use often.
-        #if rep_id_field in repertoire:
-        #    repertoire_id_value = repertoire[rep_id_field]
-        #else:
-        #    repertoire_id_value = None
+        if rep_id_field in repertoire:
+            repertoire_id_value = repertoire[rep_id_field]
+        else:
+            repertoire_id_value = None
 
-        #if data_id_field in repertoire:
-        #    data_processing_id_value = repertoire[data_id_field]
-        #else:
-        #    data_processing_id_value = None
+        if data_id_field in repertoire:
+            data_processing_id_value = repertoire[data_id_field]
+        else:
+            data_processing_id_value = None
 
-        #if sample_id_field in repertoire:
-        #    sample_processing_id_value = repertoire[sample_id_field]
-        #else:
-        #    sample_processing_id_value = None
+        if sample_id_field in repertoire:
+            sample_processing_id_value = repertoire[sample_id_field]
+        else:
+            sample_processing_id_value = None
 
         # Get the column of values from the AIRR tag. We only want the
         # Reactivity related fields.
@@ -226,36 +226,37 @@ class AIRR_Reactivity(Reactivity):
                               %(self.getAnnotationTool(), reactivity_column))
             
             # Get the all important link field that maps repertoires to receptors.
-            #rep_receptor_link_field = airr_map.getMapping(
-            #                                 receptor_link_field,
-            #                                 ireceptor_tag, repository_tag)
-            #if not rep_receptor_link_field is None:
-            #    receptor_dict[rep_receptor_link_field] = repertoire_link_id
-            #else:
-            #    print("ERROR: Could not get repertoire link field from AIRR mapping.")
-            #    return False
+            rep_reactivity_link_field = airr_map.getMapping(
+                                             reactivity_link_field,
+                                             ireceptor_tag, repository_tag)
+            if not rep_reactivity_link_field is None:
+                reactivity_dict[rep_reactivity_link_field] = repertoire_link_id
+            else:
+                print("ERROR: Could not get repertoire link field from AIRR mapping.")
+                return False
 
-            # Check to see if reactivity_id exists, and if so, store it in the special
-            # ADC reactivity_id record, since reactivity_id is overwritten in the repository.
-            airr_reactivity_id = airr_map.getMapping("receptor_reactivity_id_reactivity",
+            # Get the field names for the cell_id. When loading we want to copy the
+            # cell_id field from the AIRR Standard into a annotation tool specific
+            # cell id for the ADC. We don't want to lose the original barcode.
+            airr_cell_id = airr_map.getMapping("cell_id_reactivity",
                                                 ireceptor_tag, repository_tag,
                                                 airr_map.getReactivityClass())
-            ir_reactivity_id = airr_map.getMapping("ir_receptor_reactivity_id_reactivity",
+            ir_cell_id = airr_map.getMapping("ir_cell_id_reactivity",
                                              ireceptor_tag, repository_tag,
                                              airr_map.getIRReactivityClass())
-            if airr_reactivity_id in reactivity_dict:
-                reactivity_dict[ir_reactivity_id] = reactivity_dict[airr_reactivity_id]
+            if airr_cell_id in reactivity_dict:
+                reactivity_dict[ir_cell_id] = reactivity_dict[airr_cell_id]
 
 
             # Set the relevant IDs for the record being inserted. It updates the dictionary
             # (passed by reference) and returns False if it fails. If it fails, don't
             # load any data.
-            #if (not self.checkIDFieldsJSON(receptor_dict,
-            #                               repertoire_link_field, repertoire_link_id,
-            #                               repertoire_id_value,
-            #                               data_processing_id_value,
-            #                               sample_processing_id_value)):
-            #    return False
+            if (not self.checkIDFieldsJSON(reactivity_dict,
+                                           repertoire_link_field, repertoire_link_id,
+                                           repertoire_id_value,
+                                           data_processing_id_value,
+                                           sample_processing_id_value)):
+                return False
 
             # Create the created and update values for this block of records. Note that
             # this means that each block of inserts will have the same date.
