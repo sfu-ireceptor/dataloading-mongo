@@ -273,7 +273,7 @@ class AIRR_Reactivity(Reactivity):
 
             # Insert the chunk of records into Mongo.
             t_start = time.perf_counter()
-            print("Info: JSON written =", json.dumps(reactivity_dict), flush=True)
+            #print("Info: JSON written =", json.dumps(reactivity_dict), flush=True)
             self.repositoryInsertRecords(reactivity_dict)
             t_end = time.perf_counter()
 
