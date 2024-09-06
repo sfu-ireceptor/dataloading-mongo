@@ -43,7 +43,7 @@ class Rearrangement(Annotation):
         column_types = df.dtypes
         # For each column in the data frame, we want to convert it to the type
         # required by the repository.
-        for (column, column_data) in df.iteritems():
+        for (column, column_data) in df.items():
             # Get both the AIRR type for the column and the Repository type.
             airr_type = self.airr_map.getMapping(column, repository_tag,
                                                  airr_type_tag, map_class)

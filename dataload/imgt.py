@@ -354,7 +354,11 @@ class IMGT(Rearrangement):
         # Note that this is quite redundant as it is storing the same information
         # for each rearrangement...
         mongo_concat['vquest_annotation_date'] = parameter_dictionary['Date']
-        mongo_concat['vquest_tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
+        # Handle different version column names for different version of IMGT
+        if 'IMGT/V-QUEST programme version' in parameter_dictionary:
+            mongo_concat['vquest_tool_version'] = parameter_dictionary['IMGT/V-QUEST programme version']
+        elif 'IMGT/V-QUEST program version' in parameter_dictionary:
+            mongo_concat['vquest_tool_version'] = parameter_dictionary['IMGT/V-QUEST program version']
         mongo_concat['vquest_reference_version'] = parameter_dictionary[
             'IMGT/V-QUEST reference directory release']
         mongo_concat['vquest_species'] = parameter_dictionary['Species']

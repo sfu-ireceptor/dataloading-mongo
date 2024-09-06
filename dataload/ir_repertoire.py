@@ -214,7 +214,7 @@ class IRRepertoire(Repertoire):
         # Note that we are only warning at this point... we have the types enforced
         # on JSON write so for now we keep track and warn about the issues only here.
         bad_columns = []
-        for (curation_file_column, column_data) in df.iteritems():
+        for (curation_file_column, column_data) in df.items():
             # For each column, check the value of the data against the type expected
             field_type = self.getAIRRMap().getMapping(curation_file_column,
                                            airr_tag, airr_type_tag,
@@ -253,7 +253,7 @@ class IRRepertoire(Repertoire):
             
         # Change the name of the columns to reflect the repository's naming rather
         # than the name in the input file.
-        for (curation_file_column, column_data) in df.iteritems():
+        for (curation_file_column, column_data) in df.items():
             if curation_file_column in columnMapping:
                 repository_column = columnMapping[curation_file_column]
                 if self.verbose():

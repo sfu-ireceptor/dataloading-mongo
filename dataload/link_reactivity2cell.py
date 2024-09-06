@@ -1,12 +1,12 @@
 #! /opt/ireceptor/data/bin/python
 """
- link_rearrangement2clone.py is a script to link clone_ids in the
- Rearrangement collection to the unique Clone id for a Clone in the
- Clone collection. This linking is based on files (as specified at load
- time) to identify the correct rearrangements and clones in question. It uses
- the tool annotation clone ID to make the original link and replaces
- clone_id in the Rearrangement collection with the appropriate unique
- clone_id in the repository.
+ link_reactivity2cell.py is a script to link cell_ids in the
+ Reactivity collection to the unique Cell id for a Cell in the
+ Cell collection. This linking is based on files (as specified at load
+ time) to identify the correct reactivity and cells in question. It uses
+ the tool annotation cell ID to make the original link and replaces
+ cell_id in the Reactivity collection with the appropriate unique
+ cell_id in the repository.
 """
 import os
 import argparse
@@ -18,10 +18,10 @@ import pandas as pd
 from airr_map import AIRRMap
 # Repository class - hides the DB implementation
 from repository import Repository
-# Rearrangement loader classes
-from rearrangement import Rearrangement
-# Clone loader classes
-from clone import Clone
+# Reactivity loader classes
+from airr_reactivity import AIRR_Reactivity
+# Cell loader classes
+from cell import Cell
 
 # Get the command line arguments...
 def getArguments():
@@ -138,13 +138,19 @@ def getArguments():
         "--receptor_collection",
         dest="receptor_collection",
         default="receptor",
-        help="The collection to use for storing and searching receptors. This is the collection that data is inserted into when the --airr-receptor option is used to load files. Defaults to 'receptor', which is the collection in the iReceptor Turnkey repository."
+        help="The collection to use for storing and searching receptor. This is the collection that data is inserted into when the --airr-receptor option is used to load files. Defaults to 'receptor', which is the collection in the iReceptor Turnkey repository."
+    )
+    db_group.add_argument(
+        "--reactivity_collection",
+        dest="reactivity_collection",
+        default="reactivity",
+        help="The collection to use for storing and searching reactivity. This is the collection that data is inserted into when the --airr-reactivity option is used to load files. Defaults to 'reactivity', which is the collection in the iReceptor Turnkey repository."
     )
 
     path_group = parser.add_argument_group("file options")
     parser.add_argument(
         "file_map",
-        help="File that contains two columns with headers, first column is a Rearrangement file name used in data loading, the second is a Clone file name used in data loading where the clone_id from the Rearrangement can be looked up in the Clone collection of the repository."
+        help="File that contains two columns with headers, first column is a Reactivity file name used in data loading, the second is a cell file name used in data loading where the cell_id from the Reactivity collection can be looked up in the Cell collection of the repository."
     )
 
     options = parser.parse_args()
@@ -161,24 +167,24 @@ def getArguments():
 
     return options
 
-def processRearrangements(rearrangement_file, clone_file, repository, airr_map,
-                          rearrangementParser, cloneParser, options):
-    print('Info:', flush=True)
-    print('Info: Processing - Rearrangement file = %s, Clone file = %s'%(rearrangement_file, clone_file), flush=True)
+def processReactivity(reactivity_file, cell_file, repository, airr_map,
+               reactivityParser, cellParser, options):
+    print('Info:',flush=True)
+    print('Info: Processing - Reactivity file = %s, Cell file = %s'%(reactivity_file, cell_file),flush=True)
     # Start timing the processing
     t_start = time.perf_counter()
 
     # Set the tag for the repository that we are using.
-    repository_tag = rearrangementParser.getRepositoryTag()
+    repository_tag = reactivityParser.getRepositoryTag()
 
     # Get the tag to use for iReceptor specific mappings
-    ireceptor_tag = rearrangementParser.getiReceptorTag()
+    ireceptor_tag = reactivityParser.getiReceptorTag()
 
     # Get the fields to use for finding repertoire IDs, either using those IDs
     # directly or by looking for a repertoire ID based on a annotation file
     # name.
-    repertoire_link_field = rearrangementParser.getRepertoireLinkIDField()
-    repertoire_file_field = rearrangementParser.getRepertoireFileField()
+    repertoire_link_field = reactivityParser.getRepertoireLinkIDField()
+    repertoire_file_field = reactivityParser.getRepertoireFileField()
 
     # Get the sample ID of the data we are processing. We use the file name for
     # this at the moment, but this may not be the most robust method.
@@ -187,153 +193,151 @@ def processRearrangements(rearrangement_file, clone_file, repository, airr_map,
     print("Info: repertoire file field = %s"%(file_field), flush=True)
     print("Info: repertoire link field = %s"%(repertoire_link_field), flush=True)
 
-    # Get the list of repertoires that are associated with the Rearrangement file. There
+    # Get the list of repertoires that are associated with the Reactivity file. There
     # should only be one, if more than on this is an error.
-    repertoires = repository.getRepertoires(file_field, rearrangement_file)
+    repertoires = repository.getRepertoires(file_field, reactivity_file)
     if not len(repertoires) == 1:
-        print("ERROR: Could not find unique repertoire for file %s"%(rearrangement_file), flush=True)
+        print("ERROR: Could not find unique repertoire for file %s"%(reactivity_file), flush=True)
         return False
     repertoire = repertoires[0]
 
-    # Check to make sure we have the link field that links repertoire and rearrangement
+    # Check to make sure we have the link field that links repertoire and reactivity
     # data in the repertoire object. If so, get the link ID that we use to link to
-    # the rearrangements for this file. This is what we use to look up rearrangements
+    # the Reactivity for this file. This is what we use to look up Reactivity
     if not repertoire_link_field in repertoire:
-        print("ERROR: Could not find Rearrangement link field %s"%(repertoire_link_field), flush=True)
+        print("ERROR: Could not find Reactivity link field %s"%(repertoire_link_field), flush=True)
         return False
-    rearrangement_link_id = repertoire[repertoire_link_field]
+    reactivity_link_id = repertoire[repertoire_link_field]
 
-    # Get the list of repertoire that are associated with the Clone file. Again, there should
+    # Get the list of repertoire that are associated with the Cell file. Again, there should
     # only be one.
-    repertoires = repository.getRepertoires(file_field, clone_file)
+    repertoires = repository.getRepertoires(file_field, cell_file)
     if not len(repertoires) == 1:
-        print("ERROR: Could not find unique repertoire for file %s"%(clone_file), flush=True)
+        print("ERROR: Could not find unique repertoire for file %s"%(cell_file), flush=True)
         return False
     repertoire = repertoires[0]
 
     # Check to make sure we have a link field from the repertoire, and if we do get it.
-    # This is what we use to look up Clones.
+    # This is what we use to look up Cells.
     if not repertoire_link_field in repertoire:
-        print("ERROR: Could not find Clone link field %s"%(repertoire_link_field), flush=True)
+        print("ERROR: Could not find Cell link field %s"%(repertoire_link_field), flush=True)
         return False
-    clone_link_id = repertoire[repertoire_link_field]
+    cell_link_id = repertoire[repertoire_link_field]
     
-    # Get the related link fields for the Rearrangement and Clone collections
-    rearrangement_link_field = rearrangementParser.annotation_linkid_field 
-    clone_link_field = cloneParser.annotation_linkid_field
+    # Get the related link fields for the Reactivity and Cell collections
+    reactivity_link_field = reactivityParser.annotation_linkid_field 
+    cell_link_field = cellParser.annotation_linkid_field
 
     # Get the counts for these fields and output some info.
-    rearrangement_count = repository.countRearrangements(rearrangement_link_field,
-                                                         rearrangement_link_id)
-    clone_count = repository.countClones(clone_link_field, clone_link_id)
-
-    print("Info: rearrangement link id = %s (%d)"%(rearrangement_link_id, rearrangement_count ), flush=True)
-    print("Info: clone link id = %s (%d)"%(clone_link_id,clone_count), flush=True)
+    reactivity_count = repository.countReactivity(reactivity_link_field, reactivity_link_id)
+    cell_count = repository.countCells(cell_link_field, cell_link_id)
+    print("Info: reactivity link field = %s"%(reactivity_link_field), flush=True)
+    print("Info: reactivity link id = %s (%d)"%(reactivity_link_id, reactivity_count ), flush=True)
+    print("Info: cell link field = %s"%(cell_link_field), flush=True)
+    print("Info: cell link id = %s (%d)"%(cell_link_id,cell_count), flush=True)
     
     # Get the field names for the AIRR field (which is our unique ID) and the annotation tool field
-    # which we use to find relevant clones from the rearrangements (typically a barcode).
-    airr_clone_field = airr_map.getMapping("clone_id_clone",
+    # which we use to find relevant cells from the reactivity (typically a barcode).
+    airr_cell_field = airr_map.getMapping("cell_id_cell",
                                        ireceptor_tag, repository_tag,
-                                       airr_map.getCloneClass())
-    tool_clone_field = airr_map.getMapping("ir_clone_id_clone",
+                                       airr_map.getCellClass())
+    tool_cell_field = airr_map.getMapping("ir_cell_id_cell",
                                        ireceptor_tag, repository_tag,
-                                       airr_map.getIRCloneClass())
+                                       airr_map.getIRCellClass())
 
-    # Create a dictionary, indexed by the annotation tools clone_id field. This is typically
-    # a barcode. We want the dictionary keyed on barcode, because we are going to look up clone
-    # barcodes for each rearrangement.
-    clone_id_dict = dict()
-    # Create a dictionary keyed on unique repository clone id to keep track of sequences for each
-    # clone
-    clone_seq_dict = dict()
+    # Create a dictionary, indexed by the annotation tools cell_id field. This is typically
+    # a barcode. We want the dictionary keyed on barcode, because we are going to look up cell
+    # barcodes for each reactivity.
+    cell_id_dict = dict()
 
-    # Execute the query to find all clones in the Clone collection that are from the clone file
-    # provided. Note this DOES NOT look at the file, it looks in the database to find all Clones
+    # Execute the query to find all cells in the Cell collection that are from the cell file
+    # provided. Note this DOES NOT look at the file, it looks in the database to find all Cells
     # that are associated with the file.
-    query = {clone_link_field: {'$eq': clone_link_id}}
-    clone_cursor = repository.clone.find(query)
-    # For each clone
-    for clone in clone_cursor:
-        # For each clone (keyed by the barcode), keep track of the repository clone_id (which
-        # is unique to the repository and a list of sequences related to that clone (empty for now).
-        clone_id_dict[clone[tool_clone_field]] = clone[airr_clone_field]
-        clone_seq_dict[clone[airr_clone_field]] = []
-        #print("Info:     %s = %s"%(clone[tool_clone_field],clone[airr_clone_field]))
+    query = {cell_link_field: {'$eq': cell_link_id}}
+    cell_cursor = repository.cell.find(query)
+    # For each cell
+    cell_duplicates = 0
+    for cell in cell_cursor:
+        # For each cell (keyed by the barcode), keep track of the repository cell_id (which
+        # is unique to the repository 
+        if cell[tool_cell_field] in cell_id_dict:
+            print("Warning: cell %s already in dictionary"%(
+                  cell[tool_cell_field]), flush=True)
+            cell_duplicates = cell_duplicates + 1
+        cell_id_dict[cell[tool_cell_field]] = cell[airr_cell_field]
+        #print("Info:     %s = %s"%(cell[tool_cell_field],cell[airr_cell_field]))
 
-    print("Info: Clones found = %d (%s)"%(len(clone_id_dict), clone_count), flush=True)
-    print("Info: Rearrangements found = %d"%(rearrangement_count), flush=True)
+    print("Info: Cells found = %d, unique = %d, duplicates = %d"%(
+           cell_count, len(cell_id_dict), cell_duplicates), flush=True)
+    print("Info: Reactivities found = %d"%(reactivity_count), flush=True)
 
     # Get the field names for the AIRR field (which we overwrite) and the annotation tool field
     # which we preserve.
-    airr_sequence_id_field = airr_map.getMapping("rearrangement_id",
+    airr_reactivity_id_field = airr_map.getMapping("_id",
                                        ireceptor_tag, repository_tag,
-                                       airr_map.getRearrangementClass())
-    airr_clone_id_field = airr_map.getMapping("clone_id",
+                                       airr_map.getReactivityClass())
+    airr_reactivity_id_field = '_id'
+    airr_cell_id_field = airr_map.getMapping("cell_id_reactivity",
                                        ireceptor_tag, repository_tag,
-                                       airr_map.getRearrangementClass())
-    tool_clone_field = airr_map.getMapping("ir_clone_id_rearrangement",
+                                       airr_map.getReactivityClass())
+    tool_cell_field = airr_map.getMapping("ir_cell_id_reactivity",
                                        ireceptor_tag, repository_tag,
-                                       airr_map.getIRRearrangementClass())
-    # Get the field in the repository that is used to store data update time
-    updated_at_field = airr_map.getMapping("ir_updated_at_rearrangement",
-                                           ireceptor_tag,
-                                           repository_tag)
+                                       airr_map.getIRReactivityClass())
+    print("Info: Looking up %s in Cell, setting %s, %s in Reactivity"%(
+           tool_cell_field, airr_cell_id_field, tool_cell_field), flush=True)
 
-    print("Info: Looking up %s in Clone, setting %s in Rearrangement"%(
-           tool_clone_field, airr_clone_id_field), flush=True)
-
-    # Execute the query to find all rearrangemetns in the Rearrangement collection that are
-    # associated with the rearrangement link ID (associated with the file). Note this DOES NOT
-    # look at the file, it looks in the database to find all Rearrangements that are
+    # Execute the query to find all Reactivity in the Reactivity collection that are
+    # associated with the reactivity link ID (associated with the file). Note this DOES NOT
+    # look at the file, it looks in the database to find all Reactivity that are
     # associated with the file.
-    query = {rearrangement_link_field: {'$eq': rearrangement_link_id}}
-    rearrangement_cursor = repository.rearrangement.find(query)
+    query = {reactivity_link_field: {'$eq': reactivity_link_id}}
+    reactivity_cursor = repository.reactivity.find(query)
     # Keep track of the number of updates as we iterate over the cursor.
     update_count = 0
-    for rearrangement in rearrangement_cursor:
+    for reactivity in reactivity_cursor:
         #print("Info:     %s,%s,%s"%(
-        #        rearrangement[airr_sequence_id_field],
-        #        rearrangement[tool_clone_field],
-        #        rearrangement[airr_clone_id_field]))
-        # Sequence ID - needed to update this sequence in the repository
-        this_sequence_id = rearrangement[airr_sequence_id_field]
-        # Get the AIRR clone ID field, this is the field we overwrite.
-        this_clone_id = rearrangement[airr_clone_id_field]
-        # The clone dictionary is keyed on the tool clone ID, which is not unique in the DB.
-        # If the rearrangement has a tool clone ID in the DB unique clone ID field, we are not
-        # unique. If so we need to update the clone ID field in the rearrangement collection
-        # with the unique clone id field which is in the dictionary. 
-        if this_clone_id in clone_id_dict:
-            # Get the Clone collection unique ID from the dictionary.
-            repository_clone_id = clone_id_dict[this_clone_id]
-            # Set the rearrangement clone_id to be the unqique clone_id from the Clone object.
-            repository.updateRearrangementField(airr_sequence_id_field, this_sequence_id,
-                                                airr_clone_id_field, repository_clone_id,
-                                                updated_at_field)
-            # Add the sequence ID to the clone list of rearrangements.
-            clone_seq_dict[repository_clone_id].append(this_sequence_id)
+        #        reactivity[airr_reactivity_id_field],
+        #        reactivity[tool_cell_field],
+        #        reactivity[airr_cell_id_field]))
+        # Reactivity ID - needed to update this reactivity in the repository
+        this_reactivity_id = reactivity[airr_reactivity_id_field]
+        # Get the AIRR cell ID, this is the field we overwrite. We want to keep track
+        # of it because we want to provide provenance. We store in tool_cell_field.
+        tool_cell_id = reactivity[airr_cell_id_field]
+        # The cell dictionary is keyed on the tool cell ID, which is not unique in the DB.
+        # If the reactivity has a tool cell ID in the DB unique cell ID field, we are not
+        # unique. If so we need to update the cell ID field in the reactivity collection
+        # with the unique cell id field which is in the dictionary. 
+        if tool_cell_id in cell_id_dict:
+            # Get the Cell collection unique ID from the dictionary. This is the 
+            # the value that we want to store in the reactivity Cell ID field.
+            repository_cell_id = cell_id_dict[tool_cell_id]
+            # Set the reactivity cell_id to be the unqique cell_id from the Cell object.
+            #print("%s %s %s %s %s %s"%(airr_reactivity_id_field,this_reactivity_id,airr_cell_id_field,repository_cell_id, tool_cell_field, tool_cell_id))
+            repository.updateReactivityField(airr_reactivity_id_field, this_reactivity_id,
+                                             airr_cell_id_field, repository_cell_id)
+            repository.updateReactivityField(airr_reactivity_id_field, this_reactivity_id,
+                                             tool_cell_field, tool_cell_id)
             # Update our count.
             update_count = update_count + 1
+            if update_count % 10000 == 0:
+                print("Info: Total records so far = %d (%.2f %%)"%(update_count,(update_count/reactivity_count)*100), flush=True)
+
         else:
-            # In this case we can't find the rearrangement clone ID in the dictionary. Why?
-            if this_clone_id in clone_id_dict.values():
-                # Check whether the dictionary contains this_clone_id in its values. If it does,
-                # then it is likely that the rearrangement clone_id has already been set to be
-                # the repository unique clone_id.
-                print("Warning: Clone id for sequence %s already set (clone_id = %s)"%(this_sequence_id,this_clone_id), flush=True)
+            # In this case we can't find the reactivity cell ID in the dictionary. Why?
+            if tool_cell_id in cell_id_dict.values():
+                # Check whether the dictionary contains tool_cell_id in its values. If it does,
+                # then it is likely that the reactivity cell_id has already been set to be
+                # the repository unique cell_id.
+                print("Warning: Cell id for Reactivity %s already set (cell_id = %s)"%(
+                      this_reactivity_id,tool_cell_id), flush=True)
             else:
-                # If nothing then we could not find a clone for a sequence, print a warning.
-                print("Warning: Could not find a Clone for sequence %s (%s)"%(this_sequence_id,rearrangement['v_call']), flush=True)
-    # If we want to store rearrangement object in the Clone collection, we can do so by looping
-    # over the sequence dictionary, but we need to check what is there, append, and make unique
-    # so we don't have any duplicates. Not necessary so leaving out for now.
-    #for repository_clone_id, sequence_list in clone_seq_dict.items():
-    #    print("Info: %s %s"%(repository_clone_id,sequence_list))
-
-
+                # If nothing then we could not find a cell for a Reactivity, print a warning.
+                print("Warning: Could not find a Cell for Reactivity element %s"%(
+                      this_reactivity_id), flush=True)
 
     # time end
-    print("Info: Update of %d rearrangements (%.2f%%)"%(update_count, (update_count/rearrangement_count)*100.0), flush=True)
+    print("Info: Update of %d reactivity records"%(update_count), flush=True)
     t_end = time.perf_counter()
     print("Info: Finished processing in %f seconds (%f updates/s)"%(
            (t_end - t_start),(update_count/(t_end-t_start))),flush=True)
@@ -350,9 +354,10 @@ if __name__ == "__main__":
                             options.repertoire_collection,
                             options.rearrangement_collection,
                             options.clone_collection,
-                            options.clone_collection,
+                            options.cell_collection,
                             options.expression_collection,
                             options.receptor_collection,
+                            options.reactivity_collection,
                             options.skipload, options.update,
                             options.verbose)
     # Check on the successful creation of the repository
@@ -365,30 +370,31 @@ if __name__ == "__main__":
     # that are stored in the repository.
     airr_map = AIRRMap(options.verbose)
     airr_map.readMapFile(options.mapfile)
-    if airr_map.getRearrangementMapColumn(options.database_map) is None:
+    if airr_map.getReactivityMapColumn(options.database_map) is None:
         print("ERROR: Could not find repository mapping %s in AIRR Mappings"%
               (options.database_map))
         sys.exit(1)
 
     # Create parser objects. We don't actually parse these data, but we use the
     # objects to ensure we use the iReceptor fields in these objects correctly
-    rearrangementParser = Rearrangement(options.verbose, options.database_map,
-                                        options.database_chunk, airr_map, repository)
-    cloneParser = Clone(options.verbose, options.database_map,
+    reactivityParser = AIRR_Reactivity(options.verbose, options.database_map,
+                           options.database_chunk, airr_map, repository)
+    cellParser = Cell(options.verbose, options.database_map,
                       options.database_chunk, airr_map, repository)
 
     t_total_start = time.perf_counter()
 
-    # Open the file map - it has two columns, one for Rearrangement files and one for Clone files.
+    # Open the file map - it has two columns, one for Reactivity files and one for Cell files.
     files_df = pd.read_csv(options.file_map, sep='\t')
-    if not 'Rearrangement' in files_df.columns or not 'Clone' in files_df.columns:
-        print("ERROR: Could not find 'Rearrangement' or 'Clone' column in file %s"%
+    if not 'Reactivity' in files_df.columns or not 'Cell' in files_df.columns:
+        print("ERROR: Could not find 'Reactivity' or 'Cell' column in file %s"%
                 (options.file_map))
         sys.exit(1)
-    # For each row, call processRearrangements with two file names along with the other required
-    # objects (repository, airr_map, and rearrangement and clone parsers. We get back a list with
+
+    # For each row, call processReactivity with two file names along with the other required
+    # objects (repository, airr_map, and reactivity and cell parsers. We get back a list with
     # True or False for each row processed.
-    result_list = [processRearrangements(rearrangement_file, clone_file, repository, airr_map, rearrangementParser, cloneParser, options) for rearrangement_file, clone_file in zip(files_df['Rearrangement'], files_df['Clone'])]
+    result_list = [processReactivity(reactivity_file, cell_file, repository, airr_map, reactivityParser, cellParser, options) for reactivity_file, cell_file in zip(files_df['Reactivity'], files_df['Cell'])]
 
     # Output timing
     t_total_end = time.perf_counter()
@@ -398,4 +404,4 @@ if __name__ == "__main__":
         sys.exit(0)
     else:
         print('ERROR: one or more conversions failed.')
-        sys.exit(1)
+        sys.exit()

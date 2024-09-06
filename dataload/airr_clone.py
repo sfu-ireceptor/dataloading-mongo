@@ -169,7 +169,16 @@ class AIRR_Clone(Clone):
         # per the AIRR spec.
         if self.verbose():
             print("Info: Reading the Clone JSON array", flush=True)
-        clone_array = json.load(file_handle)
+        try:
+            clone_array = json.load(file_handle)
+        except json.JSONDecodeError as error:
+            print("ERROR: %s"%(error))
+            print("ERROR: Invalid JSON in file %s"%(filename))
+            return False
+        except Exception as error:
+            print("ERROR: %s"%(error))
+            return False
+
         if self.verbose():
             print("Info: Read %d Clone objects"%(len(clone_array)), flush=True)
 

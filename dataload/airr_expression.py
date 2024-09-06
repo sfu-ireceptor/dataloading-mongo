@@ -175,7 +175,16 @@ class AIRR_Expression(Expression):
         # per the AIRR spec.
         if self.verbose():
             print("Info: Reading the Expression JSON array", flush=True)
-        expression_array = json.load(file_handle)
+        try:
+            expression_array = json.load(file_handle)
+        except json.JSONDecodeError as error:
+            print("ERROR: %s"%(error))
+            print("ERROR: Invalid JSON in file %s"%(filename))
+            return False
+        except Exception as error:
+            print("ERROR: %s"%(error))
+            return False
+
         expression_records = len(expression_array)
         if self.verbose():
             print("Info: Read %d Expression objects"%(expression_records), flush=True)
