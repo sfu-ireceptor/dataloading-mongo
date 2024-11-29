@@ -12,7 +12,7 @@ class AIRRMap:
         self.cell_class = "Cell"
         self.expression_class = "CellExpression"
         self.receptor_class = "Receptor"
-        self.reactivity_class = "ReceptorReactivity"
+        self.reactivity_class = "Reactivity"
         # Create an internal class for IR Repertoire objects. This is defined in the
         # Mapping file and should be one of the values in the ir_class column.
         self.ir_repertoire_class = "IR_Repertoire"
@@ -21,7 +21,7 @@ class AIRRMap:
         self.ir_cell_class = "IR_Cell"
         self.ir_expression_class = "IR_Expression"
         self.ir_receptor_class = "IR_Receptor"
-        self.ir_reactivity_class = "IR_ReceptorReactivity"
+        self.ir_reactivity_class = "IR_Reactivity"
 
         # Keep track of the mapfile being used.
         self.mapfile = ""
