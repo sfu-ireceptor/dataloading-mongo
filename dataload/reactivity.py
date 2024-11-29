@@ -41,7 +41,7 @@ class Reactivity(Annotation):
         if record_ids is None:
             return False
         # Get the field we want to map for the reactivity ID for each record.
-        reactivity_id_field =  self.getAIRRMap().getMapping("receptor_reactivity_id_reactivity",
+        reactivity_id_field =  self.getAIRRMap().getMapping("reactivity_id_reactivity",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getReactivityClass())
