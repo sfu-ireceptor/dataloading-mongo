@@ -170,7 +170,7 @@ class Repository:
             try:
                 record_ids = self.rearrangement.insert(json_records)
             except Exception as err:
-                print("ERROR: Unable to write records to repository, %s"%(err))
+                print("ERROR: Unable to write rearrangement records to repository, %s"%(err))
                 return None
         return record_ids
 
@@ -215,7 +215,7 @@ class Repository:
             try:
                 record_ids = self.clone.insert(json_records)
             except Exception as err:
-                print("ERROR: Unable to write records to repository, %s"%(err))
+                print("ERROR: Unable to write clone records to repository, %s"%(err))
                 return None
         return record_ids
 
@@ -257,7 +257,7 @@ class Repository:
             try:
                 record_ids = self.cell.insert(json_records)
             except Exception as err:
-                print("ERROR: Unable to write records to repository, %s"%(err))
+                print("ERROR: Unable to write cell records to repository, %s"%(err))
                 return None
         return record_ids
 
@@ -300,7 +300,7 @@ class Repository:
             try:
                 record_ids = self.expression.insert(json_records)
             except Exception as err:
-                print("ERROR: Unable to write records to repository, %s"%(err))
+                print("ERROR: Unable to write expression records to repository, %s"%(err))
                 return None
         return record_ids
 
@@ -342,7 +342,7 @@ class Repository:
             try:
                 record_ids = self.receptor.insert(json_records)
             except Exception as err:
-                print("ERROR: Unable to write records to repository, %s"%(err))
+                print("ERROR: Unable to write receptor records to repository, %s"%(err))
                 return None
         return record_ids
 
@@ -381,7 +381,7 @@ class Repository:
             try:
                 record_ids = self.reactivity.insert(json_records)
             except Exception as err:
-                print("ERROR: Unable to write records to repository, %s"%(err))
+                print("ERROR: Unable to write reactivity records to repository, %s"%(err))
                 return None
         return record_ids
 
