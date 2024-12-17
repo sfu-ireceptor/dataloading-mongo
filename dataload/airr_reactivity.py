@@ -180,11 +180,14 @@ class AIRR_Reactivity(Reactivity):
             print("ERROR: %s"%(error))
             return False
 
+        reactivity_records = len(reactivity_array)
         if self.verbose():
-            print("Info: Read %d Reactivity objects"%(len(reactivity_array)), flush=True)
+            print("Info: Read %d Reactivity objects"%(reactivity_records), flush=True)
+
 
         # Iterate over each element in the array 
         total_records = 0
+        reactivity_class = self.getAIRRMap().getReactivityClass()
         for reactivity_dict in reactivity_array:
             # Remap the column names. We need to remap because the columns may be in 
             # a different order in the file than in the column mapping. We leave any
@@ -197,10 +200,39 @@ class AIRR_Reactivity(Reactivity):
                     if self.verbose() and total_records == 0:
                         print("Info: Mapping %s field in file: %s -> %s"
                               %(self.getAnnotationTool(), reactivity_key, mongo_column))
+
                     # If they are different swap them.
                     if mongo_column != reactivity_key:
                         add_dict[mongo_column] = reactivity_value
                         del_dict[reactivity_key] = True
+
+                    # If the field is an ontology, we need to process it.
+                    # In Reactivity this is the only type of non-simple object.
+                    airr_class = "Reactivity"
+                    airr_field_format = airr_map.getMapping(reactivity_key, airr_tag, "airr_format", airr_class)
+                    #print("Info: field = %s, type = %s"%(reactivity_key, airr_field_type))
+                    if airr_field_format == "ontology":
+                        id_key = reactivity_key + "_id"
+                        ontology_set = False
+                        if isinstance(reactivity_value, dict):
+                            # If the field is a dictionary, then we need to process the label and id
+                            if "label" in reactivity_value:
+                                add_dict[reactivity_key] = reactivity_value["label"]
+                                print("Info: Got a reactivity ontology %s = %s"%(reactivity_key,reactivity_value["label"]))
+                            else:
+                                add_dict[reactivity_key] = ""
+                                print("Warning: Could not find ontology label for %s"%(reactivity_key))
+                            if "id" in reactivity_value:
+                                add_dict[id_key] = reactivity_value["id"]
+                            else:
+                                add_dict[id_key] = ""
+                                print("Warning: Could not find ontology id for %s"%(reactivity_key))
+                        else:
+                            # If the field is not a dictionary, then generate empty label and id
+                            # and print a warning.
+                            print("Warning: Could not find ontology id and label for %s"%(reactivity_key))
+                            add_dict[reactivity_key] = ""
+                            add_dict[id_key] = ""
                 else:
                     if self.verbose() and total_records == 0:
                         print("Info: No mapping for %s column %s, storing as is"
