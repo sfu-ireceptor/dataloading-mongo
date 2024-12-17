@@ -140,6 +140,13 @@ def getArguments():
         default="receptor",
         help="The collection to use for storing and searching receptors. This is the collection that data is inserted into when the --airr-receptor option is used to load files. Defaults to 'receptor', which is the collection in the iReceptor Turnkey repository."
     )
+    db_group.add_argument(
+        "--reactivity_collection",
+        dest="reactivity_collection",
+        default="reactivity",
+        help="The collection to use for storing and searching reactivity data. This is the collection that data is inserted into when the --airr-reactivity option is used to load files. Defaults to 'reactivity', which is the collection in the iReceptor Turnkey repository."
+    )
+
 
     path_group = parser.add_argument_group("file options")
     parser.add_argument(
@@ -353,6 +360,7 @@ if __name__ == "__main__":
                             options.clone_collection,
                             options.expression_collection,
                             options.receptor_collection,
+                            options.reactivity_collection,
                             options.skipload, options.update,
                             options.verbose)
     # Check on the successful creation of the repository
