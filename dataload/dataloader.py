@@ -123,6 +123,15 @@ def getArguments():
         help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR v3 and above annotation tool."
     )
 
+    # Processing MiXCR v4 data
+    type_group.add_argument(
+        "--mixcr_v4",
+        action='store_const',
+        const="MiXCR-v4",
+        dest="type",
+        help="The file to be loaded is a text (or compressed text) annotation file as produced by the MiXCR v4 and above annotation tool."
+    )
+
     # Processing Adaptive data
     type_group.add_argument(
         "--adaptive",
@@ -396,6 +405,12 @@ if __name__ == "__main__":
         parser = MiXCR(options.verbose, options.database_map, options.database_chunk,
                        airr_map, repository)
         parser.setFileMapping("mixcr_v3")
+    elif options.type == "MiXCR-v4":
+        # process mixcr
+        print("Info: Processing MiXCR data file: {}".format(options.filename))
+        parser = MiXCR(options.verbose, options.database_map, options.database_chunk,
+                       airr_map, repository)
+        parser.setFileMapping("mixcr_v4")
     elif options.type == "AIRR TSV":
         # process AIRR TSV
         print("Info: Processing AIRR TSV annotation data file: ", options.filename)
