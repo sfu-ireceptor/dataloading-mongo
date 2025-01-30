@@ -7,6 +7,7 @@
 import os
 import argparse
 import json
+import math
 import time
 import sys
 import pandas as pd
@@ -39,9 +40,9 @@ def getArguments():
         action="store_true",
         help="Run the program without actually lodaing data into the repository. This option will allow testing of the entire load process without changing the repository.")
     parser.add_argument(
-        "--update",
+        "--append",
         action="store_true",
-        help="Run the program in update mode rather than insert mode. This only works for repertoires.")
+        help="Run the program in append mode rather than replace mode.")
 
     # Add configuration options 
     config_group = parser.add_argument_group("Configuration file options", "")
@@ -146,7 +147,7 @@ def getArguments():
 
 
     # Application specific command line arguments
-    path_group = parser.add_argument_group("gene options")
+    reactivity_group = parser.add_argument_group("reactivity options")
     #parser.add_argument(
     #    "gene_field",
     #    help="Field in which the gene name is searched for, and if found, replaced."
@@ -173,7 +174,7 @@ def getArguments():
 
     return options
 
-def processRearrangements(reactivity_df, repository, airr_map, rearrangementParser, verbose, skipload):
+def processRearrangements(reactivity_df, repository, airr_map, rearrangementParser, append, verbose, skipload):
     # Start timing the processing
     t_start = time.perf_counter()
     t_update_total = 0
@@ -261,6 +262,8 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
 
     # Keep track of how many writes we make.
     update_count = 0
+    warnings = 0
+    errors = 0
 
     # For each rearrangement in the file, we need to set the sequence fields.
     for index, reactivity_data in reactivity_df.iterrows():
@@ -275,6 +278,7 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         except Exception as err:
             print("ERROR: Could not find rearrangement with sequence_id %s."%(sequence_id))
             print("ERROR: Error message = %s"%(str(err)))
+            errors = errors + 1
             continue
 
         # We should only get one sequence, as the ID should be unique. Check this.
@@ -291,10 +295,12 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         # If we didn't find the sequence, report an error and continue with the next input.
         if rearrangement_data == None:
             print("ERROR: Could not find rearrangement with sequence_id %s, skipping."%(sequence_id))
+            errors = errors + 1
             continue
         # If we found more than one sequence, report an error and continue with the next input.
         if rearrangement_count > 1:
             print("ERROR: Found more than one rearrangement with sequence_id %s, skipping."%(sequence_id))
+            errors = errors + 1
             continue
 
         # Check to see if the junction_aa, the v_gene, and the j_gene match.
@@ -302,27 +308,97 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         #if not(rearrangement_data[v_gene_repo] == reactivity_data[v_gene_file]):
         if reactivity_data[v_gene_file] not in rearrangement_data[v_gene_repo]:
             print("ERROR: V gene different - %s, %s"%(rearrangement_data[v_gene_repo],reactivity_data[v_gene_file]))
+            errors = errors + 1
             continue
         #if not(rearrangement_data[j_gene_repo] == reactivity_data[j_gene_file]):
         if reactivity_data[j_gene_file] not in rearrangement_data[j_gene_repo]:
             print("ERROR: J gene different - %s, %s"%(rearrangement_data[j_gene_repo],reactivity_data[j_gene_file]))
+            errors = errors + 1
             continue
         if not(rearrangement_data[junction_aa_repo] == reactivity_data[junction_aa_file]):
             print("ERROR: Junction AA different - %s, %s"%(rearrangement_data[junction_aa_repo],reactivity_data[junction_aa_file]))
+            errors = errors + 1
             continue
 
         # We now have a single rearrangement, for which we are going to update the data.
         now_str = rearrangementParser.getDateTimeNowUTC()
-        update = {"$set": {
-            reactivity_ref_repo:json.loads(reactivity_data[reactivity_ref_file]),
-            epitope_ref_repo:json.loads(reactivity_data[epitope_ref_file]),
-            antigen_ref_repo:json.loads(reactivity_data[antigen_ref_file]),
-            updated_at_field:now_str}
-        }
+        # If we are in append mode, add the new data to the existing data. If not
+        # replace the old data with the new data.
+        if append:
+            print("Info: Appending data for sequence_id %s."%(sequence_id))
+            if not reactivity_method_repo in rearrangement_data:
+                reactivity_method = []
+            else:
+                reactivity_method = rearrangement_data[reactivity_method_repo]
+
+            if not reactivity_ref_repo in rearrangement_data:
+                reactivity_ref = []
+            else:
+                reactivity_ref = rearrangement_data[reactivity_ref_repo]
+
+            if not epitope_ref_repo in rearrangement_data:
+                epitope_ref = []
+            else:
+                epitope_ref = rearrangement_data[epitope_ref_repo]
+
+            if not antigen_ref_repo in rearrangement_data:
+                antigen_ref = []
+            else:
+                antigen_ref = rearrangement_data[antigen_ref_repo]
+
+            if not (len(reactivity_method) == len(reactivity_ref) and len(reactivity_ref) == len(epitope_ref) and len(epitope_ref) == len(antigen_ref)):
+                print("Warning: Reactivity records not of equal length for sequence_id %s."%(sequence_id))
+                warnings = warnings + 1
+            
+            reactivity_method.extend([reactivity_data[reactivity_method_file]])
+            reactivity_ref.extend([json.loads(reactivity_data[reactivity_ref_file])])
+            epitope_ref.extend([json.loads(reactivity_data[epitope_ref_file])])
+            antigen_ref.extend([json.loads(reactivity_data[antigen_ref_file])])
+
+            update_obj = {"$set": {
+                reactivity_method_repo:reactivity_method,
+                reactivity_ref_repo:reactivity_ref,
+                epitope_ref_repo:epitope_ref,
+                antigen_ref_repo:antigen_ref,
+                updated_at_field:now_str}
+            }
+        else:
+            print("Info: Loading data for sequence_id %s."%(sequence_id))
+            if reactivity_data[reactivity_method_file] == "":
+                reactivity_method = []
+            else:
+                reactivity_method = [reactivity_data[reactivity_method_file]]
+
+            if reactivity_data[reactivity_ref_file] == "":
+                reactivity_ref = []
+            else:
+                reactivity_ref = [json.loads(reactivity_data[reactivity_ref_file])]
+
+            if reactivity_data[epitope_ref_file] == "":
+                epitope_ref = []
+            else:
+                epitope_ref = [json.loads(reactivity_data[epitope_ref_file])]
+
+            if reactivity_data[antigen_ref_file] == "":
+                antigen_ref = []
+            else:
+                antigen_ref = [json.loads(reactivity_data[antigen_ref_file])]
+
+            update_obj = {"$set": {
+                #reactivity_method_repo:[json.loads(reactivity_data[reactivity_method_file])],
+                #reactivity_ref_repo:[json.loads(reactivity_data[reactivity_ref_file])],
+                #epitope_ref_repo:[json.loads(reactivity_data[epitope_ref_file])],
+                #antigen_ref_repo:[json.loads(reactivity_data[antigen_ref_file])],
+                reactivity_method_repo:reactivity_method,
+                reactivity_ref_repo:reactivity_ref,
+                epitope_ref_repo:epitope_ref,
+                antigen_ref_repo:antigen_ref,
+                updated_at_field:now_str}
+            }
+
         # Do the update
-        print("Info: Updating data for sequence_id %s."%(sequence_id))
         if not skipload:
-            repository.rearrangement.update_one( {repo_sequence_id_field:sequence_id}, update)
+            repository.rearrangement.update_one( {repo_sequence_id_field:sequence_id}, update_obj)
             update_count = update_count + 1
         #rearrangement_data[reactivity_ref_repo] = reactivity_data[reactivity_ref_file]
         #rearrangement_data[epitope_ref_repo] = reactivity_data[epitope_ref_file]
@@ -336,6 +412,8 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
            (t_end - t_start),(update_count/(t_end-t_start))),flush=True)
     print("Info: Total update time = %f seconds (%.2f%% of total)"%
            (t_update_total,t_update_total/(t_end - t_start)*100.0))
+    print("Info: Number of errors = %d"%(errors))
+    print("Info: Number of warnings = %d"%(warnings))
     return True
 
 if __name__ == "__main__":
@@ -353,7 +431,7 @@ if __name__ == "__main__":
                             options.expression_collection,
                             options.receptor_collection,
                             options.reactivity_collection,
-                            options.skipload, options.update,
+                            options.skipload, False,
                             options.verbose)
     # Check on the successful creation of the repository
     if repository is None or not repository:
@@ -379,14 +457,14 @@ if __name__ == "__main__":
     # Open the gene map file - it has two columns, the gene name to replace and the
     # gene to use as a replacement. 
     try:
-        reactivity_df = pd.read_csv(options.reactivity_file, sep='\t')
+        reactivity_df = pd.read_csv(options.reactivity_file, keep_default_na=False, sep='\t')
     except:
         print("Info: Could not open reactivity file %s"%(options.reactivity_file))
         sys.exit(1)
 
     # Process the rearrangements in the reactivity file.
     processRearrangements(reactivity_df, repository, airr_map, rearrangementParser,
-                          options.verbose, options.skipload)
+                          options.append, options.verbose, options.skipload)
 
     # Output timing
     t_total_end = time.perf_counter()
