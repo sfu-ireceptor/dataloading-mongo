@@ -43,6 +43,12 @@ def getArguments():
         "--append",
         action="store_true",
         help="Run the program in append mode rather than replace mode.")
+    parser.add_argument(
+        "--reactivity_method",
+        dest="reactivity_method",
+        default=None,
+        help="The reactivity_method to use if it is not set in the file. Values in the file overide this value. Value is of the form 'TOOL:MATCH:FIELD1,FIELD2,Field3', for example 'IEDB:EXACT:v_gene,j_gene,junciton_aa' for an exact match of IEDB records that match on v_gene, j_gene, and junction_aa values."
+    )
 
     # Add configuration options 
     config_group = parser.add_argument_group("Configuration file options", "")
@@ -174,7 +180,7 @@ def getArguments():
 
     return options
 
-def processRearrangements(reactivity_df, repository, airr_map, rearrangementParser, append, verbose, skipload):
+def processRearrangements(reactivity_df, repository, airr_map, rearrangementParser, default_reactivity_method, append, verbose, skipload):
     # Start timing the processing
     t_start = time.perf_counter()
     t_update_total = 0
@@ -203,17 +209,17 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
     updated_at_field = airr_map.getMapping("ir_updated_at_rearrangement",
                                            ireceptor_tag, repository_tag)
 
+    sequence_id_file = "sequence_id"
+    sequence_id_repo = airr_map.getMapping("rearrangement_id",
+                                             ireceptor_tag, repository_tag,
+                                             airr_map.getRearrangementClass())
+
     reactivity_id_file = "reactivity_id"
     reactivity_id_repo = airr_map.getMapping("reactivity_id",
                                              ireceptor_tag, repository_tag,
                                              airr_map.getRearrangementClass())
     reactivity_ref_file = "reactivity_ref"
     reactivity_ref_repo = airr_map.getMapping("reactivity_ref",
-                                              ireceptor_tag, repository_tag,
-                                              airr_map.getRearrangementClass())
-
-    ir_reactivity_ref_file = "ir_reactivity_ref"
-    ir_reactivity_ref_repo = airr_map.getMapping("ir_reactivity_ref",
                                               ireceptor_tag, repository_tag,
                                               airr_map.getRearrangementClass())
 
@@ -227,6 +233,10 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                                               airr_map.getIRRearrangementClass())
     ir_antigen_ref_file = "ir_antigen_ref"
     ir_antigen_ref_repo = airr_map.getMapping("ir_antigen_ref",
+                                              ireceptor_tag, repository_tag,
+                                              airr_map.getIRRearrangementClass())
+    ir_species_ref_file = "ir_species_ref"
+    ir_species_ref_repo = airr_map.getMapping("ir_species__ref",
                                               ireceptor_tag, repository_tag,
                                               airr_map.getIRRearrangementClass())
     v_gene_file = "v_gene"
@@ -253,22 +263,26 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
     if reactivity_ref_repo == None:
         reactivity_ref_repo = reactivity_ref_file
         
-    if ir_reactivity_ref_repo == None:
-        ir_reactivity_ref_repo = ir_reactivity_ref_file
+    #if ir_reactivity_ref_repo == None:
+    #    ir_reactivity_ref_repo = ir_reactivity_ref_file
     if ir_reactivity_method_repo == None:
         ir_reactivity_method_repo = ir_reactivity_method_file
     if ir_epitope_ref_repo == None:
         ir_epitope_ref_repo = ir_epitope_ref_file
     if ir_antigen_ref_repo == None:
         ir_antigen_ref_repo = ir_antigen_ref_file
+    if ir_species_ref_repo == None:
+        ir_species_ref_repo = ir_species_ref_file
 
     if verbose:
+        print("Info: AIRR sequence id field = %s,%s"%(sequence_id_repo, sequence_id_file))
         print("Info: AIRR reactivity id field = %s"%(reactivity_id_repo))
         print("Info: AIRR reactivity field = %s"%(reactivity_ref_repo))
-        print("Info: iReceptor reactivity field = %s"%(ir_reactivity_ref_repo))
+        #print("Info: iReceptor reactivity field = %s"%(ir_reactivity_ref_repo))
         print("Info: iReceptor reactivity method field = %s"%(ir_reactivity_method_repo))
         print("Info: iReceptor epitope field = %s"%(ir_epitope_ref_repo))
         print("Info: iReceptor antigen field = %s"%(ir_antigen_ref_repo))
+        print("Info: iReceptor species field = %s"%(ir_species_ref_repo))
 
     # Keep track of how many writes we make.
     update_count = 0
@@ -278,11 +292,13 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
     # For each rearrangement in the file, we need to set the sequence fields.
     for index, reactivity_data in reactivity_df.iterrows():
         # Get the sequence_id
-        sequence_id = reactivity_data['sequence_id']
+        #print(reactivity_data)
+        sequence_id = reactivity_data[sequence_id_file]
+        #print("Info: AIRR sequence id field = %s,%s"%(sequence_id, sequence_id_file))
         
         # Get the sequence from the repository, skip this sequence if query
         # fails for some reason and generates an exception. 
-        query = {repo_sequence_id_field: {'$eq': sequence_id}}
+        query = {sequence_id_repo: {'$eq': sequence_id}}
         try:
             rearrangement_cursor = repository.rearrangement.find(query)
         except Exception as err:
@@ -336,6 +352,8 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         # replace the old data with the new data.
         if append:
             print("Info: Appending data for sequence_id %s."%(sequence_id))
+            # Get the data for the fields. If the field doesn't exist, set it to
+            # an empty array.
             if not reactivity_ref_repo in rearrangement_data:
                 reactivity_ref = [] 
             else:
@@ -345,11 +363,6 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                 ir_reactivity_method = []
             else:
                 ir_reactivity_method = rearrangement_data[ir_reactivity_method_repo]
-
-            if not ir_reactivity_ref_repo in rearrangement_data:
-                ir_reactivity_ref = []
-            else:
-                ir_reactivity_ref = rearrangement_data[ir_reactivity_ref_repo]
 
             if not ir_epitope_ref_repo in rearrangement_data:
                 ir_epitope_ref = []
@@ -361,72 +374,93 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
             else:
                 ir_antigen_ref = rearrangement_data[ir_antigen_ref_repo]
 
-            if not (len(ir_reactivity_method) == len(ir_reactivity_ref) and len(ir_reactivity_ref) == len(ir_epitope_ref) and len(ir_epitope_ref) == len(ir_antigen_ref)):
-                print("Warning: Reactivity records not of equal length for sequence_id %s."%(sequence_id))
-                warnings = warnings + 1
-            
-            # Append new reactivity data.
-            reactivity_ref.extend(reactivity_data[reactivity_ref_file].split(","))
-            # Make the list unique
+            if not ir_species_ref_repo in rearrangement_data:
+                ir_species_ref = []
+            else:
+                ir_species_ref = rearrangement_data[ir_species_ref_repo]
+
+            # Append new reactivity data and make the list unique
+            reactivity_ref.extend(json.loads(reactivity_data[reactivity_ref_file]))
             reactivity_ref = list(set(reactivity_ref))
 
             # For the other fields, extend the arrays of each field. We want these
-            # arrays to have the same number of element so we can extract related
-            # epitope and antigen data.
-            ir_reactivity_method.extend([reactivity_data[ir_reactivity_method_file]])
-            ir_reactivity_ref.extend([json.loads(reactivity_data[ir_reactivity_ref_file])])
-            ir_epitope_ref.extend([json.loads(reactivity_data[ir_epitope_ref_file])])
-            ir_antigen_ref.extend([json.loads(reactivity_data[ir_antigen_ref_file])])
+            # arrays to also be unique
+            ir_reactivity_method.extend(json.loads(reactivity_data[ir_reactivity_method_file]))
+            ir_reactivity_method = list(set(ir_reactivity_method))
 
-            # Set up the Mongo update command
+            ir_epitope_ref.extend(json.loads(reactivity_data[ir_epitope_ref_file]))
+            ir_epitope_ref = list(set(ir_epitope_ref))
+
+            ir_antigen_ref.extend(json.loads(reactivity_data[ir_antigen_ref_file]))
+            ir_antigen_ref = list(set(ir_antigen_ref))
+
+            ir_species_ref.extend(json.loads(reactivity_data[ir_species_ref_file]))
+            ir_species_ref = list(set(ir_species_ref))
+
+            # Set up the Mongo update command object
             update_obj = {"$set": {
                 reactivity_ref_repo:reactivity_ref,
                 ir_reactivity_method_repo:ir_reactivity_method,
-                ir_reactivity_ref_repo:ir_reactivity_ref,
                 ir_epitope_ref_repo:ir_epitope_ref,
                 ir_antigen_ref_repo:ir_antigen_ref,
+                ir_species_ref_repo:ir_species_ref,
                 updated_at_field:now_str}
             }
         else:
             print("Info: Loading data for sequence_id %s."%(sequence_id))
-            if reactivity_data[reactivity_ref_file] == "":
+            # Reactivity reference (e.g. IEDB_RECEPTOR:42)
+            if not reactivity_ref_file in reactivity_data or reactivity_data[reactivity_ref_file] == "":
                 reactivity_ref = []
             else:
-                # We want this list to have unique items only. Field we read in is in 
-                # AIRR format, which is a string of CURIEs, comma separated. We store in
-                # the DB as an array so we can search it quickly.
-                reactivity_ref = list(set(reactivity_data[reactivity_ref_file].split(",")))
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                reactivity_ref = list(set(json.loads(reactivity_data[reactivity_ref_file])))
 
-            if reactivity_data[ir_reactivity_method_file] == "":
-                ir_reactivity_method = []
+            # Reactivity method is of the form TOOL:TYPE:FIELD1,FIELD2,FIELD3 
+            # e.g. "IEDB:EXACT:v_gene,j_gene,junction_aa" for an EXACT match to receptors
+            # in IEDB with exact match of AIRR v_gene, j_gene, and junction_aa fields.
+            if not ir_reactivity_method_file in reactivity_data or reactivity_data[ir_reactivity_method_file] == "":
+                #ir_reactivity_method = ["IEDB:EXACT:v_gene,j_gene,junction_aa"]
+                if not default_reactivity_method is None:
+                    ir_reactivity_method = [default_reactivity_method]
+                else:
+                    ir_reactivity_method = []
             else:
-                ir_reactivity_method = [reactivity_data[ir_reactivity_method_file]]
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                ir_reactivity_method = list(set(json.loads(reactivity_data[ir_reactivity_method_file])))
 
-            if reactivity_data[ir_reactivity_ref_file] == "":
-                ir_reactivity_ref = []
-            else:
-                ir_reactivity_ref = [json.loads(reactivity_data[ir_reactivity_ref_file])]
-
-            if reactivity_data[ir_epitope_ref_file] == "":
+            # Epitope reference (e.g. "IEDB_EPITOPE:1309147")
+            if not ir_epitope_ref_file in reactivity_data or reactivity_data[ir_epitope_ref_file] == "":
                 ir_epitope_ref = []
             else:
-                ir_epitope_ref = [json.loads(reactivity_data[ir_epitope_ref_file])]
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                ir_epitope_ref = list(set(json.loads(reactivity_data[ir_epitope_ref_file])))
 
-            if reactivity_data[ir_antigen_ref_file] == "":
+            # Antigen protein reference (e.g. "UNIPROT:P0DTC2.1")
+            if not ir_antigen_ref_file in reactivity_data or reactivity_data[ir_antigen_ref_file] == "":
                 ir_antigen_ref = []
             else:
-                ir_antigen_ref = [json.loads(reactivity_data[ir_antigen_ref_file])]
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                ir_antigen_ref = list(set(json.loads(reactivity_data[ir_antigen_ref_file])))
 
+            # Antigen species reference (e.g. "NCBITaxon:2697049")
+            if not ir_species_ref_file in reactivity_data or reactivity_data[ir_species_ref_file] == "":
+                ir_species_ref = []
+            else:
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                ir_species_ref = list(set(json.loads(reactivity_data[ir_species_ref_file])))
+
+            # Set the fields in the database in the update object.
             update_obj = {"$set": {
-                #reactivity_method_repo:[json.loads(reactivity_data[reactivity_method_file])],
-                #reactivity_ref_repo:[json.loads(reactivity_data[reactivity_ref_file])],
-                #epitope_ref_repo:[json.loads(reactivity_data[epitope_ref_file])],
-                #antigen_ref_repo:[json.loads(reactivity_data[antigen_ref_file])],
                 reactivity_ref_repo:reactivity_ref,
                 ir_reactivity_method_repo:ir_reactivity_method,
-                ir_reactivity_ref_repo:ir_reactivity_ref,
                 ir_epitope_ref_repo:ir_epitope_ref,
                 ir_antigen_ref_repo:ir_antigen_ref,
+                ir_species_ref_repo:ir_species_ref,
                 updated_at_field:now_str}
             }
 
@@ -434,10 +468,6 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         if not skipload:
             repository.rearrangement.update_one( {repo_sequence_id_field:sequence_id}, update_obj)
             update_count = update_count + 1
-        #rearrangement_data[reactivity_ref_repo] = reactivity_data[reactivity_ref_file]
-        #rearrangement_data[epitope_ref_repo] = reactivity_data[epitope_ref_file]
-        #rearrangement_data[antigen_ref_repo] = reactivity_data[antigen_ref_file]
-        
 
     # time end
     print("Info: %d rearrangement database updates made"%(update_count))
@@ -491,14 +521,15 @@ if __name__ == "__main__":
     # Open the gene map file - it has two columns, the gene name to replace and the
     # gene to use as a replacement. 
     try:
-        reactivity_df = pd.read_csv(options.reactivity_file, keep_default_na=False, sep='\t')
+        reactivity_df = pd.read_csv(options.reactivity_file, index_col=False, keep_default_na=False, sep='\t')
     except:
         print("Info: Could not open reactivity file %s"%(options.reactivity_file))
         sys.exit(1)
 
     # Process the rearrangements in the reactivity file.
     processRearrangements(reactivity_df, repository, airr_map, rearrangementParser,
-                          options.append, options.verbose, options.skipload)
+                          options.reactivity_method, options.append,
+                          options.verbose, options.skipload)
 
     # Output timing
     t_total_end = time.perf_counter()
