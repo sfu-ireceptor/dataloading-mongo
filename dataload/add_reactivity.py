@@ -288,6 +288,8 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
     update_count = 0
     warnings = 0
     errors = 0
+    t_block_start = time.perf_counter()
+    block_size = 10000
 
     # For each rearrangement in the file, we need to set the sequence fields.
     for index, reactivity_data in reactivity_df.iterrows():
@@ -351,7 +353,7 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         # If we are in append mode, add the new data to the existing data. If not
         # replace the old data with the new data.
         if append:
-            print("Info: Appending data for sequence_id %s."%(sequence_id))
+            #print("Info: Appending data for sequence_id %s."%(sequence_id))
             # Get the data for the fields. If the field doesn't exist, set it to
             # an empty array.
             if not reactivity_ref_repo in rearrangement_data:
@@ -407,7 +409,7 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                 updated_at_field:now_str}
             }
         else:
-            print("Info: Loading data for sequence_id %s."%(sequence_id))
+            #print("Info: Updating data for sequence_id %s."%(sequence_id))
             # Reactivity reference (e.g. IEDB_RECEPTOR:42)
             if not reactivity_ref_file in reactivity_data or reactivity_data[reactivity_ref_file] == "":
                 reactivity_ref = []
@@ -468,6 +470,11 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         if not skipload:
             repository.rearrangement.update_one( {repo_sequence_id_field:sequence_id}, update_obj)
             update_count = update_count + 1
+        if update_count % block_size == 0:
+            t_block_end = time.perf_counter()
+            print("Info: Finished processing %d records in %f seconds (%f updates/s)"%(
+                   block_size, (t_block_end - t_block_start),(block_size/(t_block_end-t_block_start))),flush=True)
+            t_block_start = time.perf_counter()
 
     # time end
     print("Info: %d rearrangement database updates made"%(update_count))
