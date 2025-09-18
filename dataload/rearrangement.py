@@ -9,6 +9,7 @@ import os
 import time
 import pandas as pd
 import numpy as np
+from bson.objectid import ObjectId
 from annotation import Annotation
 
 
@@ -116,30 +117,27 @@ class Rearrangement(Annotation):
     # are used by all subclasses of the Rearrangement object.
     #####################################################################################
 
-    # Write the set of JSON records provided to the "rearrangements" collection.
+    # Write the set of records provided to the "rearrangements" collection.
     # This is hiding the Mongo implementation. Probably should refactor the 
     # repository implementation completely.
-    def repositoryInsertRecords(self, json_records):
-        # Insert the JSON and get a list of IDs back. If no data returned, return an error
-        record_ids = self.repository.insertRearrangements(json_records)
-        if record_ids is None:
-            return False
+    def repositoryInsertRecords(self, records):
+
         # Get the field we want to map for the rearrangement ID for each record.
         rearrange_id_field =  self.getAIRRMap().getMapping("rearrangement_id",
                                               self.getiReceptorTag(),
                                               self.getRepositoryTag(),
                                               self.getAIRRMap().getRearrangementClass())
-        # Get the field in the repository that is used to store data update time
-        updated_at_field = self.getAIRRMap().getMapping("ir_updated_at_rearrangement",
-                                              self.getiReceptorTag(),
-                                              self.getRepositoryTag())
+        # Pre assign record IDs with a MongoDB ID and copy it
+        # into the AIRR field for the rearrangement ID
+        for record in records:
+            _id = ObjectId()
+            record['_id'] = _id
+            record[rearrange_id_field] = str(_id)
 
-        # If we found a repository record, write a string repersentation of the ID 
-        # returned into the rearrangement_id field.
-        if not rearrange_id_field is None:
-            for record_id in record_ids:
-                self.repository.updateRearrangementField("_id", record_id,
-                                      rearrange_id_field, str(record_id), updated_at_field)
+        # Insert the data and get a list of IDs back. If no data returned, return an error
+        record_ids = self.repository.insertRearrangements(records)
+        if record_ids is None:
+            return False
 
         return True
 
