@@ -582,10 +582,10 @@ class Parser:
 
         if self.verbose():
             if not isinstance(value, (list)) and pd.isnull(value):
-                print("Info: Field %s type ERROR, null value, field is non-nullable"%
+                print("ERROR: Field %s type error, null value, field is non-nullable"%
                       (key))
             elif not valid_type:
-                print("Info: Field %s type ERROR, expected %s, got %s"%
+                print("Info: Field %s type mismatch, expected %s, got %s"%
                       (key, field_type, str(type(value))))
         return valid_type
 
