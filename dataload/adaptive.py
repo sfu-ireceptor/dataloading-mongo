@@ -402,7 +402,7 @@ class Adaptive(Rearrangement):
         if self.verbose():
             print("Info: Preparing the file reader...", flush=True)
         df_reader = pd.read_csv(file_handle, sep='\t', chunksize=chunk_size,
-                                na_filter=False)
+                                na_filter=False, low_memory=False)
 
         # Iterate over the file a chunk at a time. Each chunk is a data frame.
         total_records = 0
@@ -503,7 +503,7 @@ class Adaptive(Rearrangement):
                 gene_df_chunk = df_chunk[adaptive_vfields]
                 df_chunk[v_call] = gene_df_chunk.apply(
                                   lambda x : Adaptive.mapAdaptiveGene(
-                                                 x[0], x[1], x[2], x[3]), axis=1)
+                                                 x.iloc[0], x.iloc[1], x.iloc[2], x.iloc[3]), axis=1)
             else:
                 print("ERROR: Adaptive fields for computing v_call not present")
                 return False
@@ -514,7 +514,7 @@ class Adaptive(Rearrangement):
                 gene_df_chunk = df_chunk[adaptive_dfields]
                 df_chunk[d_call] = gene_df_chunk.apply(
                                   lambda x : Adaptive.mapAdaptiveGene(
-                                                 x[0], x[1], x[2], x[3]), axis=1)
+                                                 x.iloc[0], x.iloc[1], x.iloc[2], x.iloc[3]), axis=1)
             else:
                 print("ERROR: Adaptive fields for computing d_call not present")
                 return False
@@ -525,7 +525,7 @@ class Adaptive(Rearrangement):
                 gene_df_chunk = df_chunk[adaptive_jfields]
                 df_chunk[j_call] = gene_df_chunk.apply(
                                   lambda x : Adaptive.mapAdaptiveGene(
-                                                 x[0], x[1], x[2], x[3]), axis=1)
+                                                 x.iloc[0], x.iloc[1], x.iloc[2], x.iloc[3]), axis=1)
             else:
                 print("ERROR: Adaptive fields for computing j_call not present")
                 return False
@@ -598,7 +598,8 @@ class Adaptive(Rearrangement):
             num_records = len(df_chunk)
             print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
-            records = json.loads(df_chunk.T.to_json()).values()
+            # Transpose the data frame, covert to a dictionary and get the values.
+            records = df_chunk.T.to_dict().values()
             self.repositoryInsertRecords(records)
             t_end = time.perf_counter()
             print("Info: Inserted records, time =", (t_end - t_start),
