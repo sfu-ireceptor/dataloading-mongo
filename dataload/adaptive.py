@@ -599,7 +599,9 @@ class Adaptive(Rearrangement):
             print("Info: Inserting", num_records, "records into Mongo...", flush=True)
             t_start = time.perf_counter()
             # Transpose the data frame, covert to a dictionary and get the values.
-            records = df_chunk.T.to_dict().values()
+            records = json.loads(df_chunk.T.to_json()).values()
+            # TODO: Try to optimize - below does not work
+            #records = df_chunk.T.to_dict().values()
             self.repositoryInsertRecords(records)
             t_end = time.perf_counter()
             print("Info: Inserted records, time =", (t_end - t_start),

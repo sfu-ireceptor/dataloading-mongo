@@ -694,7 +694,9 @@ class IMGT(Rearrangement):
             print("Info: Creating records from Dataframe", flush=True) 
         t_start_load_= time.perf_counter()
         t_start = time.perf_counter()
-        records = mongo_concat.T.to_dict().values()
+        # TODO: Try to optimize - below does not work
+        #records = mongo_concat.T.to_dict().values()
+        records = json.loads(mongo_concat.T.to_json()).values()
         t_end = time.perf_counter()
         if self.verbose():
             print("Info: records created, time = %f seconds (%f records/s)" %
