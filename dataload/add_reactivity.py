@@ -184,6 +184,9 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
     # Start timing the processing
     t_start = time.perf_counter()
     t_update_total = 0
+    t_find_total = 0
+    t_file_read_total = 0
+    t_file_read_start = 0
 
     # Set the tag for the repository that we are using.
     repository_tag = rearrangementParser.getRepositoryTag()
@@ -236,7 +239,15 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                                               ireceptor_tag, repository_tag,
                                               airr_map.getIRRearrangementClass())
     ir_species_ref_file = "ir_species_ref"
-    ir_species_ref_repo = airr_map.getMapping("ir_species__ref",
+    ir_species_ref_repo = airr_map.getMapping("ir_species_ref",
+                                              ireceptor_tag, repository_tag,
+                                              airr_map.getIRRearrangementClass())
+    ir_mhc_ref_file = "ir_mhc_ref"
+    ir_mhc_ref_repo = airr_map.getMapping("ir_mhc_ref",
+                                              ireceptor_tag, repository_tag,
+                                              airr_map.getIRRearrangementClass())
+    ir_mhc_name_file = "ir_mhc_name"
+    ir_mhc_name_repo = airr_map.getMapping("ir_mhc_name",
                                               ireceptor_tag, repository_tag,
                                               airr_map.getIRRearrangementClass())
     v_gene_file = "v_gene"
@@ -273,6 +284,10 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         ir_antigen_ref_repo = ir_antigen_ref_file
     if ir_species_ref_repo == None:
         ir_species_ref_repo = ir_species_ref_file
+    if ir_mhc_ref_repo == None:
+        ir_mhc_ref_repo = ir_mhc_ref_file
+    if ir_mhc_name_repo == None:
+        ir_mhc_name_repo = ir_mhc_name_file
 
     if verbose:
         print("Info: AIRR sequence id field = %s,%s"%(sequence_id_repo, sequence_id_file))
@@ -283,23 +298,29 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
         print("Info: iReceptor epitope field = %s"%(ir_epitope_ref_repo))
         print("Info: iReceptor antigen field = %s"%(ir_antigen_ref_repo))
         print("Info: iReceptor species field = %s"%(ir_species_ref_repo))
+        print("Info: iReceptor mhc field = %s"%(ir_mhc_ref_repo))
+        print("Info: iReceptor mhc_name field = %s"%(ir_mhc_name_repo))
 
     # Keep track of how many writes we make.
     update_count = 0
     warnings = 0
     errors = 0
     t_block_start = time.perf_counter()
-    block_size = 10000
+    t_file_read_start = time.perf_counter()
+    block_size = 1000
+    total_rearrangements = 0
 
     # For each rearrangement in the file, we need to set the sequence fields.
     for index, reactivity_data in reactivity_df.iterrows():
         # Get the sequence_id
         #print(reactivity_data)
         sequence_id = reactivity_data[sequence_id_file]
+        t_file_read_total = t_file_read_total + (time.perf_counter() - t_file_read_start)
         #print("Info: AIRR sequence id field = %s,%s"%(sequence_id, sequence_id_file))
         
         # Get the sequence from the repository, skip this sequence if query
         # fails for some reason and generates an exception. 
+        t_find_start = time.perf_counter()
         query = {sequence_id_repo: {'$eq': sequence_id}}
         try:
             rearrangement_cursor = repository.rearrangement.find(query)
@@ -330,15 +351,15 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
             print("ERROR: Found more than one rearrangement with sequence_id %s, skipping."%(sequence_id))
             errors = errors + 1
             continue
+        t_find_total = t_find_total + (time.perf_counter() - t_find_start)
 
         # Check to see if the junction_aa, the v_gene, and the j_gene match.
         # Recall that v_gene and j_gene in the repository are lists.
-        #if not(rearrangement_data[v_gene_repo] == reactivity_data[v_gene_file]):
+        # Recall that v_gene and j_gene in the reactivity file should be a single gene
         if reactivity_data[v_gene_file] not in rearrangement_data[v_gene_repo]:
             print("ERROR: V gene different - %s, %s"%(rearrangement_data[v_gene_repo],reactivity_data[v_gene_file]))
             errors = errors + 1
             continue
-        #if not(rearrangement_data[j_gene_repo] == reactivity_data[j_gene_file]):
         if reactivity_data[j_gene_file] not in rearrangement_data[j_gene_repo]:
             print("ERROR: J gene different - %s, %s"%(rearrangement_data[j_gene_repo],reactivity_data[j_gene_file]))
             errors = errors + 1
@@ -381,13 +402,28 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
             else:
                 ir_species_ref = rearrangement_data[ir_species_ref_repo]
 
+            if not ir_mhc_ref_repo in rearrangement_data:
+                ir_mhc_ref = []
+            else:
+                ir_mhc_ref = rearrangement_data[ir_mhc_ref_repo]
+
+            if not ir_mhc_name_repo in rearrangement_data:
+                ir_mhc_name = []
+            else:
+                ir_mhc_name = rearrangement_data[ir_mhc_name_repo]
+
             # Append new reactivity data and make the list unique
             reactivity_ref.extend(json.loads(reactivity_data[reactivity_ref_file]))
             reactivity_ref = list(set(reactivity_ref))
 
             # For the other fields, extend the arrays of each field. We want these
             # arrays to also be unique
-            ir_reactivity_method.extend(json.loads(reactivity_data[ir_reactivity_method_file]))
+
+            # For reactivity method we have a default in case there isn't one in the file.
+            if ir_reactivity_method_file in reactivity_data:
+                ir_reactivity_method.extend(json.loads(reactivity_data[ir_reactivity_method_file]))
+            else:
+                ir_reactivity_method.extend([default_reactivity_method])
             ir_reactivity_method = list(set(ir_reactivity_method))
 
             ir_epitope_ref.extend(json.loads(reactivity_data[ir_epitope_ref_file]))
@@ -399,6 +435,12 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
             ir_species_ref.extend(json.loads(reactivity_data[ir_species_ref_file]))
             ir_species_ref = list(set(ir_species_ref))
 
+            ir_mhc_ref.extend(json.loads(reactivity_data[ir_mhc_ref_file]))
+            ir_mhc_ref = list(set(ir_mhc_ref))
+
+            ir_mhc_name.extend(json.loads(reactivity_data[ir_mhc_name_file]))
+            ir_mhc_name = list(set(ir_mhc_name))
+
             # Set up the Mongo update command object
             update_obj = {"$set": {
                 reactivity_ref_repo:reactivity_ref,
@@ -406,6 +448,8 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                 ir_epitope_ref_repo:ir_epitope_ref,
                 ir_antigen_ref_repo:ir_antigen_ref,
                 ir_species_ref_repo:ir_species_ref,
+                ir_mhc_ref_repo:ir_mhc_ref,
+                ir_mhc_name_repo:ir_mhc_name,
                 updated_at_field:now_str}
             }
         else:
@@ -456,6 +500,22 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                 # Input field is a JSON array. We store as a JSON array in the DB for fast search
                 ir_species_ref = list(set(json.loads(reactivity_data[ir_species_ref_file])))
 
+            # Peptide MHC reference (e.g. "MRO:0001007")
+            if not ir_mhc_ref_file in reactivity_data or reactivity_data[ir_mhc_ref_file] == "":
+                ir_mhc_ref = []
+            else:
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                ir_mhc_ref = list(set(json.loads(reactivity_data[ir_mhc_ref_file])))
+
+            # Peptide MHC allele name (e.g. "HLA-A*02:01")
+            if not ir_mhc_name_file in reactivity_data or reactivity_data[ir_mhc_name_file] == "":
+                ir_mhc_name = []
+            else:
+                # We want this list to have unique items only so we convert to a set, then a list.
+                # Input field is a JSON array. We store as a JSON array in the DB for fast search
+                ir_mhc_name = list(set(json.loads(reactivity_data[ir_mhc_name_file])))
+
             # Set the fields in the database in the update object.
             update_obj = {"$set": {
                 reactivity_ref_repo:reactivity_ref,
@@ -463,18 +523,30 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
                 ir_epitope_ref_repo:ir_epitope_ref,
                 ir_antigen_ref_repo:ir_antigen_ref,
                 ir_species_ref_repo:ir_species_ref,
+                ir_mhc_ref_repo:ir_mhc_ref,
+                ir_mhc_name_repo:ir_mhc_name,
                 updated_at_field:now_str}
             }
 
         # Do the update
         if not skipload:
+            t_update_start = time.perf_counter()
             repository.rearrangement.update_one( {repo_sequence_id_field:sequence_id}, update_obj)
+            t_update_total = t_update_total + (time.perf_counter() - t_update_start)
             update_count = update_count + 1
-        if update_count % block_size == 0:
+        total_rearrangements = total_rearrangements + 1
+        if total_rearrangements % block_size == 0:
             t_block_end = time.perf_counter()
-            print("Info: Finished processing %d records in %f seconds (%f updates/s)"%(
-                   block_size, (t_block_end - t_block_start),(block_size/(t_block_end-t_block_start))),flush=True)
+            print("Info: Finished processing %d records in %f seconds (%f updates/s), total = %d"%(
+                   block_size, (t_block_end - t_block_start),(block_size/(t_block_end-t_block_start)),total_rearrangements),flush=True)
+            print("Info:     Total update time = %f seconds (%.2f%% of total)"%
+                   (t_update_total,t_update_total/(t_block_end - t_start)*100.0))
+            print("Info:     Total find time = %f seconds (%.2f%% of total)"%
+                   (t_find_total,t_find_total/(t_block_end - t_start)*100.0))
+            print("Info:     Total file read time = %f seconds (%.2f%% of total)"%
+                   (t_file_read_total,t_file_read_total/(t_block_end - t_start)*100.0))
             t_block_start = time.perf_counter()
+        t_file_read_start = time.perf_counter()
 
     # time end
     print("Info: %d rearrangement database updates made"%(update_count))
