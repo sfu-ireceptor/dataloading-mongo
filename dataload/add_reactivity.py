@@ -466,7 +466,6 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
             # e.g. "IEDB:EXACT:v_gene,j_gene,junction_aa" for an EXACT match to receptors
             # in IEDB with exact match of AIRR v_gene, j_gene, and junction_aa fields.
             if not ir_reactivity_method_file in reactivity_data or reactivity_data[ir_reactivity_method_file] == "":
-                #ir_reactivity_method = ["IEDB:EXACT:v_gene,j_gene,junction_aa"]
                 if not default_reactivity_method is None:
                     ir_reactivity_method = [default_reactivity_method]
                 else:
@@ -539,12 +538,12 @@ def processRearrangements(reactivity_df, repository, airr_map, rearrangementPars
             t_block_end = time.perf_counter()
             print("Info: Finished processing %d records in %f seconds (%f updates/s), total = %d"%(
                    block_size, (t_block_end - t_block_start),(block_size/(t_block_end-t_block_start)),total_rearrangements),flush=True)
-            print("Info:     Total update time = %f seconds (%.2f%% of total)"%
-                   (t_update_total,t_update_total/(t_block_end - t_start)*100.0))
-            print("Info:     Total find time = %f seconds (%.2f%% of total)"%
-                   (t_find_total,t_find_total/(t_block_end - t_start)*100.0))
+            print("Info:     Total database update time = %f seconds (%.2f%% of total)"%
+                   (t_update_total,t_update_total/(t_block_end - t_start)*100.0),flush=True)
+            print("Info:     Total database find time = %f seconds (%.2f%% of total)"%
+                   (t_find_total,t_find_total/(t_block_end - t_start)*100.0),flush=True)
             print("Info:     Total file read time = %f seconds (%.2f%% of total)"%
-                   (t_file_read_total,t_file_read_total/(t_block_end - t_start)*100.0))
+                   (t_file_read_total,t_file_read_total/(t_block_end - t_start)*100.0),flush=True)
             t_block_start = time.perf_counter()
         t_file_read_start = time.perf_counter()
 
