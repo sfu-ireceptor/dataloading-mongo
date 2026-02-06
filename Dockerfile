@@ -7,11 +7,12 @@ RUN pip install -r /requirements.txt
 # add PHP requirements (PHP 8.2 specific). If the version changes, the
 # reference to /etc/php/8.2/cli/php.ini will need to be changed.
 RUN apt-get update
-RUN apt-get install php8.2 -y
+RUN apt-get install php8.4 -y
 RUN apt-get install php-dev -y
-RUN pecl install mongodb
+# install MongoDB PHP extension - needs version 1.15.0
+RUN pecl install mongodb-1.15.0
 RUN php -v
-RUN echo "extension=mongodb.so" >> /etc/php/8.2/cli/php.ini
+RUN echo "extension=mongodb.so" >> /etc/php/8.4/cli/php.ini
 RUN curl -sS https://getcomposer.org/installer |php
 RUN mv composer.phar /usr/local/bin/composer
 RUN composer require mongodb/mongodb
