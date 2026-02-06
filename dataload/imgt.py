@@ -515,7 +515,7 @@ class IMGT(Rearrangement):
                     # for each row.
                     process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
                     mongo_concat[repository_field] = process_df.apply(
-                              lambda x : check_stop_codon(x[0], x[1]), axis=1)
+                              lambda x : check_stop_codon(x.iloc[0], x.iloc[1]), axis=1)
             elif value in ["sequence_alignment","sequence_alignment_aa","d_sequence_alignment"]: 
                 # These fields are built from one out of two fields that come from
                 # the mapping. They are string fields, one of which we assume has
@@ -531,8 +531,8 @@ class IMGT(Rearrangement):
                     process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
                     mongo_concat[repository_field] = process_df.apply(
                               lambda x : '{}{}'.format(
-                                  x[0] if pd.notnull(x[0]) else "",
-                                  x[1] if pd.notnull(x[1]) else ""
+                                  x.iloc[0] if pd.notnull(x.iloc[0]) else "",
+                                  x.iloc[1] if pd.notnull(x.iloc[1]) else ""
                               ), axis=1)
             elif value == "np1" or value == "np2":
                 # These fields are built from a complex combination of fieldes
@@ -562,7 +562,7 @@ class IMGT(Rearrangement):
                 if len(vquest_array) == 2:
                     process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
                     mongo_concat[repository_field] = process_df.apply(
-                              lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
+                              lambda x : x.iloc[0] if pd.notnull(x.iloc[0]) else x.iloc[1], axis=1)
             elif value == 'p5d_length' or value == 'p3d_length' or value == 'n1_length':
                 # These are numerical length fields, built from one of two possible
                 # source fields. Again, we assume that either field, but not
@@ -573,7 +573,7 @@ class IMGT(Rearrangement):
                 if len(vquest_array) == 2:
                     process_df =  vquest_df[[vquest_array[0],vquest_array[1]]]
                     mongo_concat[repository_field] = process_df.apply(
-                              lambda x : x[0] if pd.notnull(x[0]) else x[1], axis=1)
+                              lambda x : x.iloc[0] if pd.notnull(x.iloc[0]) else x.iloc[1], axis=1)
         
         # We need to iterate over the compuation list again, as some of the 
         # computed values needed values computed in the first pass above. For
@@ -689,15 +689,17 @@ class IMGT(Rearrangement):
             print("ERROR: Unable to map data to the repository")
             return False
 
-        # Convert the mongo data frame data into JSON.
+        # Convert the mongo data frame data into a list of records.
         if self.verbose():
-            print("Info: Creating JSON from Dataframe", flush=True) 
+            print("Info: Creating records from Dataframe", flush=True) 
         t_start_load_= time.perf_counter()
         t_start = time.perf_counter()
+        # TODO: Try to optimize - below does not work
+        #records = mongo_concat.T.to_dict().values()
         records = json.loads(mongo_concat.T.to_json()).values()
         t_end = time.perf_counter()
         if self.verbose():
-            print("Info: JSON created, time = %f seconds (%f records/s)" %
+            print("Info: records created, time = %f seconds (%f records/s)" %
                   ((t_end - t_start),len(records)/(t_end - t_start)), flush=True)
 
         # The climax: insert the records into the MongoDb collection!
