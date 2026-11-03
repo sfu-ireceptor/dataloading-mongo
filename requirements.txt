@@ -6,7 +6,7 @@ idna
 numpy
 pandas
 plotly
-pymongo==3.10.1
+pymongo==4.18.3
 python-dateutil
 pytz
 PyYAML
